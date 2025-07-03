@@ -1,0 +1,25 @@
+2025/07/11 16:14:56 Database connection established successfully
+Migration 1 (create_users_table) already applied, skipping
+Migration 2 (create_tasks_table) already applied, skipping
+Migration 3 (create_journal_entries_table) already applied, skipping
+All migrations applied successfully
+2025/07/11 16:14:56 Database connection established successfully
+Admin user already exists, skipping creation
+2025/07/11 16:14:56 Ent client and services initialized successfully
+2025/07/11 16:14:56 Server started on 0.0.0.0:8081
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+⇨ http server started on [::]:8081
+[2025-07-11T16:17:38+08:00] 401 GET /api/users/me (127.0.0.1) 47.302µs
+[2025-07-11T16:18:37+08:00] 401 GET /api/users/me (127.0.0.1) 42.102µs
+[2025-07-11T16:22:00+08:00] 200 POST /api/auth/login (127.0.0.1) 36.413317ms
+[2025-07-11T16:22:03+08:00] 401 GET /api/users/me (127.0.0.1) 22.603µs
+[2025-07-11T16:22:31+08:00] 401 GET /api/users/me (127.0.0.1) 20.729µs
+signal: killed
