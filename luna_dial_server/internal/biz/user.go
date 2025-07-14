@@ -45,27 +45,37 @@ type UserLoginParam struct {
 	Password string
 }
 
+type UserUsecase struct {
+	UserRepo *UserRepo
+}
+
+func NewUserUsecase(userRepo *UserRepo) *UserUsecase {
+	return &UserUsecase{
+		UserRepo: userRepo,
+	}
+}
+
 // 创建用户
-func CreateUser(param CreateUserParam) (*User, error) {
+func (uc *UserUsecase) CreateUser(param CreateUserParam) (*User, error) {
 	return nil, ErrNoPermission // TODO: 实现
 }
 
 // 编辑用户
-func UpdateUser(param UpdateUserParam) (*User, error) {
+func (uc *UserUsecase) UpdateUser(param UpdateUserParam) (*User, error) {
 	return nil, ErrNoPermission // TODO: 实现
 }
 
 // 删除用户
-func DeleteUser(param DeleteUserParam) error {
+func (uc *UserUsecase) DeleteUser(param DeleteUserParam) error {
 	return ErrNoPermission // TODO: 实现
 }
 
 // 获取用户
-func GetUser(param GetUserParam) (*User, error) {
+func (uc *UserUsecase) GetUser(param GetUserParam) (*User, error) {
 	return nil, ErrNoPermission // TODO: 实现
 }
 
 // 用户登录
-func UserLogin(param UserLoginParam) (*User, error) {
+func (uc *UserUsecase) UserLogin(param UserLoginParam) (*User, error) {
 	return nil, ErrNoPermission // TODO: 实现
 }

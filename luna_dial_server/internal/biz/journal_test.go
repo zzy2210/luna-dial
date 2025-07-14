@@ -5,6 +5,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // 创建测试用的 JournalUsecase 实例
@@ -18,13 +21,8 @@ func TestNewJournalUsecase(t *testing.T) {
 	repo := &mockJournalRepo{}
 	usecase := NewJournalUsecase(repo)
 
-	if usecase == nil {
-		t.Fatal("NewJournalUsecase returned nil")
-	}
-
-	if usecase.repo != repo {
-		t.Error("repo not set correctly")
-	}
+	require.NotNil(t, usecase, "NewJournalUsecase should not return nil")
+	assert.Equal(t, repo, usecase.repo, "repo should be set correctly")
 }
 
 // 测试 CreateJournal 方法
@@ -47,48 +45,21 @@ func TestJournalUsecase_CreateJournal(t *testing.T) {
 
 		journal, err := usecase.CreateJournal(ctx, param)
 
-		// 期望成功创建，但当前会失败
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: CreateJournal 应该成功创建，但得到错误: %v", err)
-		}
-
-		if journal == nil {
-			t.Fatal("❌ 业务逻辑未实现: CreateJournal 应该返回创建的日志对象")
-		}
+		// ❌ TDD: 期望成功创建，当前业务逻辑未实现会失败
+		require.NoError(t, err, "CreateJournal should succeed")
+		require.NotNil(t, journal, "CreateJournal should return created journal object")
 
 		// 验证返回的日志字段
-		if journal.Title != param.Title {
-			t.Errorf("期望标题为 %s, 得到 %s", param.Title, journal.Title)
-		}
-
-		if journal.Content != param.Content {
-			t.Errorf("期望内容为 %s, 得到 %s", param.Content, journal.Content)
-		}
-
-		if journal.JournalType != param.JournalType {
-			t.Errorf("期望类型为 %v, 得到 %v", param.JournalType, journal.JournalType)
-		}
-
-		if journal.UserID != param.UserID {
-			t.Errorf("期望用户ID为 %s, 得到 %s", param.UserID, journal.UserID)
-		}
-
-		if journal.Icon != param.Icon {
-			t.Errorf("期望图标为 %s, 得到 %s", param.Icon, journal.Icon)
-		}
+		assert.Equal(t, param.Title, journal.Title, "title should match")
+		assert.Equal(t, param.Content, journal.Content, "content should match")
+		assert.Equal(t, param.JournalType, journal.JournalType, "journal type should match")
+		assert.Equal(t, param.UserID, journal.UserID, "user ID should match")
+		assert.Equal(t, param.Icon, journal.Icon, "icon should match")
 
 		// 验证自动设置的字段
-		if journal.ID == "" {
-			t.Error("期望生成非空的ID")
-		}
-
-		if journal.CreatedAt.IsZero() {
-			t.Error("期望设置创建时间")
-		}
-
-		if journal.UpdatedAt.IsZero() {
-			t.Error("期望设置更新时间")
-		}
+		assert.NotEmpty(t, journal.ID, "ID should be generated")
+		assert.False(t, journal.CreatedAt.IsZero(), "created time should be set")
+		assert.False(t, journal.UpdatedAt.IsZero(), "updated time should be set")
 	})
 
 	t.Run("成功创建周报", func(t *testing.T) {
@@ -106,17 +77,10 @@ func TestJournalUsecase_CreateJournal(t *testing.T) {
 
 		journal, err := usecase.CreateJournal(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: %v", err)
-		}
-
-		if journal == nil {
-			t.Fatal("❌ 应该返回创建的周报")
-		}
-
-		if journal.JournalType != PeriodWeek {
-			t.Errorf("期望日志类型为 PeriodWeek, 得到 %v", journal.JournalType)
-		}
+		// ❌ TDD: 期望成功创建，当前业务逻辑未实现会失败
+		require.NoError(t, err, "CreateJournal should succeed for week journal")
+		require.NotNil(t, journal, "should return created week journal")
+		assert.Equal(t, PeriodWeek, journal.JournalType, "journal type should be PeriodWeek")
 	})
 
 	t.Run("参数验证失败 - 空用户ID", func(t *testing.T) {
@@ -133,18 +97,9 @@ func TestJournalUsecase_CreateJournal(t *testing.T) {
 
 		journal, err := usecase.CreateJournal(ctx, param)
 
-		if journal != nil {
-			t.Errorf("期望返回 nil, 得到 %+v", journal)
-		}
-
-		if err == nil {
-			t.Error("期望返回验证错误")
-		}
-
-		// TODO: 实现后应该返回具体的验证错误
-		if err == ErrNoPermission {
-			t.Log("当前返回 ErrNoPermission，实现后应该返回具体的验证错误")
-		}
+		// ✅ TDD: 明确期望的业务错误
+		assert.Nil(t, journal, "should return nil journal for empty user ID")
+		assert.Equal(t, ErrUserIDEmpty, err, "should return ErrUserIDEmpty for empty user ID")
 	})
 
 	t.Run("参数验证失败 - 空标题", func(t *testing.T) {
@@ -161,13 +116,9 @@ func TestJournalUsecase_CreateJournal(t *testing.T) {
 
 		journal, err := usecase.CreateJournal(ctx, param)
 
-		if journal != nil {
-			t.Errorf("期望返回 nil, 得到 %+v", journal)
-		}
-
-		if err == nil {
-			t.Error("期望返回验证错误")
-		}
+		// ✅ TDD: 明确期望的业务错误
+		assert.Nil(t, journal, "should return nil journal for empty title")
+		assert.Equal(t, ErrTitleEmpty, err, "should return ErrTitleEmpty for empty title")
 	})
 }
 
@@ -186,22 +137,11 @@ func TestJournalUsecase_UpdateJournal(t *testing.T) {
 
 		journal, err := usecase.UpdateJournal(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: UpdateJournal 应该成功更新，但得到错误: %v", err)
-		}
-
-		if journal == nil {
-			t.Fatal("❌ 应该返回更新后的日志对象")
-		}
-
-		if journal.Title != newTitle {
-			t.Errorf("期望标题更新为 %s, 得到 %s", newTitle, journal.Title)
-		}
-
-		// 验证更新时间被修改
-		if journal.UpdatedAt.IsZero() {
-			t.Error("期望更新时间被设置")
-		}
+		// ❌ TDD: 期望成功更新，当前业务逻辑未实现会失败
+		require.NoError(t, err, "UpdateJournal should succeed")
+		require.NotNil(t, journal, "should return updated journal object")
+		assert.Equal(t, newTitle, journal.Title, "title should be updated")
+		assert.False(t, journal.UpdatedAt.IsZero(), "updated time should be set")
 	})
 
 	t.Run("成功更新日志内容和类型", func(t *testing.T) {
@@ -216,21 +156,11 @@ func TestJournalUsecase_UpdateJournal(t *testing.T) {
 
 		journal, err := usecase.UpdateJournal(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: %v", err)
-		}
-
-		if journal == nil {
-			t.Fatal("❌ 应该返回更新后的日志对象")
-		}
-
-		if journal.Content != newContent {
-			t.Errorf("期望内容更新为 %s, 得到 %s", newContent, journal.Content)
-		}
-
-		if journal.JournalType != newType {
-			t.Errorf("期望类型更新为 %v, 得到 %v", newType, journal.JournalType)
-		}
+		// ❌ TDD: 期望成功更新，当前业务逻辑未实现会失败
+		require.NoError(t, err, "UpdateJournal should succeed")
+		require.NotNil(t, journal, "should return updated journal object")
+		assert.Equal(t, newContent, journal.Content, "content should be updated")
+		assert.Equal(t, newType, journal.JournalType, "journal type should be updated")
 	})
 
 	t.Run("权限验证失败 - 不同用户", func(t *testing.T) {
@@ -243,13 +173,9 @@ func TestJournalUsecase_UpdateJournal(t *testing.T) {
 
 		journal, err := usecase.UpdateJournal(ctx, param)
 
-		if journal != nil {
-			t.Errorf("期望返回 nil, 得到 %+v", journal)
-		}
-
-		if err == nil {
-			t.Error("期望返回权限错误")
-		}
+		// ✅ TDD: 明确期望的权限错误
+		assert.Nil(t, journal, "should return nil journal for permission denied")
+		assert.Equal(t, ErrNoPermission, err, "should return ErrNoPermission for different user")
 	})
 }
 
@@ -266,9 +192,8 @@ func TestJournalUsecase_DeleteJournal(t *testing.T) {
 
 		err := usecase.DeleteJournal(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: DeleteJournal 应该成功删除，但得到错误: %v", err)
-		}
+		// ❌ TDD: 期望成功删除，当前业务逻辑未实现会失败
+		assert.NoError(t, err, "DeleteJournal should succeed")
 	})
 
 	t.Run("权限验证失败", func(t *testing.T) {
@@ -279,9 +204,8 @@ func TestJournalUsecase_DeleteJournal(t *testing.T) {
 
 		err := usecase.DeleteJournal(ctx, param)
 
-		if err == nil {
-			t.Error("期望返回权限错误")
-		}
+		// ✅ TDD: 明确期望的权限错误
+		assert.Equal(t, ErrNoPermission, err, "should return ErrNoPermission for different user")
 	})
 
 	t.Run("日志不存在", func(t *testing.T) {
@@ -292,9 +216,8 @@ func TestJournalUsecase_DeleteJournal(t *testing.T) {
 
 		err := usecase.DeleteJournal(ctx, param)
 
-		if err == nil {
-			t.Error("期望返回不存在错误")
-		}
+		// ✅ TDD: 明确期望的不存在错误
+		assert.Equal(t, ErrJournalNotFound, err, "should return ErrJournalNotFound for non-existent journal")
 	})
 }
 
@@ -311,21 +234,11 @@ func TestJournalUsecase_GetJournal(t *testing.T) {
 
 		journal, err := usecase.GetJournal(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: GetJournal 应该成功获取，但得到错误: %v", err)
-		}
-
-		if journal == nil {
-			t.Fatal("❌ 应该返回日志对象")
-		}
-
-		if journal.ID != param.JournalID {
-			t.Errorf("期望日志ID为 %s, 得到 %s", param.JournalID, journal.ID)
-		}
-
-		if journal.UserID != param.UserID {
-			t.Errorf("期望用户ID为 %s, 得到 %s", param.UserID, journal.UserID)
-		}
+		// ❌ TDD: 期望成功获取，当前业务逻辑未实现会失败
+		require.NoError(t, err, "GetJournal should succeed")
+		require.NotNil(t, journal, "should return journal object")
+		assert.Equal(t, param.JournalID, journal.ID, "journal ID should match")
+		assert.Equal(t, param.UserID, journal.UserID, "user ID should match")
 	})
 
 	t.Run("日志不存在", func(t *testing.T) {
@@ -336,13 +249,9 @@ func TestJournalUsecase_GetJournal(t *testing.T) {
 
 		journal, err := usecase.GetJournal(ctx, param)
 
-		if journal != nil {
-			t.Errorf("期望返回 nil, 得到 %+v", journal)
-		}
-
-		if err == nil {
-			t.Error("期望返回不存在错误")
-		}
+		// ✅ TDD: 明确期望的不存在错误
+		assert.Nil(t, journal, "should return nil journal for non-existent")
+		assert.Equal(t, ErrJournalNotFound, err, "should return ErrJournalNotFound for non-existent journal")
 	})
 }
 
@@ -363,25 +272,16 @@ func TestJournalUsecase_ListJournalByPeriod(t *testing.T) {
 
 		journals, err := usecase.ListJournalByPeriod(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: ListJournalByPeriod 应该成功获取，但得到错误: %v", err)
-		}
-
-		if journals == nil {
-			t.Fatal("❌ 应该返回日志列表")
-		}
+		// ❌ TDD: 期望成功获取，当前业务逻辑未实现会失败
+		require.NoError(t, err, "ListJournalByPeriod should succeed")
+		require.NotNil(t, journals, "should return journal list")
 
 		// 验证返回的日志都在指定时间范围内
 		for _, journal := range journals {
-			if journal.UserID != param.UserID {
-				t.Errorf("返回了其他用户的日志: %s", journal.UserID)
-			}
-
+			assert.Equal(t, param.UserID, journal.UserID, "all journals should belong to specified user")
 			// 验证日志时间在范围内
-			if journal.TimePeriod.Start.Before(param.Period.Start) ||
-				journal.TimePeriod.End.After(param.Period.End) {
-				t.Errorf("日志时间超出范围: %v", journal.TimePeriod)
-			}
+			assert.True(t, !journal.TimePeriod.Start.Before(param.Period.Start), "journal start time should be within range")
+			assert.True(t, !journal.TimePeriod.End.After(param.Period.End), "journal end time should be within range")
 		}
 	})
 
@@ -397,19 +297,13 @@ func TestJournalUsecase_ListJournalByPeriod(t *testing.T) {
 
 		journals, err := usecase.ListJournalByPeriod(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: %v", err)
-		}
-
-		if journals == nil {
-			t.Fatal("❌ 应该返回日志列表")
-		}
+		// ❌ TDD: 期望成功获取，当前业务逻辑未实现会失败
+		require.NoError(t, err, "ListJournalByPeriod should succeed for week period")
+		require.NotNil(t, journals, "should return journal list")
 
 		// 验证返回的日志类型
 		for _, journal := range journals {
-			if journal.JournalType != PeriodWeek && journal.JournalType != PeriodDay {
-				t.Errorf("期望周报或日报，得到 %v", journal.JournalType)
-			}
+			assert.Contains(t, []PeriodType{PeriodWeek, PeriodDay}, journal.JournalType, "should return week or day journals")
 		}
 	})
 }
@@ -430,24 +324,16 @@ func TestJournalUsecase_ListAllJournals(t *testing.T) {
 
 		journals, err := usecase.ListAllJournals(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: ListAllJournals 应该成功获取，但得到错误: %v", err)
-		}
-
-		if journals == nil {
-			t.Fatal("❌ 应该返回日志列表")
-		}
+		// ❌ TDD: 期望成功获取，当前业务逻辑未实现会失败
+		require.NoError(t, err, "ListAllJournals should succeed")
+		require.NotNil(t, journals, "should return journal list")
 
 		// 验证分页大小
-		if len(journals) > param.Pagination.PageSize {
-			t.Errorf("返回数量超过分页大小: %d > %d", len(journals), param.Pagination.PageSize)
-		}
+		assert.LessOrEqual(t, len(journals), param.Pagination.PageSize, "returned count should not exceed page size")
 
 		// 验证所有日志都属于指定用户
 		for _, journal := range journals {
-			if journal.UserID != param.UserID {
-				t.Errorf("返回了其他用户的日志: %s", journal.UserID)
-			}
+			assert.Equal(t, param.UserID, journal.UserID, "all journals should belong to specified user")
 		}
 	})
 
@@ -462,17 +348,10 @@ func TestJournalUsecase_ListAllJournals(t *testing.T) {
 
 		journals, err := usecase.ListAllJournals(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: %v", err)
-		}
-
-		if journals == nil {
-			t.Fatal("❌ 应该返回空列表，而不是 nil")
-		}
-
-		if len(journals) != 0 {
-			t.Errorf("期望返回空列表，得到 %d 个日志", len(journals))
-		}
+		// ❌ TDD: 期望成功获取空列表，当前业务逻辑未实现会失败
+		require.NoError(t, err, "ListAllJournals should succeed even with no results")
+		require.NotNil(t, journals, "should return empty list, not nil")
+		assert.Empty(t, journals, "should return empty list for user with no journals")
 	})
 }
 
@@ -493,21 +372,10 @@ func TestJournal_Fields(t *testing.T) {
 		UserID:    "user-123",
 	}
 
-	if journal.ID != "journal-123" {
-		t.Errorf("期望ID为 'journal-123', 得到 %s", journal.ID)
-	}
-
-	if journal.Title != "测试日志" {
-		t.Errorf("期望标题为 '测试日志', 得到 %s", journal.Title)
-	}
-
-	if journal.JournalType != PeriodDay {
-		t.Errorf("期望类型为 PeriodDay, 得到 %v", journal.JournalType)
-	}
-
-	if journal.UserID != "user-123" {
-		t.Errorf("期望用户ID为 'user-123', 得到 %s", journal.UserID)
-	}
+	assert.Equal(t, "journal-123", journal.ID, "ID should match")
+	assert.Equal(t, "测试日志", journal.Title, "title should match")
+	assert.Equal(t, PeriodDay, journal.JournalType, "journal type should match")
+	assert.Equal(t, "user-123", journal.UserID, "user ID should match")
 }
 
 // 测试参数结构体
@@ -524,13 +392,8 @@ func TestCreateJournalParam_Fields(t *testing.T) {
 		Icon: "📊",
 	}
 
-	if param.UserID != "user-123" {
-		t.Errorf("期望用户ID为 'user-123', 得到 %s", param.UserID)
-	}
-
-	if param.JournalType != PeriodWeek {
-		t.Errorf("期望类型为 PeriodWeek, 得到 %v", param.JournalType)
-	}
+	assert.Equal(t, "user-123", param.UserID, "user ID should match")
+	assert.Equal(t, PeriodWeek, param.JournalType, "journal type should match")
 }
 
 func TestUpdateJournalParam_Fields(t *testing.T) {
@@ -544,17 +407,11 @@ func TestUpdateJournalParam_Fields(t *testing.T) {
 		Content:   &newContent,
 	}
 
-	if param.JournalID != "journal-123" {
-		t.Errorf("期望日志ID为 'journal-123', 得到 %s", param.JournalID)
-	}
-
-	if param.Title == nil || *param.Title != newTitle {
-		t.Errorf("期望标题为 '%s', 得到 %v", newTitle, param.Title)
-	}
-
-	if param.Content == nil || *param.Content != newContent {
-		t.Errorf("期望内容为 '%s', 得到 %v", newContent, param.Content)
-	}
+	assert.Equal(t, "journal-123", param.JournalID, "journal ID should match")
+	require.NotNil(t, param.Title, "title pointer should not be nil")
+	assert.Equal(t, newTitle, *param.Title, "title should match")
+	require.NotNil(t, param.Content, "content pointer should not be nil")
+	assert.Equal(t, newContent, *param.Content, "content should match")
 }
 
 // 测试分页参数
@@ -564,36 +421,14 @@ func TestPaginationParam_Fields(t *testing.T) {
 		PageSize: 20,
 	}
 
-	if param.PageNum != 2 {
-		t.Errorf("期望页码为 2, 得到 %d", param.PageNum)
-	}
-
-	if param.PageSize != 20 {
-		t.Errorf("期望页大小为 20, 得到 %d", param.PageSize)
-	}
+	assert.Equal(t, 2, param.PageNum, "page number should match")
+	assert.Equal(t, 20, param.PageSize, "page size should match")
 }
 
 // 边界测试
 func TestJournalUsecase_EdgeCases(t *testing.T) {
 	usecase := createTestJournalUsecase()
 	ctx := context.Background()
-
-	t.Run("nil context", func(t *testing.T) {
-		param := CreateJournalParam{
-			UserID:      "user-123",
-			Title:       "测试",
-			Content:     "测试内容",
-			JournalType: PeriodDay,
-		}
-
-		// 使用 context.TODO() 而不是 nil
-		_, err := usecase.CreateJournal(context.TODO(), param)
-
-		// 当前实现返回 ErrNoPermission，实现后可能需要处理特殊 context
-		if err == nil {
-			t.Log("实现后需要考虑特殊 context 的处理")
-		}
-	})
 
 	t.Run("极长标题", func(t *testing.T) {
 		longTitle := strings.Repeat("很长的标题", 1000)
@@ -606,14 +441,44 @@ func TestJournalUsecase_EdgeCases(t *testing.T) {
 
 		journal, err := usecase.CreateJournal(ctx, param)
 
-		// 实现后应该有标题长度限制
-		if err == ErrNoPermission {
-			t.Log("当前返回 ErrNoPermission，实现后应该有标题长度验证")
+		// ✅ TDD: 明确期望标题长度验证错误（未来需要定义具体错误类型）
+		assert.Nil(t, journal, "should return nil journal for extremely long title")
+		assert.Error(t, err, "should return validation error for extremely long title")
+		// TODO: 实现后应该定义具体的标题长度错误类型
+	})
+
+	t.Run("空内容验证", func(t *testing.T) {
+		param := CreateJournalParam{
+			UserID:      "user-123",
+			Title:       "标题",
+			Content:     "", // 空内容
+			JournalType: PeriodDay,
 		}
 
-		if journal != nil && len(journal.Title) > 200 {
-			t.Errorf("标题可能过长，需要限制长度")
+		journal, err := usecase.CreateJournal(ctx, param)
+
+		// ✅ TDD: 明确期望内容为空的业务错误
+		assert.Nil(t, journal, "should return nil journal for empty content")
+		assert.Equal(t, ErrJournalContentEmpty, err, "should return ErrJournalContentEmpty for empty content")
+	})
+
+	t.Run("无效时间范围", func(t *testing.T) {
+		param := CreateJournalParam{
+			UserID:      "user-123",
+			Title:       "测试",
+			Content:     "测试内容",
+			JournalType: PeriodDay,
+			TimePeriod: Period{
+				Start: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
+				End:   time.Date(2025, 1, 14, 0, 0, 0, 0, time.UTC), // 结束时间在开始时间之前
+			},
 		}
+
+		journal, err := usecase.CreateJournal(ctx, param)
+
+		// ✅ TDD: 明确期望时间范围验证错误
+		assert.Nil(t, journal, "should return nil journal for invalid time period")
+		assert.Equal(t, ErrJournalPeriodInvalid, err, "should return ErrJournalPeriodInvalid for invalid period")
 	})
 
 	t.Run("特殊字符处理", func(t *testing.T) {
@@ -627,15 +492,13 @@ func TestJournalUsecase_EdgeCases(t *testing.T) {
 
 		journal, err := usecase.CreateJournal(ctx, param)
 
-		if err == ErrNoPermission {
-			t.Log("当前返回 ErrNoPermission，实现后需要处理特殊字符转义")
-		}
-
-		if journal != nil {
+		// ❌ TDD: 期望特殊字符被正确处理，当前业务逻辑未实现会失败
+		// 实现后应该能成功创建，但需要转义特殊字符
+		if err == nil && journal != nil {
 			// 验证特殊字符被正确处理
-			if strings.Contains(journal.Title, "<script>") {
-				t.Error("可能存在XSS风险，需要转义HTML标签")
-			}
+			assert.NotContains(t, journal.Title, "<script>", "should escape HTML tags to prevent XSS")
+			assert.NotContains(t, journal.Content, "<", "should escape HTML characters")
 		}
+		// TODO: 实现后需要定义特殊字符处理的具体规则
 	})
 }

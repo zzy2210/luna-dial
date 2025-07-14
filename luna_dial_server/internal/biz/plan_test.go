@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // 创建测试用的 PlanUsecase 实例
@@ -83,41 +85,23 @@ func TestPlanUsecase_GetPlanByPeriod(t *testing.T) {
 
 		plan, err := planUsecase.GetPlanByPeriod(param)
 
-		// 期望成功返回计划，但实际会失败因为当前返回 ErrNoPermission
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
+		// 业务逻辑实现后，err 应该为 nil，plan 不为 nil
+		assert.Nil(t, err)
+		assert.NotNil(t, plan)
 
-		if plan == nil {
-			t.Fatal("expected plan to be returned, got nil")
-		}
+		if plan != nil {
+			// 验证计划结构
+			assert.Equal(t, PeriodDay, plan.PlanType)
+			assert.Equal(t, param.Period.Start, plan.PlanPeriod.Start)
+			assert.Equal(t, param.Period.End, plan.PlanPeriod.End)
 
-		// 验证计划结构
-		if plan.PlanType != PeriodDay {
-			t.Errorf("expected PlanType to be PeriodDay, got %v", plan.PlanType)
-		}
+			// 期望有任务和日志数据
+			assert.GreaterOrEqual(t, plan.TasksTotal, 0)
+			assert.GreaterOrEqual(t, plan.JournalsTotal, 0)
 
-		if plan.PlanPeriod.Start != param.Period.Start {
-			t.Errorf("expected plan start time to match param")
-		}
-
-		if plan.PlanPeriod.End != param.Period.End {
-			t.Errorf("expected plan end time to match param")
-		}
-
-		// 期望有任务和日志数据
-		if plan.TasksTotal < 0 {
-			t.Errorf("expected non-negative TasksTotal")
-		}
-
-		if plan.JournalsTotal < 0 {
-			t.Errorf("expected non-negative JournalsTotal")
-		}
-
-		// 期望有分组统计数据
-		expectedDays := 31 // 1月有31天
-		if len(plan.GroupStats) != expectedDays {
-			t.Errorf("expected %d group stats for daily grouping, got %d", expectedDays, len(plan.GroupStats))
+			// 期望有分组统计数据（按日分组，1月有31天）
+			expectedDays := 31
+			assert.Equal(t, expectedDays, len(plan.GroupStats))
 		}
 	})
 
@@ -132,27 +116,21 @@ func TestPlanUsecase_GetPlanByPeriod(t *testing.T) {
 		}
 
 		plan, err := planUsecase.GetPlanByPeriod(param)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
 
-		if plan == nil {
-			t.Fatal("expected plan to be returned, got nil")
-		}
+		// 业务逻辑实现后，err 应该为 nil，plan 不为 nil
+		assert.Nil(t, err)
+		assert.NotNil(t, plan)
 
-		if plan.PlanType != PeriodWeek {
-			t.Errorf("expected PlanType to be PeriodWeek, got %v", plan.PlanType)
-		}
+		if plan != nil {
+			assert.Equal(t, PeriodWeek, plan.PlanType)
 
-		// 期望按周分组，1月大约有4-5周
-		if len(plan.GroupStats) < 4 || len(plan.GroupStats) > 6 {
-			t.Errorf("expected 4-6 group stats for weekly grouping, got %d", len(plan.GroupStats))
-		}
+			// 期望按周分组，1月大约有4-5周
+			assert.GreaterOrEqual(t, len(plan.GroupStats), 4)
+			assert.LessOrEqual(t, len(plan.GroupStats), 6)
 
-		// 验证周统计的 GroupKey 格式应该是 "2025-W01", "2025-W02" 等
-		for _, stat := range plan.GroupStats {
-			if len(stat.GroupKey) == 0 {
-				t.Errorf("expected non-empty GroupKey")
+			// 验证周统计的 GroupKey 格式应该是 "2025-W01", "2025-W02" 等
+			for _, stat := range plan.GroupStats {
+				assert.NotEmpty(t, stat.GroupKey)
 			}
 		}
 	})
@@ -169,19 +147,10 @@ func TestPlanUsecase_GetPlanByPeriod(t *testing.T) {
 
 		plan, err := planUsecase.GetPlanByPeriod(param)
 
-		if plan != nil {
-			t.Errorf("expected plan to be nil for invalid input, got %+v", plan)
-		}
-
-		// 期望返回特定的验证错误，而不是 ErrNoPermission
-		if err == nil {
-			t.Error("expected error for empty user ID, got nil")
-		}
-
-		// TODO: 实现后应该返回 ErrUserIDEmpty 或类似错误
-		if err == ErrNoPermission {
-			t.Log("当前实现返回 ErrNoPermission，实现后应该返回更具体的验证错误")
-		}
+		assert.Nil(t, plan)
+		assert.NotNil(t, err)
+		// 业务逻辑实现后应该返回 ErrUserIDEmpty
+		assert.Equal(t, ErrUserIDEmpty, err, "应该返回 ErrUserIDEmpty 错误")
 	})
 
 	t.Run("参数验证失败 - 无效时间区间", func(t *testing.T) {
@@ -196,18 +165,10 @@ func TestPlanUsecase_GetPlanByPeriod(t *testing.T) {
 
 		plan, err := planUsecase.GetPlanByPeriod(param)
 
-		if plan != nil {
-			t.Errorf("expected plan to be nil for invalid period, got %+v", plan)
-		}
-
-		if err == nil {
-			t.Error("expected error for invalid period, got nil")
-		}
-
-		// TODO: 实现后应该返回 ErrInvalidPeriod 或类似错误
-		if err == ErrNoPermission {
-			t.Log("当前实现返回 ErrNoPermission，实现后应该返回更具体的验证错误")
-		}
+		assert.Nil(t, plan)
+		assert.NotNil(t, err)
+		// 业务逻辑实现后应该返回 ErrInvalidPeriod
+		assert.Equal(t, ErrInvalidPeriod, err, "应该返回 ErrInvalidPeriod 错误")
 	})
 }
 
@@ -227,34 +188,21 @@ func TestPlanUsecase_GetPlanStats(t *testing.T) {
 
 		stats, err := planUsecase.GetPlanStats(param)
 
-		// 期望成功返回统计数据，但实际会失败因为当前返回 ErrNoPermission
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
+		// 业务逻辑实现后，err 应该为 nil，stats 不为 nil
+		assert.Nil(t, err)
+		assert.NotNil(t, stats)
 
-		if stats == nil {
-			t.Fatal("expected stats to be returned, got nil")
-		}
+		if stats != nil {
+			// 期望返回12个月的统计数据
+			expectedMonths := 12
+			assert.Equal(t, expectedMonths, len(stats))
 
-		// 期望返回12个月的统计数据
-		expectedMonths := 12
-		if len(stats) != expectedMonths {
-			t.Errorf("expected %d month stats, got %d", expectedMonths, len(stats))
-		}
-
-		// 验证统计数据格式
-		for i, stat := range stats {
-			expectedKey := fmt.Sprintf("2025-%02d", i+1)
-			if stat.GroupKey != expectedKey {
-				t.Errorf("expected GroupKey to be %s, got %s", expectedKey, stat.GroupKey)
-			}
-
-			if stat.TaskCount < 0 {
-				t.Errorf("expected non-negative TaskCount, got %d", stat.TaskCount)
-			}
-
-			if stat.ScoreTotal < 0 {
-				t.Errorf("expected non-negative ScoreTotal, got %d", stat.ScoreTotal)
+			// 验证统计数据格式
+			for i, stat := range stats {
+				expectedKey := fmt.Sprintf("2025-%02d", i+1)
+				assert.Equal(t, expectedKey, stat.GroupKey)
+				assert.GreaterOrEqual(t, stat.TaskCount, 0)
+				assert.GreaterOrEqual(t, stat.ScoreTotal, 0)
 			}
 		}
 	})
@@ -270,23 +218,19 @@ func TestPlanUsecase_GetPlanStats(t *testing.T) {
 		}
 
 		stats, err := planUsecase.GetPlanStats(param)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
 
-		if stats == nil {
-			t.Fatal("expected stats to be returned, got nil")
-		}
+		// 业务逻辑实现后，err 应该为 nil
+		assert.Nil(t, err)
+		assert.NotNil(t, stats)
 
-		// 1月大约有4-5周
-		if len(stats) < 4 || len(stats) > 6 {
-			t.Errorf("expected 4-6 week stats, got %d", len(stats))
-		}
+		if stats != nil {
+			// 1月大约有4-5周
+			assert.GreaterOrEqual(t, len(stats), 4)
+			assert.LessOrEqual(t, len(stats), 6)
 
-		// 验证周统计的 GroupKey 格式应该是 "2025-W01", "2025-W02" 等
-		for _, stat := range stats {
-			if !strings.HasPrefix(stat.GroupKey, "2025-W") {
-				t.Errorf("expected GroupKey to start with '2025-W', got %s", stat.GroupKey)
+			// 验证周统计的 GroupKey 格式应该是 "2025-W01", "2025-W02" 等
+			for _, stat := range stats {
+				assert.True(t, strings.HasPrefix(stat.GroupKey, "2025-W"))
 			}
 		}
 	})
@@ -302,25 +246,20 @@ func TestPlanUsecase_GetPlanStats(t *testing.T) {
 		}
 
 		stats, err := planUsecase.GetPlanStats(param)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
 
-		if stats == nil {
-			t.Fatal("expected stats to be returned, got nil")
-		}
+		// 业务逻辑实现后，err 应该为 nil
+		assert.Nil(t, err)
+		assert.NotNil(t, stats)
 
-		// 期望返回7天的统计数据
-		expectedDays := 7
-		if len(stats) != expectedDays {
-			t.Errorf("expected %d day stats, got %d", expectedDays, len(stats))
-		}
+		if stats != nil {
+			// 期望返回7天的统计数据
+			expectedDays := 7
+			assert.Equal(t, expectedDays, len(stats))
 
-		// 验证日统计的 GroupKey 格式应该是 "2025-01-01", "2025-01-02" 等
-		for i, stat := range stats {
-			expectedKey := fmt.Sprintf("2025-01-%02d", i+1)
-			if stat.GroupKey != expectedKey {
-				t.Errorf("expected GroupKey to be %s, got %s", expectedKey, stat.GroupKey)
+			// 验证日统计的 GroupKey 格式应该是 "2025-01-01", "2025-01-02" 等
+			for i, stat := range stats {
+				expectedKey := fmt.Sprintf("2025-01-%02d", i+1)
+				assert.Equal(t, expectedKey, stat.GroupKey)
 			}
 		}
 	})
@@ -336,25 +275,20 @@ func TestPlanUsecase_GetPlanStats(t *testing.T) {
 		}
 
 		stats, err := planUsecase.GetPlanStats(param)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
 
-		if stats == nil {
-			t.Fatal("expected stats to be returned, got nil")
-		}
+		// 业务逻辑实现后，err 应该为 nil
+		assert.Nil(t, err)
+		assert.NotNil(t, stats)
 
-		// 期望返回4个季度的统计数据
-		expectedQuarters := 4
-		if len(stats) != expectedQuarters {
-			t.Errorf("expected %d quarter stats, got %d", expectedQuarters, len(stats))
-		}
+		if stats != nil {
+			// 期望返回4个季度的统计数据
+			expectedQuarters := 4
+			assert.Equal(t, expectedQuarters, len(stats))
 
-		// 验证季度统计的 GroupKey 格式应该是 "2025-Q1", "2025-Q2" 等
-		expectedQuarterKeys := []string{"2025-Q1", "2025-Q2", "2025-Q3", "2025-Q4"}
-		for i, stat := range stats {
-			if stat.GroupKey != expectedQuarterKeys[i] {
-				t.Errorf("expected GroupKey to be %s, got %s", expectedQuarterKeys[i], stat.GroupKey)
+			// 验证季度统计的 GroupKey 格式应该是 "2025-Q1", "2025-Q2" 等
+			expectedQuarterKeys := []string{"2025-Q1", "2025-Q2", "2025-Q3", "2025-Q4"}
+			for i, stat := range stats {
+				assert.Equal(t, expectedQuarterKeys[i], stat.GroupKey)
 			}
 		}
 	})
@@ -371,18 +305,10 @@ func TestPlanUsecase_GetPlanStats(t *testing.T) {
 
 		stats, err := planUsecase.GetPlanStats(param)
 
-		if stats != nil {
-			t.Errorf("expected stats to be nil for invalid input, got %+v", stats)
-		}
-
-		if err == nil {
-			t.Error("expected error for empty user ID, got nil")
-		}
-
-		// TODO: 实现后应该返回 ErrUserIDEmpty 或类似错误
-		if err == ErrNoPermission {
-			t.Log("当前实现返回 ErrNoPermission，实现后应该返回更具体的验证错误")
-		}
+		assert.Nil(t, stats)
+		assert.NotNil(t, err)
+		// 业务逻辑实现后应该返回 ErrUserIDEmpty
+		assert.Equal(t, ErrUserIDEmpty, err, "应该返回 ErrUserIDEmpty 错误")
 	})
 
 	t.Run("参数验证失败 - 无效时间区间", func(t *testing.T) {
@@ -397,18 +323,10 @@ func TestPlanUsecase_GetPlanStats(t *testing.T) {
 
 		stats, err := planUsecase.GetPlanStats(param)
 
-		if stats != nil {
-			t.Errorf("expected stats to be nil for invalid period, got %+v", stats)
-		}
-
-		if err == nil {
-			t.Error("expected error for invalid period, got nil")
-		}
-
-		// TODO: 实现后应该返回 ErrInvalidPeriod 或类似错误
-		if err == ErrNoPermission {
-			t.Log("当前实现返回 ErrNoPermission，实现后应该返回更具体的验证错误")
-		}
+		assert.Nil(t, stats)
+		assert.NotNil(t, err)
+		// 业务逻辑实现后应该返回 ErrInvalidPeriod
+		assert.Equal(t, ErrInvalidPeriod, err, "应该返回 ErrInvalidPeriod 错误")
 	})
 }
 
@@ -436,29 +354,12 @@ func TestPlan_Fields(t *testing.T) {
 	}
 
 	// 验证字段类型和值
-	if plan.TasksTotal != 10 {
-		t.Errorf("expected TasksTotal to be 10, got %d", plan.TasksTotal)
-	}
-
-	if plan.JournalsTotal != 5 {
-		t.Errorf("expected JournalsTotal to be 5, got %d", plan.JournalsTotal)
-	}
-
-	if plan.PlanType != PeriodMonth {
-		t.Errorf("expected PlanType to be PeriodMonth, got %v", plan.PlanType)
-	}
-
-	if plan.ScoreTotal != 100 {
-		t.Errorf("expected ScoreTotal to be 100, got %d", plan.ScoreTotal)
-	}
-
-	if len(plan.GroupStats) != 1 {
-		t.Errorf("expected GroupStats length to be 1, got %d", len(plan.GroupStats))
-	}
-
-	if plan.GroupStats[0].GroupKey != "2025-01" {
-		t.Errorf("expected GroupKey to be '2025-01', got %s", plan.GroupStats[0].GroupKey)
-	}
+	assert.Equal(t, 10, plan.TasksTotal)
+	assert.Equal(t, 5, plan.JournalsTotal)
+	assert.Equal(t, PeriodMonth, plan.PlanType)
+	assert.Equal(t, 100, plan.ScoreTotal)
+	assert.Equal(t, 1, len(plan.GroupStats))
+	assert.Equal(t, "2025-01", plan.GroupStats[0].GroupKey)
 }
 
 // 测试 GroupStat 结构体
@@ -469,17 +370,9 @@ func TestGroupStat_Fields(t *testing.T) {
 		ScoreTotal: 50,
 	}
 
-	if stat.GroupKey != "2025-W01" {
-		t.Errorf("expected GroupKey to be '2025-W01', got %s", stat.GroupKey)
-	}
-
-	if stat.TaskCount != 5 {
-		t.Errorf("expected TaskCount to be 5, got %d", stat.TaskCount)
-	}
-
-	if stat.ScoreTotal != 50 {
-		t.Errorf("expected ScoreTotal to be 50, got %d", stat.ScoreTotal)
-	}
+	assert.Equal(t, "2025-W01", stat.GroupKey)
+	assert.Equal(t, 5, stat.TaskCount)
+	assert.Equal(t, 50, stat.ScoreTotal)
 }
 
 // 测试参数结构体
@@ -493,13 +386,8 @@ func TestGetPlanByPeriodParam_Fields(t *testing.T) {
 		GroupBy: PeriodDay,
 	}
 
-	if param.UserID != "user-123" {
-		t.Errorf("expected UserID to be 'user-123', got %s", param.UserID)
-	}
-
-	if param.GroupBy != PeriodDay {
-		t.Errorf("expected GroupBy to be PeriodDay, got %v", param.GroupBy)
-	}
+	assert.Equal(t, "user-123", param.UserID)
+	assert.Equal(t, PeriodDay, param.GroupBy)
 }
 
 func TestGetPlanStatsParam_Fields(t *testing.T) {
@@ -512,13 +400,8 @@ func TestGetPlanStatsParam_Fields(t *testing.T) {
 		GroupBy: PeriodQuarter,
 	}
 
-	if param.UserID != "user-456" {
-		t.Errorf("expected UserID to be 'user-456', got %s", param.UserID)
-	}
-
-	if param.GroupBy != PeriodQuarter {
-		t.Errorf("expected GroupBy to be PeriodQuarter, got %v", param.GroupBy)
-	}
+	assert.Equal(t, "user-456", param.UserID)
+	assert.Equal(t, PeriodQuarter, param.GroupBy)
 }
 
 // 边界测试：极端情况
@@ -540,10 +423,7 @@ func TestPlanUsecase_EdgeCases(t *testing.T) {
 	})
 
 	t.Run("极长用户ID", func(t *testing.T) {
-		longUserID := string(make([]byte, 1000))
-		for i := range longUserID {
-			longUserID = longUserID[:i] + "a" + longUserID[i+1:]
-		}
+		longUserID := strings.Repeat("a", 1000)
 
 		param := GetPlanByPeriodParam{
 			UserID: longUserID,
@@ -555,9 +435,9 @@ func TestPlanUsecase_EdgeCases(t *testing.T) {
 		}
 
 		_, err := planUsecase.GetPlanByPeriod(param)
-		if err != ErrNoPermission {
-			t.Errorf("expected ErrNoPermission, got %v", err)
-		}
+		// 业务逻辑实现后应该返回用户ID相关的验证错误
+		assert.NotNil(t, err)
+		// 可能是 ErrUserIDInvalid 或 ErrUserIDTooLong
 	})
 
 	t.Run("极端时间值", func(t *testing.T) {
@@ -571,9 +451,9 @@ func TestPlanUsecase_EdgeCases(t *testing.T) {
 		}
 
 		_, err := planUsecase.GetPlanByPeriod(param)
-		if err != ErrNoPermission {
-			t.Errorf("expected ErrNoPermission, got %v", err)
-		}
+		// 业务逻辑实现后可能因为时间跨度过大而返回错误
+		assert.NotNil(t, err)
+		// 可能是 ErrPeriodTooLarge 或类似错误
 	})
 }
 
@@ -593,12 +473,9 @@ func TestPlanUsecase_Performance(t *testing.T) {
 	// 测试多次调用的一致性
 	for i := 0; i < 100; i++ {
 		plan, err := planUsecase.GetPlanByPeriod(param)
-		if plan != nil {
-			t.Errorf("iteration %d: expected plan to be nil", i)
-		}
-		if err != ErrNoPermission {
-			t.Errorf("iteration %d: expected ErrNoPermission, got %v", i, err)
-		}
+		// 当前实现应该一致地返回错误
+		assert.Nil(t, plan, "iteration %d: expected plan to be nil", i)
+		assert.Equal(t, ErrNoPermission, err, "iteration %d: expected ErrNoPermission, got %v", i, err)
 	}
 }
 
@@ -619,49 +496,23 @@ func TestPlanUsecase_RealBusinessLogic_ShouldFail(t *testing.T) {
 
 		plan, err := planUsecase.GetPlanByPeriod(param)
 
-		// 这个断言会失败，因为当前实现返回 nil 和 ErrNoPermission
-		// 但我们期望的是真正的 Plan 对象
-		if err != nil {
-			t.Fatalf("❌ 业务逻辑未实现: GetPlanByPeriod 应该成功返回计划，但得到错误: %v", err)
-		}
+		// 业务逻辑实现后，这些断言应该通过
+		assert.Nil(t, err, "GetPlanByPeriod 应该成功返回计划")
+		assert.NotNil(t, plan, "GetPlanByPeriod 应该返回非空的计划对象")
 
-		if plan == nil {
-			t.Fatal("❌ 业务逻辑未实现: GetPlanByPeriod 应该返回非空的计划对象")
-		}
+		if plan != nil {
+			assert.Equal(t, PeriodDay, plan.PlanType, "计划类型应该正确")
+			assert.Equal(t, param.Period.Start, plan.PlanPeriod.Start, "计划开始时间应该正确")
+			assert.Equal(t, param.Period.End, plan.PlanPeriod.End, "计划结束时间应该正确")
 
-		// 验证返回的计划包含正确的字段
-		if plan.PlanType != PeriodDay {
-			t.Errorf("❌ 计划类型不正确: 期望 %v, 得到 %v", PeriodDay, plan.PlanType)
-		}
+			// 期望包含分组统计数据（按日分组，1月有31天）
+			expectedDays := 31
+			assert.Equal(t, expectedDays, len(plan.GroupStats), "应该包含31天的分组统计数据")
 
-		if plan.PlanPeriod.Start != param.Period.Start {
-			t.Errorf("❌ 计划开始时间不正确")
-		}
-
-		if plan.PlanPeriod.End != param.Period.End {
-			t.Errorf("❌ 计划结束时间不正确")
-		}
-
-		// 期望包含任务和日志数据
-		if len(plan.Tasks) == 0 && plan.TasksTotal == 0 {
-			t.Log("⚠️  当前没有任务数据，实现后应该从 TaskUsecase 获取")
-		}
-
-		if len(plan.Journals) == 0 && plan.JournalsTotal == 0 {
-			t.Log("⚠️  当前没有日志数据，实现后应该从 JournalUsecase 获取")
-		}
-
-		// 期望包含分组统计数据（按日分组，1月有31天）
-		expectedDays := 31
-		if len(plan.GroupStats) != expectedDays {
-			t.Errorf("❌ 分组统计数据不正确: 期望 %d 天的统计，得到 %d", expectedDays, len(plan.GroupStats))
-		}
-
-		// 验证分组统计的格式
-		for i, stat := range plan.GroupStats {
-			expectedKey := fmt.Sprintf("2025-01-%02d", i+1)
-			if stat.GroupKey != expectedKey {
-				t.Errorf("❌ 分组键格式不正确: 期望 %s, 得到 %s", expectedKey, stat.GroupKey)
+			// 验证分组统计的格式
+			for i, stat := range plan.GroupStats {
+				expectedKey := fmt.Sprintf("2025-01-%02d", i+1)
+				assert.Equal(t, expectedKey, stat.GroupKey, "分组键格式应该正确")
 			}
 		}
 	})
@@ -680,35 +531,21 @@ func TestPlanUsecase_RealBusinessLogic_ShouldFail(t *testing.T) {
 
 		stats, err := planUsecase.GetPlanStats(param)
 
-		// 这个断言会失败，因为当前实现返回 nil 和 ErrNoPermission
-		if err != nil {
-			t.Fatalf("❌ 业务逻辑未实现: GetPlanStats 应该成功返回统计数据，但得到错误: %v", err)
-		}
+		// 业务逻辑实现后，这些断言应该通过
+		assert.Nil(t, err, "GetPlanStats 应该成功返回统计数据")
+		assert.NotNil(t, stats, "GetPlanStats 应该返回非空的统计数据")
 
-		if stats == nil {
-			t.Fatal("❌ 业务逻辑未实现: GetPlanStats 应该返回非空的统计数据")
-		}
+		if stats != nil {
+			// 期望返回12个月的统计数据
+			expectedMonths := 12
+			assert.Equal(t, expectedMonths, len(stats), "应该返回12个月的统计数据")
 
-		// 期望返回12个月的统计数据
-		expectedMonths := 12
-		if len(stats) != expectedMonths {
-			t.Errorf("❌ 统计数据数量不正确: 期望 %d 个月的统计，得到 %d", expectedMonths, len(stats))
-		}
-
-		// 验证每个月的统计数据格式
-		for i, stat := range stats {
-			expectedKey := fmt.Sprintf("2025-%02d", i+1)
-			if stat.GroupKey != expectedKey {
-				t.Errorf("❌ 月份分组键不正确: 期望 %s, 得到 %s", expectedKey, stat.GroupKey)
-			}
-
-			// 期望有有效的统计数据（任务数量和分数）
-			if stat.TaskCount < 0 {
-				t.Errorf("❌ 任务数量不能为负数: %d", stat.TaskCount)
-			}
-
-			if stat.ScoreTotal < 0 {
-				t.Errorf("❌ 总分不能为负数: %d", stat.ScoreTotal)
+			// 验证每个月的统计数据格式
+			for i, stat := range stats {
+				expectedKey := fmt.Sprintf("2025-%02d", i+1)
+				assert.Equal(t, expectedKey, stat.GroupKey, "月份分组键应该正确")
+				assert.GreaterOrEqual(t, stat.TaskCount, 0, "任务数量不能为负数")
+				assert.GreaterOrEqual(t, stat.ScoreTotal, 0, "总分不能为负数")
 			}
 		}
 	})
@@ -749,22 +586,19 @@ func TestPlanUsecase_RealBusinessLogic_ShouldFail(t *testing.T) {
 
 				stats, err := planUsecase.GetPlanStats(param)
 
-				if err != nil {
-					t.Fatalf("❌ %s 业务逻辑未实现: %v", tc.name, err)
-				}
+				// 业务逻辑实现后，这些断言应该通过
+				assert.Nil(t, err, "%s 业务逻辑应该成功", tc.name)
+				assert.NotNil(t, stats, "%s 应该返回统计数据", tc.name)
 
-				if stats == nil {
-					t.Fatalf("❌ %s 应该返回统计数据", tc.name)
-				}
-
-				if tc.groupBy == PeriodQuarter && len(stats) != tc.expectedCount {
-					t.Errorf("❌ %s 统计数量不正确: 期望 %d, 得到 %d", tc.name, tc.expectedCount, len(stats))
+				if stats != nil && tc.groupBy == PeriodQuarter {
+					assert.Equal(t, tc.expectedCount, len(stats), "%s 统计数量应该正确", tc.name)
 				}
 
 				// 验证分组键的格式
-				for _, stat := range stats {
-					if !strings.HasPrefix(stat.GroupKey, tc.keyPattern) {
-						t.Errorf("❌ %s 分组键格式不正确: 期望以 %s 开头, 得到 %s", tc.name, tc.keyPattern, stat.GroupKey)
+				if stats != nil {
+					for _, stat := range stats {
+						assert.True(t, strings.HasPrefix(stat.GroupKey, tc.keyPattern),
+							"%s 分组键格式应该正确: 期望以 %s 开头, 得到 %s", tc.name, tc.keyPattern, stat.GroupKey)
 					}
 				}
 			})

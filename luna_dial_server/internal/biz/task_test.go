@@ -5,6 +5,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // 创建测试用的 TaskUsecase 实例
@@ -18,13 +21,8 @@ func TestNewTaskUsecase(t *testing.T) {
 	repo := &mockTaskRepo{}
 	usecase := NewTaskUsecase(repo)
 
-	if usecase == nil {
-		t.Fatal("NewTaskUsecase returned nil")
-	}
-
-	if usecase.repo != repo {
-		t.Error("repo not set correctly")
-	}
+	require.NotNil(t, usecase, "NewTaskUsecase should not return nil")
+	assert.Equal(t, repo, usecase.repo, "repo should be set correctly")
 }
 
 // 测试 CreateTask 方法
@@ -48,56 +46,23 @@ func TestTaskUsecase_CreateTask(t *testing.T) {
 
 		task, err := usecase.CreateTask(ctx, param)
 
-		// 期望成功创建，但当前会失败
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: CreateTask 应该成功创建，但得到错误: %v", err)
-		}
-
-		if task == nil {
-			t.Fatal("❌ 业务逻辑未实现: CreateTask 应该返回创建的任务对象")
-		}
+		// ❌ TDD: 期望成功创建，当前业务逻辑未实现会失败
+		require.NoError(t, err, "CreateTask should succeed")
+		require.NotNil(t, task, "CreateTask should return created task object")
 
 		// 验证返回的任务字段
-		if task.Title != param.Title {
-			t.Errorf("期望标题为 %s, 得到 %s", param.Title, task.Title)
-		}
-
-		if task.TaskType != param.Type {
-			t.Errorf("期望类型为 %v, 得到 %v", param.Type, task.TaskType)
-		}
-
-		if task.Score != param.Score {
-			t.Errorf("期望分数为 %d, 得到 %d", param.Score, task.Score)
-		}
-
-		if task.UserID != param.UserID {
-			t.Errorf("期望用户ID为 %s, 得到 %s", param.UserID, task.UserID)
-		}
-
-		if task.Icon != param.Icon {
-			t.Errorf("期望图标为 %s, 得到 %s", param.Icon, task.Icon)
-		}
-
-		if len(task.Tags) != len(param.Tags) {
-			t.Errorf("期望标签数量为 %d, 得到 %d", len(param.Tags), len(task.Tags))
-		}
+		assert.Equal(t, param.Title, task.Title, "title should match")
+		assert.Equal(t, param.Type, task.TaskType, "task type should match")
+		assert.Equal(t, param.Score, task.Score, "score should match")
+		assert.Equal(t, param.UserID, task.UserID, "user ID should match")
+		assert.Equal(t, param.Icon, task.Icon, "icon should match")
+		assert.Equal(t, len(param.Tags), len(task.Tags), "tags count should match")
 
 		// 验证自动设置的字段
-		if task.ID == "" {
-			t.Error("期望生成非空的ID")
-		}
-
-		if task.IsCompleted {
-			t.Error("新创建的任务应该是未完成状态")
-		}
-
-		if task.CreatedAt.IsZero() {
-			t.Error("期望设置创建时间")
-		}
-
-		if task.UpdatedAt.IsZero() {
-			t.Error("期望设置更新时间")
-		}
+		assert.NotEmpty(t, task.ID, "ID should be generated")
+		assert.False(t, task.IsCompleted, "new task should be incomplete")
+		assert.False(t, task.CreatedAt.IsZero(), "created time should be set")
+		assert.False(t, task.UpdatedAt.IsZero(), "updated time should be set")
 	})
 
 	t.Run("成功创建周任务", func(t *testing.T) {
@@ -116,17 +81,10 @@ func TestTaskUsecase_CreateTask(t *testing.T) {
 
 		task, err := usecase.CreateTask(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: %v", err)
-		}
-
-		if task == nil {
-			t.Fatal("❌ 应该返回创建的周任务")
-		}
-
-		if task.TaskType != PeriodWeek {
-			t.Errorf("期望任务类型为 PeriodWeek, 得到 %v", task.TaskType)
-		}
+		// ❌ TDD: 期望成功创建，当前业务逻辑未实现会失败
+		require.NoError(t, err, "CreateTask should succeed for week task")
+		require.NotNil(t, task, "should return created week task")
+		assert.Equal(t, PeriodWeek, task.TaskType, "task type should be PeriodWeek")
 	})
 
 	t.Run("成功创建子任务", func(t *testing.T) {
@@ -146,17 +104,11 @@ func TestTaskUsecase_CreateTask(t *testing.T) {
 
 		task, err := usecase.CreateTask(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: %v", err)
-		}
-
-		if task == nil {
-			t.Fatal("❌ 应该返回创建的子任务")
-		}
-
-		if task.ParentID != param.ParentID {
-			t.Errorf("期望父任务ID为 %s, 得到 %s", param.ParentID, task.ParentID)
-		}
+		// ❌ TDD: 期望成功创建，当前业务逻辑未实现会失败
+		require.NoError(t, err, "CreateTask should succeed for subtask")
+		require.NotNil(t, task, "should return created subtask")
+		assert.Equal(t, param.ParentID, task.ParentID, "parent ID should match")
+		assert.Equal(t, param.Title, task.Title, "title should match")
 	})
 
 	t.Run("参数验证失败 - 空用户ID", func(t *testing.T) {
@@ -169,18 +121,9 @@ func TestTaskUsecase_CreateTask(t *testing.T) {
 
 		task, err := usecase.CreateTask(ctx, param)
 
-		if task != nil {
-			t.Errorf("期望返回 nil, 得到 %+v", task)
-		}
-
-		if err == nil {
-			t.Error("期望返回验证错误")
-		}
-
-		// TODO: 实现后应该返回具体的验证错误
-		if err == ErrNoPermission {
-			t.Log("当前返回 ErrNoPermission，实现后应该返回具体的验证错误")
-		}
+		// ✅ TDD: 明确期望的业务错误
+		assert.Nil(t, task, "should return nil task for empty user ID")
+		assert.Equal(t, ErrUserIDEmpty, err, "should return ErrUserIDEmpty for empty user ID")
 	})
 
 	t.Run("参数验证失败 - 空标题", func(t *testing.T) {
@@ -193,13 +136,9 @@ func TestTaskUsecase_CreateTask(t *testing.T) {
 
 		task, err := usecase.CreateTask(ctx, param)
 
-		if task != nil {
-			t.Errorf("期望返回 nil, 得到 %+v", task)
-		}
-
-		if err == nil {
-			t.Error("期望返回验证错误")
-		}
+		// ✅ TDD: 明确期望的业务错误
+		assert.Nil(t, task, "should return nil task for empty title")
+		assert.Equal(t, ErrTitleEmpty, err, "should return ErrTitleEmpty for empty title")
 	})
 
 	t.Run("参数验证失败 - 无效分数", func(t *testing.T) {
@@ -212,13 +151,10 @@ func TestTaskUsecase_CreateTask(t *testing.T) {
 
 		task, err := usecase.CreateTask(ctx, param)
 
-		if task != nil {
-			t.Errorf("期望返回 nil, 得到 %+v", task)
-		}
-
-		if err == nil {
-			t.Error("期望返回验证错误")
-		}
+		// ✅ TDD: 明确期望的分数验证错误
+		assert.Nil(t, task, "should return nil task for invalid score")
+		assert.Equal(t, ErrOnlyDayTaskCanScore, err, "should return ErrOnlyDayTaskCanScore for invalid score")
+		// TODO: 考虑为负分数创建专门的错误类型
 	})
 }
 
@@ -237,22 +173,11 @@ func TestTaskUsecase_UpdateTask(t *testing.T) {
 
 		task, err := usecase.UpdateTask(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: UpdateTask 应该成功更新，但得到错误: %v", err)
-		}
-
-		if task == nil {
-			t.Fatal("❌ 应该返回更新后的任务对象")
-		}
-
-		if task.Title != newTitle {
-			t.Errorf("期望标题更新为 %s, 得到 %s", newTitle, task.Title)
-		}
-
-		// 验证更新时间被修改
-		if task.UpdatedAt.IsZero() {
-			t.Error("期望更新时间被设置")
-		}
+		// ❌ TDD: 期望成功更新，当前业务逻辑未实现会失败
+		require.NoError(t, err, "UpdateTask should succeed")
+		require.NotNil(t, task, "should return updated task")
+		assert.Equal(t, newTitle, task.Title, "title should be updated")
+		assert.False(t, task.UpdatedAt.IsZero(), "updated time should be set")
 	})
 
 	t.Run("成功更新任务完成状态", func(t *testing.T) {
@@ -265,17 +190,10 @@ func TestTaskUsecase_UpdateTask(t *testing.T) {
 
 		task, err := usecase.UpdateTask(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: %v", err)
-		}
-
-		if task == nil {
-			t.Fatal("❌ 应该返回更新后的任务对象")
-		}
-
-		if !task.IsCompleted {
-			t.Error("期望任务状态更新为已完成")
-		}
+		// ❌ TDD: 期望成功更新，当前业务逻辑未实现会失败
+		require.NoError(t, err, "UpdateTask should succeed for completion status")
+		require.NotNil(t, task, "should return updated task")
+		assert.True(t, task.IsCompleted, "task should be marked as completed")
 	})
 
 	t.Run("成功更新任务分数和标签", func(t *testing.T) {
@@ -290,21 +208,11 @@ func TestTaskUsecase_UpdateTask(t *testing.T) {
 
 		task, err := usecase.UpdateTask(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: %v", err)
-		}
-
-		if task == nil {
-			t.Fatal("❌ 应该返回更新后的任务对象")
-		}
-
-		if task.Score != newScore {
-			t.Errorf("期望分数更新为 %d, 得到 %d", newScore, task.Score)
-		}
-
-		if len(task.Tags) != len(newTags) {
-			t.Errorf("期望标签数量为 %d, 得到 %d", len(newTags), len(task.Tags))
-		}
+		// ❌ TDD: 期望成功更新，当前业务逻辑未实现会失败
+		require.NoError(t, err, "UpdateTask should succeed for score and tags")
+		require.NotNil(t, task, "should return updated task")
+		assert.Equal(t, newScore, task.Score, "score should be updated")
+		assert.Equal(t, newTags, task.Tags, "tags should be updated")
 	})
 
 	t.Run("权限验证失败 - 不同用户", func(t *testing.T) {
@@ -317,13 +225,9 @@ func TestTaskUsecase_UpdateTask(t *testing.T) {
 
 		task, err := usecase.UpdateTask(ctx, param)
 
-		if task != nil {
-			t.Errorf("期望返回 nil, 得到 %+v", task)
-		}
-
-		if err == nil {
-			t.Error("期望返回权限错误")
-		}
+		// ✅ TDD: 明确期望权限错误
+		assert.Nil(t, task, "should return nil task for unauthorized user")
+		assert.Equal(t, ErrNoPermission, err, "should return ErrNoPermission for unauthorized access")
 	})
 }
 
@@ -340,9 +244,8 @@ func TestTaskUsecase_DeleteTask(t *testing.T) {
 
 		err := usecase.DeleteTask(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: DeleteTask 应该成功删除，但得到错误: %v", err)
-		}
+		// ❌ TDD: 期望成功删除，当前业务逻辑未实现会失败
+		require.NoError(t, err, "DeleteTask should succeed")
 	})
 
 	t.Run("权限验证失败", func(t *testing.T) {
@@ -353,9 +256,8 @@ func TestTaskUsecase_DeleteTask(t *testing.T) {
 
 		err := usecase.DeleteTask(ctx, param)
 
-		if err == nil {
-			t.Error("期望返回权限错误")
-		}
+		// ✅ TDD: 明确期望权限错误
+		assert.Equal(t, ErrNoPermission, err, "should return ErrNoPermission for unauthorized deletion")
 	})
 
 	t.Run("任务不存在", func(t *testing.T) {
@@ -366,9 +268,8 @@ func TestTaskUsecase_DeleteTask(t *testing.T) {
 
 		err := usecase.DeleteTask(ctx, param)
 
-		if err == nil {
-			t.Error("期望返回不存在错误")
-		}
+		// ✅ TDD: 明确期望任务不存在错误
+		assert.Equal(t, ErrTaskNotFound, err, "should return ErrTaskNotFound for non-existent task")
 	})
 }
 
@@ -386,17 +287,10 @@ func TestTaskUsecase_SetTaskScore(t *testing.T) {
 
 		task, err := usecase.SetTaskScore(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: SetTaskScore 应该成功设置，但得到错误: %v", err)
-		}
-
-		if task == nil {
-			t.Fatal("❌ 应该返回更新后的任务对象")
-		}
-
-		if task.Score != param.Score {
-			t.Errorf("期望分数为 %d, 得到 %d", param.Score, task.Score)
-		}
+		// ❌ TDD: 期望成功设置，当前业务逻辑未实现会失败
+		require.NoError(t, err, "SetTaskScore should succeed")
+		require.NotNil(t, task, "should return updated task")
+		assert.Equal(t, param.Score, task.Score, "score should be updated")
 	})
 
 	t.Run("无效分数", func(t *testing.T) {
@@ -408,13 +302,10 @@ func TestTaskUsecase_SetTaskScore(t *testing.T) {
 
 		task, err := usecase.SetTaskScore(ctx, param)
 
-		if task != nil {
-			t.Errorf("期望返回 nil, 得到 %+v", task)
-		}
-
-		if err == nil {
-			t.Error("期望返回验证错误")
-		}
+		// ✅ TDD: 明确期望分数验证错误
+		assert.Nil(t, task, "should return nil task for invalid score")
+		assert.Equal(t, ErrOnlyDayTaskCanScore, err, "should return ErrOnlyDayTaskCanScore for negative score")
+		// TODO: 考虑为负分数创建专门的错误类型
 	})
 }
 
@@ -440,21 +331,11 @@ func TestTaskUsecase_CreateSubTask(t *testing.T) {
 
 		task, err := usecase.CreateSubTask(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: CreateSubTask 应该成功创建，但得到错误: %v", err)
-		}
-
-		if task == nil {
-			t.Fatal("❌ 应该返回创建的子任务")
-		}
-
-		if task.ParentID != param.ParentID {
-			t.Errorf("期望父任务ID为 %s, 得到 %s", param.ParentID, task.ParentID)
-		}
-
-		if task.Title != param.Title {
-			t.Errorf("期望标题为 %s, 得到 %s", param.Title, task.Title)
-		}
+		// ❌ TDD: 期望成功创建，当前业务逻辑未实现会失败
+		require.NoError(t, err, "CreateSubTask should succeed")
+		require.NotNil(t, task, "should return created sub task")
+		assert.Equal(t, param.ParentID, task.ParentID, "parent ID should match")
+		assert.Equal(t, param.Title, task.Title, "title should match")
 	})
 
 	t.Run("父任务不存在", func(t *testing.T) {
@@ -468,13 +349,9 @@ func TestTaskUsecase_CreateSubTask(t *testing.T) {
 
 		task, err := usecase.CreateSubTask(ctx, param)
 
-		if task != nil {
-			t.Errorf("期望返回 nil, 得到 %+v", task)
-		}
-
-		if err == nil {
-			t.Error("期望返回父任务不存在错误")
-		}
+		// ✅ TDD: 明确期望父任务不存在错误
+		assert.Nil(t, task, "should return nil task for non-existent parent")
+		assert.Equal(t, ErrTaskNotFound, err, "should return ErrTaskNotFound for non-existent parent")
 	})
 }
 
@@ -492,25 +369,12 @@ func TestTaskUsecase_TagOperations(t *testing.T) {
 
 		task, err := usecase.AddTag(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: AddTag 应该成功添加，但得到错误: %v", err)
-		}
-
-		if task == nil {
-			t.Fatal("❌ 应该返回更新后的任务对象")
-		}
+		// ❌ TDD: 期望成功添加，当前业务逻辑未实现会失败
+		require.NoError(t, err, "AddTag should succeed")
+		require.NotNil(t, task, "should return updated task")
 
 		// 验证标签被添加
-		tagFound := false
-		for _, tag := range task.Tags {
-			if tag == param.Tag {
-				tagFound = true
-				break
-			}
-		}
-		if !tagFound {
-			t.Errorf("期望标签 %s 被添加", param.Tag)
-		}
+		assert.Contains(t, task.Tags, param.Tag, "new tag should be added to task")
 	})
 
 	t.Run("成功移除标签", func(t *testing.T) {
@@ -522,20 +386,12 @@ func TestTaskUsecase_TagOperations(t *testing.T) {
 
 		task, err := usecase.RemoveTag(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: RemoveTag 应该成功移除，但得到错误: %v", err)
-		}
-
-		if task == nil {
-			t.Fatal("❌ 应该返回更新后的任务对象")
-		}
+		// ❌ TDD: 期望成功移除，当前业务逻辑未实现会失败
+		require.NoError(t, err, "RemoveTag should succeed")
+		require.NotNil(t, task, "should return updated task")
 
 		// 验证标签被移除
-		for _, tag := range task.Tags {
-			if tag == param.Tag {
-				t.Errorf("标签 %s 应该被移除", param.Tag)
-			}
-		}
+		assert.NotContains(t, task.Tags, param.Tag, "tag should be removed from task")
 	})
 
 	t.Run("添加重复标签", func(t *testing.T) {
@@ -547,7 +403,7 @@ func TestTaskUsecase_TagOperations(t *testing.T) {
 
 		task, err := usecase.AddTag(ctx, param)
 
-		// 实现后应该处理重复标签的情况
+		// ❌ TDD: 当前业务逻辑未实现，实现后应该处理重复标签的情况
 		if err == ErrNoPermission {
 			t.Log("当前返回 ErrNoPermission，实现后需要处理重复标签")
 		}
@@ -560,9 +416,7 @@ func TestTaskUsecase_TagOperations(t *testing.T) {
 					tagCount++
 				}
 			}
-			if tagCount > 1 {
-				t.Errorf("不应该添加重复标签")
-			}
+			assert.LessOrEqual(t, tagCount, 1, "should not add duplicate tags")
 		}
 	})
 }
@@ -581,17 +435,10 @@ func TestTaskUsecase_SetTaskIcon(t *testing.T) {
 
 		task, err := usecase.SetTaskIcon(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: SetTaskIcon 应该成功设置，但得到错误: %v", err)
-		}
-
-		if task == nil {
-			t.Fatal("❌ 应该返回更新后的任务对象")
-		}
-
-		if task.Icon != param.Icon {
-			t.Errorf("期望图标为 %s, 得到 %s", param.Icon, task.Icon)
-		}
+		// ❌ TDD: 期望成功设置，当前业务逻辑未实现会失败
+		require.NoError(t, err, "SetTaskIcon should succeed")
+		require.NotNil(t, task, "should return updated task")
+		assert.Equal(t, param.Icon, task.Icon, "icon should be updated")
 	})
 }
 
@@ -612,25 +459,19 @@ func TestTaskUsecase_ListTaskByPeriod(t *testing.T) {
 
 		tasks, err := usecase.ListTaskByPeriod(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: ListTaskByPeriod 应该成功获取，但得到错误: %v", err)
-		}
-
-		if tasks == nil {
-			t.Fatal("❌ 应该返回任务列表")
-		}
+		// ❌ TDD: 期望成功获取，当前业务逻辑未实现会失败
+		require.NoError(t, err, "ListTaskByPeriod should succeed")
+		require.NotNil(t, tasks, "should return task list")
 
 		// 验证返回的任务都在指定时间范围内
 		for _, task := range tasks {
-			if task.UserID != param.UserID {
-				t.Errorf("返回了其他用户的任务: %s", task.UserID)
-			}
+			assert.Equal(t, param.UserID, task.UserID, "should only return user's tasks")
 
 			// 验证任务时间在范围内
-			if task.TimePeriod.Start.Before(param.Period.Start) ||
-				task.TimePeriod.End.After(param.Period.End) {
-				t.Errorf("任务时间超出范围: %v", task.TimePeriod)
-			}
+			assert.False(t, task.TimePeriod.Start.Before(param.Period.Start),
+				"task start time should be within period")
+			assert.False(t, task.TimePeriod.End.After(param.Period.End),
+				"task end time should be within period")
 		}
 	})
 
@@ -676,13 +517,9 @@ func TestTaskUsecase_ListTaskTree(t *testing.T) {
 
 		tasks, err := usecase.ListTaskTree(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: ListTaskTree 应该成功获取，但得到错误: %v", err)
-		}
-
-		if tasks == nil {
-			t.Fatal("❌ 应该返回任务树列表")
-		}
+		// ❌ TDD: 期望成功获取，当前业务逻辑未实现会失败
+		require.NoError(t, err, "ListTaskTree should succeed")
+		require.NotNil(t, tasks, "should return task tree list")
 
 		// 验证任务树结构
 		parentFound := false
@@ -691,14 +528,10 @@ func TestTaskUsecase_ListTaskTree(t *testing.T) {
 				parentFound = true
 			}
 
-			if task.UserID != param.UserID {
-				t.Errorf("返回了其他用户的任务: %s", task.UserID)
-			}
+			assert.Equal(t, param.UserID, task.UserID, "should only return user's tasks")
 		}
 
-		if !parentFound {
-			t.Error("应该包含根任务")
-		}
+		assert.True(t, parentFound, "should include root task")
 	})
 }
 
@@ -715,19 +548,13 @@ func TestTaskUsecase_ListTaskParentTree(t *testing.T) {
 
 		tasks, err := usecase.ListTaskParentTree(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: ListTaskParentTree 应该成功获取，但得到错误: %v", err)
-		}
-
-		if tasks == nil {
-			t.Fatal("❌ 应该返回父任务树列表")
-		}
+		// ❌ TDD: 期望成功获取，当前业务逻辑未实现会失败
+		require.NoError(t, err, "ListTaskParentTree should succeed")
+		require.NotNil(t, tasks, "should return parent task tree list")
 
 		// 验证返回的都是父级任务
 		for _, task := range tasks {
-			if task.UserID != param.UserID {
-				t.Errorf("返回了其他用户的任务: %s", task.UserID)
-			}
+			assert.Equal(t, param.UserID, task.UserID, "should only return user's tasks")
 		}
 	})
 }
@@ -749,29 +576,18 @@ func TestTaskUsecase_GetTaskStats(t *testing.T) {
 
 		stats, err := usecase.GetTaskStats(ctx, param)
 
-		if err != nil {
-			t.Errorf("❌ 业务逻辑未实现: GetTaskStats 应该成功获取，但得到错误: %v", err)
-		}
-
-		if stats == nil {
-			t.Fatal("❌ 应该返回统计数据")
-		}
+		// ❌ TDD: 期望成功获取，当前业务逻辑未实现会失败
+		require.NoError(t, err, "GetTaskStats should succeed")
+		require.NotNil(t, stats, "should return statistics data")
 
 		// 期望返回12个月的统计数据
 		expectedMonths := 12
-		if len(stats) != expectedMonths {
-			t.Errorf("期望 %d 个月的统计，得到 %d", expectedMonths, len(stats))
-		}
+		assert.Len(t, stats, expectedMonths, "should return 12 months of statistics")
 
 		// 验证统计数据格式
 		for _, stat := range stats {
-			if stat.TaskCount < 0 {
-				t.Errorf("任务数量不能为负数: %d", stat.TaskCount)
-			}
-
-			if stat.ScoreTotal < 0 {
-				t.Errorf("总分不能为负数: %d", stat.ScoreTotal)
-			}
+			assert.GreaterOrEqual(t, stat.TaskCount, 0, "task count should not be negative")
+			assert.GreaterOrEqual(t, stat.ScoreTotal, 0, "score total should not be negative")
 		}
 	})
 }
