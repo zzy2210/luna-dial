@@ -1,6 +1,7 @@
 package biz
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -24,25 +25,16 @@ func createTestPlanUsecase() *PlanUsecase {
 // Mock TaskRepo 实现
 type mockTaskRepo struct{}
 
-func (m *mockTaskRepo) CreateTask(task *Task) error                  { return nil }
-func (m *mockTaskRepo) UpdateTask(task *Task) error                  { return nil }
-func (m *mockTaskRepo) DeleteTask(taskID, userID string) error       { return nil }
-func (m *mockTaskRepo) GetTask(taskID, userID string) (*Task, error) { return nil, ErrTaskNotFound }
-func (m *mockTaskRepo) ListTasks(userID string, periodStart, periodEnd time.Time, taskType string) ([]*Task, error) {
+func (m *mockTaskRepo) CreateTask(ctx context.Context, task *Task) error            { return nil }
+func (m *mockTaskRepo) UpdateTask(ctx context.Context, task *Task) error            { return nil }
+func (m *mockTaskRepo) DeleteTask(ctx context.Context, taskID, userID string) error { return nil }
+func (m *mockTaskRepo) GetTask(ctx context.Context, taskID, userID string) (*Task, error) {
+	return nil, ErrTaskNotFound
+}
+func (m *mockTaskRepo) ListTasks(ctx context.Context, userID string, periodStart, periodEnd time.Time, taskType string) ([]*Task, error) {
 	return nil, nil
 }
-func (m *mockTaskRepo) ListTaskTree(taskID, userID string) ([]*Task, error) { return nil, nil }
-
-// Mock JournalRepo 实现
-type mockJournalRepo struct{}
-
-func (m *mockJournalRepo) CreateJournal(journal *Journal) error         { return nil }
-func (m *mockJournalRepo) UpdateJournal(journal *Journal) error         { return nil }
-func (m *mockJournalRepo) DeleteJournal(journalID, userID string) error { return nil }
-func (m *mockJournalRepo) GetJournal(journalID, userID string) (*Journal, error) {
-	return nil, ErrJournalNotFound
-}
-func (m *mockJournalRepo) ListJournals(userID string, periodStart, periodEnd time.Time, journalType string) ([]*Journal, error) {
+func (m *mockTaskRepo) ListTaskTree(ctx context.Context, taskID, userID string) ([]*Task, error) {
 	return nil, nil
 }
 
@@ -83,7 +75,7 @@ func TestPlanUsecase_GetPlanByPeriod(t *testing.T) {
 			GroupBy: PeriodDay,
 		}
 
-		plan, err := planUsecase.GetPlanByPeriod(param)
+		plan, err := planUsecase.GetPlanByPeriod(context.TODO(), param)
 
 		// 业务逻辑实现后，err 应该为 nil，plan 不为 nil
 		assert.Nil(t, err)
@@ -115,7 +107,7 @@ func TestPlanUsecase_GetPlanByPeriod(t *testing.T) {
 			GroupBy: PeriodWeek,
 		}
 
-		plan, err := planUsecase.GetPlanByPeriod(param)
+		plan, err := planUsecase.GetPlanByPeriod(context.TODO(), param)
 
 		// 业务逻辑实现后，err 应该为 nil，plan 不为 nil
 		assert.Nil(t, err)
@@ -145,7 +137,7 @@ func TestPlanUsecase_GetPlanByPeriod(t *testing.T) {
 			GroupBy: PeriodDay,
 		}
 
-		plan, err := planUsecase.GetPlanByPeriod(param)
+		plan, err := planUsecase.GetPlanByPeriod(context.TODO(), param)
 
 		assert.Nil(t, plan)
 		assert.NotNil(t, err)
@@ -163,7 +155,7 @@ func TestPlanUsecase_GetPlanByPeriod(t *testing.T) {
 			GroupBy: PeriodDay,
 		}
 
-		plan, err := planUsecase.GetPlanByPeriod(param)
+		plan, err := planUsecase.GetPlanByPeriod(context.TODO(), param)
 
 		assert.Nil(t, plan)
 		assert.NotNil(t, err)
@@ -186,7 +178,7 @@ func TestPlanUsecase_GetPlanStats(t *testing.T) {
 			GroupBy: PeriodMonth,
 		}
 
-		stats, err := planUsecase.GetPlanStats(param)
+		stats, err := planUsecase.GetPlanStats(context.TODO(), param)
 
 		// 业务逻辑实现后，err 应该为 nil，stats 不为 nil
 		assert.Nil(t, err)
@@ -217,7 +209,7 @@ func TestPlanUsecase_GetPlanStats(t *testing.T) {
 			GroupBy: PeriodWeek,
 		}
 
-		stats, err := planUsecase.GetPlanStats(param)
+		stats, err := planUsecase.GetPlanStats(context.TODO(), param)
 
 		// 业务逻辑实现后，err 应该为 nil
 		assert.Nil(t, err)
@@ -245,7 +237,7 @@ func TestPlanUsecase_GetPlanStats(t *testing.T) {
 			GroupBy: PeriodDay,
 		}
 
-		stats, err := planUsecase.GetPlanStats(param)
+		stats, err := planUsecase.GetPlanStats(context.TODO(), param)
 
 		// 业务逻辑实现后，err 应该为 nil
 		assert.Nil(t, err)
@@ -274,7 +266,7 @@ func TestPlanUsecase_GetPlanStats(t *testing.T) {
 			GroupBy: PeriodQuarter,
 		}
 
-		stats, err := planUsecase.GetPlanStats(param)
+		stats, err := planUsecase.GetPlanStats(context.TODO(), param)
 
 		// 业务逻辑实现后，err 应该为 nil
 		assert.Nil(t, err)
@@ -303,7 +295,7 @@ func TestPlanUsecase_GetPlanStats(t *testing.T) {
 			GroupBy: PeriodMonth,
 		}
 
-		stats, err := planUsecase.GetPlanStats(param)
+		stats, err := planUsecase.GetPlanStats(context.TODO(), param)
 
 		assert.Nil(t, stats)
 		assert.NotNil(t, err)
@@ -321,7 +313,7 @@ func TestPlanUsecase_GetPlanStats(t *testing.T) {
 			GroupBy: PeriodMonth,
 		}
 
-		stats, err := planUsecase.GetPlanStats(param)
+		stats, err := planUsecase.GetPlanStats(context.TODO(), param)
 
 		assert.Nil(t, stats)
 		assert.NotNil(t, err)
@@ -419,7 +411,7 @@ func TestPlanUsecase_EdgeCases(t *testing.T) {
 		}()
 
 		var nilUsecase *PlanUsecase
-		_, _ = nilUsecase.GetPlanByPeriod(GetPlanByPeriodParam{})
+		_, _ = nilUsecase.GetPlanByPeriod(context.TODO(), GetPlanByPeriodParam{})
 	})
 
 	t.Run("极长用户ID", func(t *testing.T) {
@@ -434,7 +426,7 @@ func TestPlanUsecase_EdgeCases(t *testing.T) {
 			GroupBy: PeriodDay,
 		}
 
-		_, err := planUsecase.GetPlanByPeriod(param)
+		_, err := planUsecase.GetPlanByPeriod(context.TODO(), param)
 		// 业务逻辑实现后应该返回用户ID相关的验证错误
 		assert.NotNil(t, err)
 		// 可能是 ErrUserIDInvalid 或 ErrUserIDTooLong
@@ -450,7 +442,7 @@ func TestPlanUsecase_EdgeCases(t *testing.T) {
 			GroupBy: PeriodYear,
 		}
 
-		_, err := planUsecase.GetPlanByPeriod(param)
+		_, err := planUsecase.GetPlanByPeriod(context.TODO(), param)
 		// 业务逻辑实现后可能因为时间跨度过大而返回错误
 		assert.NotNil(t, err)
 		// 可能是 ErrPeriodTooLarge 或类似错误
@@ -472,7 +464,7 @@ func TestPlanUsecase_Performance(t *testing.T) {
 
 	// 测试多次调用的一致性
 	for i := 0; i < 100; i++ {
-		plan, err := planUsecase.GetPlanByPeriod(param)
+		plan, err := planUsecase.GetPlanByPeriod(context.TODO(), param)
 		// 当前实现应该一致地返回错误
 		assert.Nil(t, plan, "iteration %d: expected plan to be nil", i)
 		assert.Equal(t, ErrNoPermission, err, "iteration %d: expected ErrNoPermission, got %v", i, err)
@@ -494,7 +486,7 @@ func TestPlanUsecase_RealBusinessLogic_ShouldFail(t *testing.T) {
 			GroupBy: PeriodDay,
 		}
 
-		plan, err := planUsecase.GetPlanByPeriod(param)
+		plan, err := planUsecase.GetPlanByPeriod(context.TODO(), param)
 
 		// 业务逻辑实现后，这些断言应该通过
 		assert.Nil(t, err, "GetPlanByPeriod 应该成功返回计划")
@@ -529,7 +521,7 @@ func TestPlanUsecase_RealBusinessLogic_ShouldFail(t *testing.T) {
 			GroupBy: PeriodMonth,
 		}
 
-		stats, err := planUsecase.GetPlanStats(param)
+		stats, err := planUsecase.GetPlanStats(context.TODO(), param)
 
 		// 业务逻辑实现后，这些断言应该通过
 		assert.Nil(t, err, "GetPlanStats 应该成功返回统计数据")
@@ -584,7 +576,7 @@ func TestPlanUsecase_RealBusinessLogic_ShouldFail(t *testing.T) {
 					GroupBy: tc.groupBy,
 				}
 
-				stats, err := planUsecase.GetPlanStats(param)
+				stats, err := planUsecase.GetPlanStats(context.TODO(), param)
 
 				// 业务逻辑实现后，这些断言应该通过
 				assert.Nil(t, err, "%s 业务逻辑应该成功", tc.name)

@@ -1,12 +1,15 @@
 package biz
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type TaskRepo interface {
-	CreateTask(task *Task) error
-	UpdateTask(task *Task) error
-	DeleteTask(taskID, userID string) error
-	GetTask(taskID, userID string) (*Task, error)
-	ListTasks(userID string, periodStart, periodEnd time.Time, taskType string) ([]*Task, error)
-	ListTaskTree(taskID, userID string) ([]*Task, error)
+	CreateTask(ctx context.Context, task *Task) error
+	UpdateTask(ctx context.Context, task *Task) error
+	DeleteTask(ctx context.Context, taskID, userID string) error
+	GetTask(ctx context.Context, taskID, userID string) (*Task, error)
+	ListTasks(ctx context.Context, userID string, periodStart, periodEnd time.Time, taskType string) ([]*Task, error)
+	ListTaskTree(ctx context.Context, taskID, userID string) ([]*Task, error)
 }

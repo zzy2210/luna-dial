@@ -10,6 +10,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// 测试用UUID常量 (无连字符格式)
+const (
+	TestTaskUserID123     = "550e8400e29b41d4a716446655440000"
+	TestTaskUserIDOther   = "550e8400e29b41d4a716446655440001"
+	TestTaskID123         = "123e4567e89b12d3a456426614174000"
+	TestParentTaskID123   = "123e4567e89b12d3a456426614174001"
+	TestTaskIDNonExistent = "123e4567e89b12d3a456426614174002"
+	TestChildTaskID123    = "123e4567e89b12d3a456426614174003"
+	TestParentTaskID      = "123e4567e89b12d3a456426614174004"
+)
+
 // 创建测试用的 TaskUsecase 实例
 func createTestTaskUsecase() *TaskUsecase {
 	repo := &mockTaskRepo{}
@@ -32,7 +43,7 @@ func TestTaskUsecase_CreateTask(t *testing.T) {
 
 	t.Run("成功创建日任务", func(t *testing.T) {
 		param := CreateTaskParam{
-			UserID: "user-123",
+			UserID: TestTaskUserID123,
 			Title:  "完成产品需求文档",
 			Type:   PeriodDay,
 			Period: Period{
@@ -67,7 +78,7 @@ func TestTaskUsecase_CreateTask(t *testing.T) {
 
 	t.Run("成功创建周任务", func(t *testing.T) {
 		param := CreateTaskParam{
-			UserID: "user-123",
+			UserID: TestTaskUserID123,
 			Title:  "完成项目里程碑",
 			Type:   PeriodWeek,
 			Period: Period{
@@ -89,7 +100,7 @@ func TestTaskUsecase_CreateTask(t *testing.T) {
 
 	t.Run("成功创建子任务", func(t *testing.T) {
 		param := CreateTaskParam{
-			UserID: "user-123",
+			UserID: TestTaskUserID123,
 			Title:  "子任务：设计UI界面",
 			Type:   PeriodDay,
 			Period: Period{
@@ -99,7 +110,7 @@ func TestTaskUsecase_CreateTask(t *testing.T) {
 			Tags:     []string{"设计", "UI"},
 			Icon:     "🎨",
 			Score:    50,
-			ParentID: "parent-task-123", // 父任务ID
+			ParentID: TestParentTaskID123, // 父任务ID
 		}
 
 		task, err := usecase.CreateTask(ctx, param)
@@ -128,7 +139,7 @@ func TestTaskUsecase_CreateTask(t *testing.T) {
 
 	t.Run("参数验证失败 - 空标题", func(t *testing.T) {
 		param := CreateTaskParam{
-			UserID: "user-123",
+			UserID: TestTaskUserID123,
 			Title:  "", // 空标题
 			Type:   PeriodDay,
 			Score:  50,
@@ -143,7 +154,7 @@ func TestTaskUsecase_CreateTask(t *testing.T) {
 
 	t.Run("参数验证失败 - 无效分数", func(t *testing.T) {
 		param := CreateTaskParam{
-			UserID: "user-123",
+			UserID: TestTaskUserID123,
 			Title:  "测试任务",
 			Type:   PeriodDay,
 			Score:  -10, // 负分数
@@ -166,8 +177,8 @@ func TestTaskUsecase_UpdateTask(t *testing.T) {
 	t.Run("成功更新任务标题", func(t *testing.T) {
 		newTitle := "更新后的任务标题"
 		param := UpdateTaskParam{
-			TaskID: "task-123",
-			UserID: "user-123",
+			TaskID: TestTaskID123,
+			UserID: TestTaskUserID123,
 			Title:  &newTitle,
 		}
 
@@ -183,8 +194,8 @@ func TestTaskUsecase_UpdateTask(t *testing.T) {
 	t.Run("成功更新任务完成状态", func(t *testing.T) {
 		completed := true
 		param := UpdateTaskParam{
-			TaskID:      "task-123",
-			UserID:      "user-123",
+			TaskID:      TestTaskID123,
+			UserID:      TestTaskUserID123,
 			IsCompleted: &completed,
 		}
 
@@ -200,8 +211,8 @@ func TestTaskUsecase_UpdateTask(t *testing.T) {
 		newScore := 100
 		newTags := []string{"更新", "标签"}
 		param := UpdateTaskParam{
-			TaskID: "task-123",
-			UserID: "user-123",
+			TaskID: TestTaskID123,
+			UserID: TestTaskUserID123,
 			Score:  &newScore,
 			Tags:   &newTags,
 		}
@@ -218,8 +229,8 @@ func TestTaskUsecase_UpdateTask(t *testing.T) {
 	t.Run("权限验证失败 - 不同用户", func(t *testing.T) {
 		newTitle := "恶意更新"
 		param := UpdateTaskParam{
-			TaskID: "task-123",
-			UserID: "other-user", // 不同的用户ID
+			TaskID: TestTaskID123,
+			UserID: TestTaskUserIDOther, // 不同的用户ID
 			Title:  &newTitle,
 		}
 
@@ -238,8 +249,8 @@ func TestTaskUsecase_DeleteTask(t *testing.T) {
 
 	t.Run("成功删除任务", func(t *testing.T) {
 		param := DeleteTaskParam{
-			TaskID: "task-123",
-			UserID: "user-123",
+			TaskID: TestTaskID123,
+			UserID: TestTaskUserID123,
 		}
 
 		err := usecase.DeleteTask(ctx, param)
@@ -250,8 +261,8 @@ func TestTaskUsecase_DeleteTask(t *testing.T) {
 
 	t.Run("权限验证失败", func(t *testing.T) {
 		param := DeleteTaskParam{
-			TaskID: "task-123",
-			UserID: "other-user",
+			TaskID: TestTaskID123,
+			UserID: TestTaskUserIDOther,
 		}
 
 		err := usecase.DeleteTask(ctx, param)
@@ -262,8 +273,8 @@ func TestTaskUsecase_DeleteTask(t *testing.T) {
 
 	t.Run("任务不存在", func(t *testing.T) {
 		param := DeleteTaskParam{
-			TaskID: "non-existent",
-			UserID: "user-123",
+			TaskID: TestTaskIDNonExistent,
+			UserID: TestTaskUserID123,
 		}
 
 		err := usecase.DeleteTask(ctx, param)
@@ -280,8 +291,8 @@ func TestTaskUsecase_SetTaskScore(t *testing.T) {
 
 	t.Run("成功设置任务分数", func(t *testing.T) {
 		param := SetTaskScoreParam{
-			TaskID: "task-123",
-			UserID: "user-123",
+			TaskID: TestTaskID123,
+			UserID: TestTaskUserID123,
 			Score:  150,
 		}
 
@@ -295,8 +306,8 @@ func TestTaskUsecase_SetTaskScore(t *testing.T) {
 
 	t.Run("无效分数", func(t *testing.T) {
 		param := SetTaskScoreParam{
-			TaskID: "task-123",
-			UserID: "user-123",
+			TaskID: TestTaskID123,
+			UserID: TestTaskUserID123,
 			Score:  -50, // 负分数
 		}
 
@@ -316,8 +327,8 @@ func TestTaskUsecase_CreateSubTask(t *testing.T) {
 
 	t.Run("成功创建子任务", func(t *testing.T) {
 		param := CreateSubTaskParam{
-			ParentID: "parent-task-123",
-			UserID:   "user-123",
+			ParentID: TestParentTaskID123,
+			UserID:   TestTaskUserID123,
 			Title:    "子任务1",
 			Type:     PeriodDay,
 			Period: Period{
@@ -340,8 +351,8 @@ func TestTaskUsecase_CreateSubTask(t *testing.T) {
 
 	t.Run("父任务不存在", func(t *testing.T) {
 		param := CreateSubTaskParam{
-			ParentID: "non-existent-parent",
-			UserID:   "user-123",
+			ParentID: TestTaskIDNonExistent,
+			UserID:   TestTaskUserID123,
 			Title:    "子任务",
 			Type:     PeriodDay,
 			Score:    30,
@@ -362,8 +373,8 @@ func TestTaskUsecase_TagOperations(t *testing.T) {
 
 	t.Run("成功添加标签", func(t *testing.T) {
 		param := AddTagParam{
-			TaskID: "task-123",
-			UserID: "user-123",
+			TaskID: TestTaskID123,
+			UserID: TestTaskUserID123,
 			Tag:    "新标签",
 		}
 
@@ -379,8 +390,8 @@ func TestTaskUsecase_TagOperations(t *testing.T) {
 
 	t.Run("成功移除标签", func(t *testing.T) {
 		param := RemoveTagParam{
-			TaskID: "task-123",
-			UserID: "user-123",
+			TaskID: TestTaskID123,
+			UserID: TestTaskUserID123,
 			Tag:    "要移除的标签",
 		}
 
@@ -396,8 +407,8 @@ func TestTaskUsecase_TagOperations(t *testing.T) {
 
 	t.Run("添加重复标签", func(t *testing.T) {
 		param := AddTagParam{
-			TaskID: "task-123",
-			UserID: "user-123",
+			TaskID: TestTaskID123,
+			UserID: TestTaskUserID123,
 			Tag:    "已存在标签",
 		}
 
@@ -428,8 +439,8 @@ func TestTaskUsecase_SetTaskIcon(t *testing.T) {
 
 	t.Run("成功设置任务图标", func(t *testing.T) {
 		param := SetTaskIconParam{
-			TaskID: "task-123",
-			UserID: "user-123",
+			TaskID: TestTaskID123,
+			UserID: TestTaskUserID123,
 			Icon:   "🚀",
 		}
 
@@ -449,7 +460,7 @@ func TestTaskUsecase_ListTaskByPeriod(t *testing.T) {
 
 	t.Run("成功获取月度任务列表", func(t *testing.T) {
 		param := ListTaskByPeriodParam{
-			UserID: "user-123",
+			UserID: TestTaskUserID123,
 			Period: Period{
 				Start: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
 				End:   time.Date(2025, 1, 31, 23, 59, 59, 0, time.UTC),
@@ -477,7 +488,7 @@ func TestTaskUsecase_ListTaskByPeriod(t *testing.T) {
 
 	t.Run("成功获取日度任务列表", func(t *testing.T) {
 		param := ListTaskByPeriodParam{
-			UserID: "user-123",
+			UserID: TestTaskUserID123,
 			Period: Period{
 				Start: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
 				End:   time.Date(2025, 1, 15, 23, 59, 59, 0, time.UTC),
@@ -511,8 +522,8 @@ func TestTaskUsecase_ListTaskTree(t *testing.T) {
 
 	t.Run("成功获取任务树", func(t *testing.T) {
 		param := ListTaskTreeParam{
-			UserID: "user-123",
-			TaskID: "parent-task-123",
+			UserID: TestTaskUserID123,
+			TaskID: TestParentTaskID123,
 		}
 
 		tasks, err := usecase.ListTaskTree(ctx, param)
@@ -542,8 +553,8 @@ func TestTaskUsecase_ListTaskParentTree(t *testing.T) {
 
 	t.Run("成功获取父任务树", func(t *testing.T) {
 		param := ListTaskParentTreeParam{
-			UserID: "user-123",
-			TaskID: "child-task-123",
+			UserID: TestTaskUserID123,
+			TaskID: TestChildTaskID123,
 		}
 
 		tasks, err := usecase.ListTaskParentTree(ctx, param)
@@ -566,7 +577,7 @@ func TestTaskUsecase_GetTaskStats(t *testing.T) {
 
 	t.Run("成功获取任务统计", func(t *testing.T) {
 		param := GetTaskStatsParam{
-			UserID: "user-123",
+			UserID: TestTaskUserID123,
 			Period: Period{
 				Start: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
 				End:   time.Date(2025, 12, 31, 23, 59, 59, 0, time.UTC),
@@ -595,7 +606,7 @@ func TestTaskUsecase_GetTaskStats(t *testing.T) {
 // 测试结构体字段
 func TestTask_Fields(t *testing.T) {
 	task := Task{
-		ID:       "task-123",
+		ID:       TestTaskID123,
 		Title:    "测试任务",
 		TaskType: PeriodDay,
 		TimePeriod: Period{
@@ -607,12 +618,12 @@ func TestTask_Fields(t *testing.T) {
 		Score:       80,
 		IsCompleted: false,
 		ParentID:    "",
-		UserID:      "user-123",
+		UserID:      TestTaskUserID123,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
 
-	if task.ID != "task-123" {
+	if task.ID != TestTaskID123 {
 		t.Errorf("期望ID为 'task-123', 得到 %s", task.ID)
 	}
 
@@ -640,7 +651,7 @@ func TestTask_Fields(t *testing.T) {
 // 测试参数结构体
 func TestCreateTaskParam_Fields(t *testing.T) {
 	param := CreateTaskParam{
-		UserID: "user-123",
+		UserID: TestTaskUserID123,
 		Title:  "新任务",
 		Type:   PeriodWeek,
 		Period: Period{
@@ -650,10 +661,10 @@ func TestCreateTaskParam_Fields(t *testing.T) {
 		Tags:     []string{"新建", "任务"},
 		Icon:     "🎯",
 		Score:    100,
-		ParentID: "parent-123",
+		ParentID: TestParentTaskID,
 	}
 
-	if param.UserID != "user-123" {
+	if param.UserID != TestTaskUserID123 {
 		t.Errorf("期望用户ID为 'user-123', 得到 %s", param.UserID)
 	}
 
@@ -674,7 +685,7 @@ func TestTaskUsecase_EdgeCases(t *testing.T) {
 	t.Run("极长标题", func(t *testing.T) {
 		longTitle := strings.Repeat("很长的任务标题", 1000)
 		param := CreateTaskParam{
-			UserID: "user-123",
+			UserID: TestTaskUserID123,
 			Title:  longTitle,
 			Type:   PeriodDay,
 			Score:  50,
@@ -694,7 +705,7 @@ func TestTaskUsecase_EdgeCases(t *testing.T) {
 
 	t.Run("极大分数", func(t *testing.T) {
 		param := CreateTaskParam{
-			UserID: "user-123",
+			UserID: TestTaskUserID123,
 			Title:  "高分任务",
 			Type:   PeriodDay,
 			Score:  999999, // 极大分数
@@ -718,7 +729,7 @@ func TestTaskUsecase_EdgeCases(t *testing.T) {
 		}
 
 		param := CreateTaskParam{
-			UserID: "user-123",
+			UserID: TestTaskUserID123,
 			Title:  "多标签任务",
 			Type:   PeriodDay,
 			Tags:   manyTags,
@@ -738,7 +749,7 @@ func TestTaskUsecase_EdgeCases(t *testing.T) {
 
 	t.Run("特殊字符处理", func(t *testing.T) {
 		param := CreateTaskParam{
-			UserID: "user-123",
+			UserID: TestTaskUserID123,
 			Title:  "任务<script>alert('xss')</script>",
 			Type:   PeriodDay,
 			Tags:   []string{"特殊&字符", "<危险>标签"},

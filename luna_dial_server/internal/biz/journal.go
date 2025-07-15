@@ -80,30 +80,53 @@ func NewJournalUsecase(repo JournalRepo) *JournalUsecase {
 
 // 创建日志
 func (uc *JournalUsecase) CreateJournal(ctx context.Context, param CreateJournalParam) (*Journal, error) {
+	// TODO: 添加参数验证逻辑
+	// 示例 repo 调用（当前返回占位符错误）
+	// journal := &Journal{...}
+	// return uc.repo.CreateJournal(ctx, journal)
 	return nil, ErrNoPermission // TODO: 实现
 }
 
 // 编辑日志
 func (uc *JournalUsecase) UpdateJournal(ctx context.Context, param UpdateJournalParam) (*Journal, error) {
+	// TODO: 添加权限验证和更新逻辑
+	// 示例 repo 调用（当前返回占位符错误）
+	// existing, err := uc.repo.GetJournal(ctx, param.JournalID, param.UserID)
+	// if err != nil { return nil, err }
+	// return uc.repo.UpdateJournal(ctx, journal)
 	return nil, ErrNoPermission // TODO: 实现
 }
 
 // 删除日志
 func (uc *JournalUsecase) DeleteJournal(ctx context.Context, param DeleteJournalParam) error {
+	// TODO: 添加权限验证和删除逻辑
+	// 示例 repo 调用（当前返回占位符错误）
+	// return uc.repo.DeleteJournal(ctx, param.JournalID, param.UserID)
 	return ErrNoPermission // TODO: 实现
 }
 
 // 获取日志详情
 func (uc *JournalUsecase) GetJournal(ctx context.Context, param GetJournalParam) (*Journal, error) {
+	// TODO: 添加权限验证逻辑
+	// 示例 repo 调用（当前返回占位符错误）
+	// return uc.repo.GetJournal(ctx, param.JournalID, param.UserID)
 	return nil, ErrNoPermission // TODO: 实现
 }
 
 // 获取指定时间的指定类型的日志列表
 func (uc *JournalUsecase) ListJournalByPeriod(ctx context.Context, param ListJournalByPeriodParam) ([]Journal, error) {
+	// TODO: 添加业务逻辑
+	// 示例 repo 调用（当前返回占位符错误）
+	// journals, err := uc.repo.ListJournals(ctx, param.UserID, param.Period.Start, param.Period.End, string(param.GroupBy))
+	// if err != nil { return nil, err }
 	return nil, ErrNoPermission // TODO: 实现
 }
 
 // 获取全部日志列表，带分页
 func (uc *JournalUsecase) ListAllJournals(ctx context.Context, param ListAllJournalsParam) ([]Journal, error) {
+	// TODO: 添加分页逻辑
+	// 示例 repo 调用（当前返回占位符错误）
+	// journals, err := uc.repo.ListJournals(ctx, param.UserID, time.Time{}, time.Time{}, "")
+	// if err != nil { return nil, err }
 	return nil, ErrNoPermission // TODO: 实现
 }

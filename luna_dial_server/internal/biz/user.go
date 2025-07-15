@@ -1,6 +1,7 @@
 package biz
 
 import (
+	"context"
 	"net/mail"
 	"time"
 	"unicode"
@@ -64,7 +65,7 @@ func NewUserUsecase(userRepo UserRepo) *UserUsecase {
 
 // 创建用户
 // email 非必填
-func (uc *UserUsecase) CreateUser(param CreateUserParam) (*User, error) {
+func (uc *UserUsecase) CreateUser(ctx context.Context, param CreateUserParam) (*User, error) {
 	if param.UserName == "" {
 		return nil, ErrUserNameEmpty
 	}
@@ -92,7 +93,7 @@ func (uc *UserUsecase) CreateUser(param CreateUserParam) (*User, error) {
 	}
 
 	// 查重 username
-	existingUser, err := uc.UserRepo.GetUserByUserName(param.UserName)
+	existingUser, err := uc.UserRepo.GetUserByUserName(ctx, param.UserName)
 	if err != nil && err != ErrUserNotFound {
 		return nil, err
 	}
@@ -111,7 +112,7 @@ func (uc *UserUsecase) CreateUser(param CreateUserParam) (*User, error) {
 		UpdatedAt: time.Now(),
 	}
 
-	if err := uc.UserRepo.CreateUser(user); err != nil {
+	if err := uc.UserRepo.CreateUser(ctx, user); err != nil {
 		return nil, err
 	}
 
@@ -120,7 +121,7 @@ func (uc *UserUsecase) CreateUser(param CreateUserParam) (*User, error) {
 
 // 编辑用户
 // 禁止修改 userName,ID
-func (uc *UserUsecase) UpdateUser(param UpdateUserParam) (*User, error) {
+func (uc *UserUsecase) UpdateUser(ctx context.Context, param UpdateUserParam) (*User, error) {
 	if param.UserID == "" {
 		return nil, ErrUserIDEmpty
 	}
@@ -128,7 +129,7 @@ func (uc *UserUsecase) UpdateUser(param UpdateUserParam) (*User, error) {
 		return nil, ErrUserIDInvalid
 	}
 	// 根据 用户ID 查用户
-	user, err := uc.UserRepo.GetUserByID(param.UserID)
+	user, err := uc.UserRepo.GetUserByID(ctx, param.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +155,7 @@ func (uc *UserUsecase) UpdateUser(param UpdateUserParam) (*User, error) {
 
 	user.UpdatedAt = time.Now()
 
-	err = uc.UserRepo.UpdateUser(user)
+	err = uc.UserRepo.UpdateUser(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +164,7 @@ func (uc *UserUsecase) UpdateUser(param UpdateUserParam) (*User, error) {
 }
 
 // 删除用户
-func (uc *UserUsecase) DeleteUser(param DeleteUserParam) error {
+func (uc *UserUsecase) DeleteUser(ctx context.Context, param DeleteUserParam) error {
 	if param.UserID == "" {
 		return ErrUserIDEmpty
 	}
@@ -172,7 +173,7 @@ func (uc *UserUsecase) DeleteUser(param DeleteUserParam) error {
 		return ErrUserIDInvalid
 	}
 	// 根据 用户ID 查用户
-	user, err := uc.UserRepo.GetUserByID(param.UserID)
+	user, err := uc.UserRepo.GetUserByID(ctx, param.UserID)
 	if err != nil {
 		if err == ErrUserNotFound {
 			return ErrUserNotFound // 用户不存在
@@ -180,13 +181,13 @@ func (uc *UserUsecase) DeleteUser(param DeleteUserParam) error {
 		return ErrNoPermission
 	}
 
-	return uc.UserRepo.DeleteUser(user.ID)
+	return uc.UserRepo.DeleteUser(ctx, user.ID)
 }
 
 // 获取用户
 // 不会做脱敏处理，业务层需要脱敏
 // 但是获取的密码已经被sm3 hash
-func (uc *UserUsecase) GetUser(param GetUserParam) (*User, error) {
+func (uc *UserUsecase) GetUser(ctx context.Context, param GetUserParam) (*User, error) {
 
 	if param.UserID == "" {
 		return nil, ErrUserIDEmpty
@@ -195,7 +196,7 @@ func (uc *UserUsecase) GetUser(param GetUserParam) (*User, error) {
 		return nil, ErrUserIDInvalid
 	}
 	// 根据 用户ID 查用户
-	user, err := uc.UserRepo.GetUserByID(param.UserID)
+	user, err := uc.UserRepo.GetUserByID(ctx, param.UserID)
 	if err != nil {
 		if err == ErrUserNotFound {
 			return nil, ErrUserNotFound
@@ -210,12 +211,12 @@ func (uc *UserUsecase) GetUser(param GetUserParam) (*User, error) {
 }
 
 // 用户登录
-func (uc *UserUsecase) UserLogin(param UserLoginParam) (*User, error) {
+func (uc *UserUsecase) UserLogin(ctx context.Context, param UserLoginParam) (*User, error) {
 	if param.UserName == "" || param.Password == "" {
 		return nil, ErrInvalidInput // 参数不合法
 	}
 
-	user, err := uc.UserRepo.GetUserByUserName(param.UserName)
+	user, err := uc.UserRepo.GetUserByUserName(ctx, param.UserName)
 	if err != nil {
 		if err == ErrUserNotFound {
 			return nil, ErrUserNotFound // 用户不存在

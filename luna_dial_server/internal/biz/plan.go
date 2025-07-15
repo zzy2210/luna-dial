@@ -1,5 +1,7 @@
 package biz
 
+import "context"
+
 type Plan struct {
 	Tasks         []Task      `json:"tasks"`
 	TasksTotal    int         `json:"tasks_total"`
@@ -43,11 +45,11 @@ func NewPlanUsecase(taskUsecase *TaskUsecase, journalUsecase *JournalUsecase) *P
 }
 
 // 获取指定时间的计划
-func (uc *PlanUsecase) GetPlanByPeriod(param GetPlanByPeriodParam) (*Plan, error) {
+func (uc *PlanUsecase) GetPlanByPeriod(ctx context.Context, param GetPlanByPeriodParam) (*Plan, error) {
 	return nil, ErrNoPermission // TODO: 实现
 }
 
 // 获取指定时间的统计
-func (uc *PlanUsecase) GetPlanStats(param GetPlanStatsParam) ([]GroupStat, error) {
+func (uc *PlanUsecase) GetPlanStats(ctx context.Context, param GetPlanStatsParam) ([]GroupStat, error) {
 	return nil, ErrNoPermission // TODO: 实现
 }

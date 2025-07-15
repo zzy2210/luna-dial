@@ -1,6 +1,7 @@
 package biz
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
 	"regexp"
@@ -17,39 +18,39 @@ type MockUserRepo struct {
 	mock.Mock
 }
 
-func (m *MockUserRepo) CreateUser(user *User) error {
-	args := m.Called(user)
+func (m *MockUserRepo) CreateUser(ctx context.Context, user *User) error {
+	args := m.Called(ctx, user)
 	return args.Error(0)
 }
 
-func (m *MockUserRepo) UpdateUser(user *User) error {
-	args := m.Called(user)
+func (m *MockUserRepo) UpdateUser(ctx context.Context, user *User) error {
+	args := m.Called(ctx, user)
 	return args.Error(0)
 }
 
-func (m *MockUserRepo) DeleteUser(userID string) error {
-	args := m.Called(userID)
+func (m *MockUserRepo) DeleteUser(ctx context.Context, userID string) error {
+	args := m.Called(ctx, userID)
 	return args.Error(0)
 }
 
-func (m *MockUserRepo) GetUserByID(userID string) (*User, error) {
-	args := m.Called(userID)
+func (m *MockUserRepo) GetUserByID(ctx context.Context, userID string) (*User, error) {
+	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*User), args.Error(1)
 }
 
-func (m *MockUserRepo) GetUserByUserName(userName string) (*User, error) {
-	args := m.Called(userName)
+func (m *MockUserRepo) GetUserByUserName(ctx context.Context, userName string) (*User, error) {
+	args := m.Called(ctx, userName)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*User), args.Error(1)
 }
 
-func (m *MockUserRepo) GetUserByEmail(email string) (*User, error) {
-	args := m.Called(email)
+func (m *MockUserRepo) GetUserByEmail(ctx context.Context, email string) (*User, error) {
+	args := m.Called(ctx, email)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -91,11 +92,11 @@ func TestCreateUser(t *testing.T) {
 		}
 
 		// 设置 mock 期望
-		mockRepo.On("GetUserByUserName", param.UserName).Return(nil, ErrUserNotFound)
-		mockRepo.On("CreateUser", mock.AnythingOfType("*biz.User")).Return(nil)
+		mockRepo.On("GetUserByUserName", mock.Anything, param.UserName).Return(nil, ErrUserNotFound)
+		mockRepo.On("CreateUser", mock.Anything, mock.AnythingOfType("*biz.User")).Return(nil)
 
 		// 执行测试
-		user, err := usecase.CreateUser(param)
+		user, err := usecase.CreateUser(context.Background(), param)
 
 		// 业务逻辑实现后，err 应该为 nil，user 不为 nil
 		assert.Nil(t, err)
@@ -123,7 +124,7 @@ func TestCreateUser(t *testing.T) {
 			Password: "securepassword123",
 		}
 
-		user, err := usecase.CreateUser(param)
+		user, err := usecase.CreateUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -142,7 +143,7 @@ func TestCreateUser(t *testing.T) {
 			Password: "securepassword123",
 		}
 
-		user, err := usecase.CreateUser(param)
+		user, err := usecase.CreateUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -161,7 +162,7 @@ func TestCreateUser(t *testing.T) {
 			Password: "123", // 弱密码
 		}
 
-		user, err := usecase.CreateUser(param)
+		user, err := usecase.CreateUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -186,9 +187,9 @@ func TestCreateUser(t *testing.T) {
 			UserName: "existinguser",
 			Email:    "existing@example.com",
 		}
-		mockRepo.On("GetUserByUserName", param.UserName).Return(existingUser, nil)
+		mockRepo.On("GetUserByUserName", mock.Anything, param.UserName).Return(existingUser, nil)
 
-		user, err := usecase.CreateUser(param)
+		user, err := usecase.CreateUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -205,7 +206,7 @@ func TestCreateUser(t *testing.T) {
 			Password: "securepassword123",
 		}
 
-		user, err := usecase.CreateUser(param)
+		user, err := usecase.CreateUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -224,7 +225,7 @@ func TestCreateUser(t *testing.T) {
 			Password: "securepassword123",
 		}
 
-		user, err := usecase.CreateUser(param)
+		user, err := usecase.CreateUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -243,7 +244,7 @@ func TestCreateUser(t *testing.T) {
 			Password: "securepassword123",
 		}
 
-		user, err := usecase.CreateUser(param)
+		user, err := usecase.CreateUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -262,7 +263,7 @@ func TestCreateUser(t *testing.T) {
 			Password: "", // 空密码
 		}
 
-		user, err := usecase.CreateUser(param)
+		user, err := usecase.CreateUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -293,10 +294,10 @@ func TestUpdateUser(t *testing.T) {
 			CreatedAt: time.Now().Add(-24 * time.Hour),
 			UpdatedAt: time.Now().Add(-24 * time.Hour),
 		}
-		mockRepo.On("GetUserByID", param.UserID).Return(existingUser, nil)
-		mockRepo.On("UpdateUser", mock.AnythingOfType("*biz.User")).Return(nil)
+		mockRepo.On("GetUserByID", mock.Anything, param.UserID).Return(existingUser, nil)
+		mockRepo.On("UpdateUser", mock.Anything, mock.AnythingOfType("*biz.User")).Return(nil)
 
-		user, err := usecase.UpdateUser(param)
+		user, err := usecase.UpdateUser(context.Background(), param)
 
 		// 业务逻辑实现后，err 应该为 nil
 		assert.Nil(t, err)
@@ -316,9 +317,9 @@ func TestUpdateUser(t *testing.T) {
 			Name:   &newName,
 		}
 
-		mockRepo.On("GetUserByID", param.UserID).Return(nil, ErrUserNotFound)
+		mockRepo.On("GetUserByID", mock.Anything, param.UserID).Return(nil, ErrUserNotFound)
 
-		user, err := usecase.UpdateUser(param)
+		user, err := usecase.UpdateUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -334,7 +335,7 @@ func TestUpdateUser(t *testing.T) {
 			Name:   &newName,
 		}
 
-		user, err := usecase.UpdateUser(param)
+		user, err := usecase.UpdateUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -357,10 +358,10 @@ func TestDeleteUser(t *testing.T) {
 			UserName: "testuser",
 			Email:    "test@example.com",
 		}
-		mockRepo.On("GetUserByID", param.UserID).Return(existingUser, nil)
-		mockRepo.On("DeleteUser", param.UserID).Return(nil)
+		mockRepo.On("GetUserByID", mock.Anything, param.UserID).Return(existingUser, nil)
+		mockRepo.On("DeleteUser", mock.Anything, param.UserID).Return(nil)
 
-		err := usecase.DeleteUser(param)
+		err := usecase.DeleteUser(context.Background(), param)
 
 		// 业务逻辑实现后，err 应该为 nil
 		assert.Nil(t, err)
@@ -374,9 +375,9 @@ func TestDeleteUser(t *testing.T) {
 			UserID: "6ba7b8109dad11d180b400c04fd430c8",
 		}
 
-		mockRepo.On("GetUserByID", param.UserID).Return(nil, ErrUserNotFound)
+		mockRepo.On("GetUserByID", mock.Anything, param.UserID).Return(nil, ErrUserNotFound)
 
-		err := usecase.DeleteUser(param)
+		err := usecase.DeleteUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, ErrUserNotFound, err, "应该返回 ErrUserNotFound 错误")
@@ -389,7 +390,7 @@ func TestDeleteUser(t *testing.T) {
 			UserID: "",
 		}
 
-		err := usecase.DeleteUser(param)
+		err := usecase.DeleteUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, ErrUserIDEmpty, err, "应该返回 ErrUserIDEmpty 错误")
@@ -402,7 +403,7 @@ func TestDeleteUser(t *testing.T) {
 			UserID: "not-a-uuid", // 无效的UUID格式
 		}
 
-		err := usecase.DeleteUser(param)
+		err := usecase.DeleteUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, ErrUserIDInvalid, err, "应该返回 ErrUserIDInvalid 错误")
@@ -428,9 +429,9 @@ func TestGetUser(t *testing.T) {
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-		mockRepo.On("GetUserByID", param.UserID).Return(expectedUser, nil)
+		mockRepo.On("GetUserByID", mock.Anything, param.UserID).Return(expectedUser, nil)
 
-		user, err := usecase.GetUser(param)
+		user, err := usecase.GetUser(context.Background(), param)
 
 		// 业务逻辑实现后，err 应该为 nil
 		assert.Nil(t, err)
@@ -446,9 +447,9 @@ func TestGetUser(t *testing.T) {
 			UserID: "6ba7b8109dad11d180b400c04fd430c8",
 		}
 
-		mockRepo.On("GetUserByID", param.UserID).Return(nil, ErrUserNotFound)
+		mockRepo.On("GetUserByID", mock.Anything, param.UserID).Return(nil, ErrUserNotFound)
 
-		user, err := usecase.GetUser(param)
+		user, err := usecase.GetUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -462,7 +463,7 @@ func TestGetUser(t *testing.T) {
 			UserID: "",
 		}
 
-		user, err := usecase.GetUser(param)
+		user, err := usecase.GetUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -476,7 +477,7 @@ func TestGetUser(t *testing.T) {
 			UserID: "invalid-format", // 无效的UUID格式
 		}
 
-		user, err := usecase.GetUser(param)
+		user, err := usecase.GetUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -506,9 +507,9 @@ func TestUserLogin(t *testing.T) {
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-		mockRepo.On("GetUserByUserName", param.UserName).Return(expectedUser, nil)
+		mockRepo.On("GetUserByUserName", mock.Anything, param.UserName).Return(expectedUser, nil)
 
-		user, err := usecase.UserLogin(param)
+		user, err := usecase.UserLogin(context.Background(), param)
 
 		// 业务逻辑实现后，err 应该为 nil
 		assert.Nil(t, err)
@@ -524,9 +525,9 @@ func TestUserLogin(t *testing.T) {
 			Password: "anypassword",
 		}
 
-		mockRepo.On("GetUserByUserName", param.UserName).Return(nil, ErrUserNotFound)
+		mockRepo.On("GetUserByUserName", mock.Anything, param.UserName).Return(nil, ErrUserNotFound)
 
-		user, err := usecase.UserLogin(param)
+		user, err := usecase.UserLogin(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -546,9 +547,9 @@ func TestUserLogin(t *testing.T) {
 			UserName: "testuser",
 			Password: "hashed_correctpassword",
 		}
-		mockRepo.On("GetUserByUserName", param.UserName).Return(existingUser, nil)
+		mockRepo.On("GetUserByUserName", mock.Anything, param.UserName).Return(existingUser, nil)
 
-		user, err := usecase.UserLogin(param)
+		user, err := usecase.UserLogin(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -563,7 +564,7 @@ func TestUserLogin(t *testing.T) {
 			Password: "password",
 		}
 
-		user, err := usecase.UserLogin(param)
+		user, err := usecase.UserLogin(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -578,7 +579,7 @@ func TestUserLogin(t *testing.T) {
 			Password: "",
 		}
 
-		user, err := usecase.UserLogin(param)
+		user, err := usecase.UserLogin(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -600,10 +601,10 @@ func TestUserLogin(t *testing.T) {
 			Email:    "test@example.com",
 			Password: "hashed_correctpassword",
 		}
-		mockRepo.On("GetUserByUserName", param.UserName).Return(nil, ErrUserNotFound)
-		mockRepo.On("GetUserByEmail", param.UserName).Return(expectedUser, nil)
+		mockRepo.On("GetUserByUserName", mock.Anything, param.UserName).Return(nil, ErrUserNotFound)
+		mockRepo.On("GetUserByEmail", mock.Anything, param.UserName).Return(expectedUser, nil)
 
-		user, err := usecase.UserLogin(param)
+		user, err := usecase.UserLogin(context.Background(), param)
 
 		// 假设不支持邮箱登录时，应返回用户不存在
 		assert.Equal(t, ErrUserNotFound, err, "应该返回 ErrUserNotFound 错误")
@@ -699,7 +700,7 @@ func TestUser_EdgeCases(t *testing.T) {
 			Email:    "test@example.com",
 			Password: "password123",
 		}
-		user, err := usecase.CreateUser(param)
+		user, err := usecase.CreateUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -718,7 +719,7 @@ func TestUser_EdgeCases(t *testing.T) {
 			Password: "password123",
 		}
 
-		user, err := usecase.CreateUser(param)
+		user, err := usecase.CreateUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -737,7 +738,7 @@ func TestUser_EdgeCases(t *testing.T) {
 			Password: "password123",
 		}
 
-		user, err := usecase.CreateUser(param)
+		user, err := usecase.CreateUser(context.Background(), param)
 
 		assert.NotNil(t, err)
 		assert.Nil(t, user)
@@ -766,7 +767,7 @@ func TestUser_EdgeCases(t *testing.T) {
 				Password: password,
 			}
 
-			user, err := usecase.CreateUser(param)
+			user, err := usecase.CreateUser(context.Background(), param)
 
 			assert.NotNil(t, err)
 			assert.Nil(t, user)
