@@ -36,7 +36,6 @@ var (
 	ErrUserNameTooLong      = errors.New("username too long")                             // 用户名过长
 	ErrNameEmpty            = errors.New("name is required")                              // 姓名不能为空
 	ErrEmailEmpty           = errors.New("email is required")                             // 邮箱不能为空
-	ErrEmailDuplicate       = errors.New("email already exists")                          // 邮箱已存在
 	ErrEmailInvalid         = errors.New("email format is invalid")                       // 邮箱格式无效
 	ErrPasswordEmpty        = errors.New("password is required")                          // 密码不能为空
 	ErrPasswordTooShort     = errors.New("password too short")                            // 密码长度不足
@@ -44,6 +43,7 @@ var (
 	ErrUserNotFound         = errors.New("user not found")                                // 用户不存在
 	ErrUserDeleteNotAllowed = errors.New("user must delete all tasks and journals first") // 用户删除前需先删除所有任务和日志
 	ErrPasswordIncorrect    = errors.New("incorrect password")                            // 密码错误
+	ErrInvalidInput         = errors.New("invalid input parameters")                      // 输入参数不合法
 )
 
 // 计划相关错误
