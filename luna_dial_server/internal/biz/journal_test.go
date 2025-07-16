@@ -176,7 +176,7 @@ func TestJournalUsecase_CreateJournal(t *testing.T) {
 
 	t.Run("参数验证失败 - 空标题", func(t *testing.T) {
 		param := CreateJournalParam{
-			UserID:      TestUserID123,
+			UserID:      "user-123",
 			Title:       "", // 空标题
 			Content:     "测试内容",
 			JournalType: PeriodDay,
@@ -270,8 +270,8 @@ func TestJournalUsecase_DeleteJournal(t *testing.T) {
 
 	t.Run("权限验证失败", func(t *testing.T) {
 		param := DeleteJournalParam{
-			JournalID: TestJournalID123,
-			UserID:    TestUserIDOther,
+			JournalID: "journal-123",
+			UserID:    "other-user",
 		}
 
 		err := usecase.DeleteJournal(ctx, param)
@@ -282,8 +282,8 @@ func TestJournalUsecase_DeleteJournal(t *testing.T) {
 
 	t.Run("日志不存在", func(t *testing.T) {
 		param := DeleteJournalParam{
-			JournalID: TestJournalIDNonExistent,
-			UserID:    TestUserID123,
+			JournalID: "non-existent",
+			UserID:    "user-123",
 		}
 
 		err := usecase.DeleteJournal(ctx, param)
@@ -300,8 +300,8 @@ func TestJournalUsecase_GetJournal(t *testing.T) {
 
 	t.Run("成功获取日志", func(t *testing.T) {
 		param := GetJournalParam{
-			JournalID: TestJournalID123,
-			UserID:    TestUserID123,
+			JournalID: "journal-123",
+			UserID:    "user-123",
 		}
 
 		journal, err := usecase.GetJournal(ctx, param)
@@ -315,8 +315,8 @@ func TestJournalUsecase_GetJournal(t *testing.T) {
 
 	t.Run("日志不存在", func(t *testing.T) {
 		param := GetJournalParam{
-			JournalID: TestJournalIDNonExistent,
-			UserID:    TestUserID123,
+			JournalID: "non-existent",
+			UserID:    "user-123",
 		}
 
 		journal, err := usecase.GetJournal(ctx, param)
@@ -334,7 +334,7 @@ func TestJournalUsecase_ListJournalByPeriod(t *testing.T) {
 
 	t.Run("成功获取月度日志列表", func(t *testing.T) {
 		param := ListJournalByPeriodParam{
-			UserID: TestUserID123,
+			UserID: "user-123",
 			Period: Period{
 				Start: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
 				End:   time.Date(2025, 1, 31, 23, 59, 59, 0, time.UTC),
@@ -359,7 +359,7 @@ func TestJournalUsecase_ListJournalByPeriod(t *testing.T) {
 
 	t.Run("成功获取周度日志列表", func(t *testing.T) {
 		param := ListJournalByPeriodParam{
-			UserID: TestUserID123,
+			UserID: "user-123",
 			Period: Period{
 				Start: time.Date(2025, 1, 13, 0, 0, 0, 0, time.UTC),
 				End:   time.Date(2025, 1, 19, 23, 59, 59, 0, time.UTC),
@@ -387,7 +387,7 @@ func TestJournalUsecase_ListAllJournals(t *testing.T) {
 
 	t.Run("成功获取分页日志列表", func(t *testing.T) {
 		param := ListAllJournalsParam{
-			UserID: TestUserID123,
+			UserID: "user-123",
 			Pagination: PaginationParam{
 				PageNum:  1,
 				PageSize: 10,
@@ -411,7 +411,7 @@ func TestJournalUsecase_ListAllJournals(t *testing.T) {
 
 	t.Run("空结果分页", func(t *testing.T) {
 		param := ListAllJournalsParam{
-			UserID: TestUserIDWithNoJournals,
+			UserID: "user-with-no-journals",
 			Pagination: PaginationParam{
 				PageNum:  1,
 				PageSize: 10,
@@ -430,7 +430,7 @@ func TestJournalUsecase_ListAllJournals(t *testing.T) {
 // 测试结构体字段
 func TestJournal_Fields(t *testing.T) {
 	journal := Journal{
-		ID:          TestJournalID123,
+		ID:          "journal-123",
 		Title:       "测试日志",
 		Content:     "测试内容",
 		JournalType: PeriodDay,
@@ -441,19 +441,19 @@ func TestJournal_Fields(t *testing.T) {
 		Icon:      "📝",
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		UserID:    TestUserID123,
+		UserID:    "user-123",
 	}
 
-	assert.Equal(t, TestJournalID123, journal.ID, "ID should match")
+	assert.Equal(t, "journal-123", journal.ID, "ID should match")
 	assert.Equal(t, "测试日志", journal.Title, "title should match")
 	assert.Equal(t, PeriodDay, journal.JournalType, "journal type should match")
-	assert.Equal(t, TestUserID123, journal.UserID, "user ID should match")
+	assert.Equal(t, "user-123", journal.UserID, "user ID should match")
 }
 
 // 测试参数结构体
 func TestCreateJournalParam_Fields(t *testing.T) {
 	param := CreateJournalParam{
-		UserID:      TestUserID123,
+		UserID:      "user-123",
 		Title:       "新日志",
 		Content:     "新内容",
 		JournalType: PeriodWeek,
@@ -464,7 +464,7 @@ func TestCreateJournalParam_Fields(t *testing.T) {
 		Icon: "📊",
 	}
 
-	assert.Equal(t, TestUserID123, param.UserID, "user ID should match")
+	assert.Equal(t, "user-123", param.UserID, "user ID should match")
 	assert.Equal(t, PeriodWeek, param.JournalType, "journal type should match")
 }
 
@@ -473,13 +473,13 @@ func TestUpdateJournalParam_Fields(t *testing.T) {
 	newContent := "更新内容"
 
 	param := UpdateJournalParam{
-		JournalID: TestJournalID123,
-		UserID:    TestUserID123,
+		JournalID: "journal-123",
+		UserID:    "user-123",
 		Title:     &newTitle,
 		Content:   &newContent,
 	}
 
-	assert.Equal(t, TestJournalID123, param.JournalID, "journal ID should match")
+	assert.Equal(t, "journal-123", param.JournalID, "journal ID should match")
 	require.NotNil(t, param.Title, "title pointer should not be nil")
 	assert.Equal(t, newTitle, *param.Title, "title should match")
 	require.NotNil(t, param.Content, "content pointer should not be nil")
@@ -505,7 +505,7 @@ func TestJournalUsecase_EdgeCases(t *testing.T) {
 	t.Run("极长标题", func(t *testing.T) {
 		longTitle := strings.Repeat("很长的标题", 1000)
 		param := CreateJournalParam{
-			UserID:      TestUserID123,
+			UserID:      "user-123",
 			Title:       longTitle,
 			Content:     "测试内容",
 			JournalType: PeriodDay,
@@ -521,7 +521,7 @@ func TestJournalUsecase_EdgeCases(t *testing.T) {
 
 	t.Run("空内容验证", func(t *testing.T) {
 		param := CreateJournalParam{
-			UserID:      TestUserID123,
+			UserID:      "user-123",
 			Title:       "标题",
 			Content:     "", // 空内容
 			JournalType: PeriodDay,
@@ -536,7 +536,7 @@ func TestJournalUsecase_EdgeCases(t *testing.T) {
 
 	t.Run("无效时间范围", func(t *testing.T) {
 		param := CreateJournalParam{
-			UserID:      TestUserID123,
+			UserID:      "user-123",
 			Title:       "测试",
 			Content:     "测试内容",
 			JournalType: PeriodDay,
@@ -555,7 +555,7 @@ func TestJournalUsecase_EdgeCases(t *testing.T) {
 
 	t.Run("特殊字符处理", func(t *testing.T) {
 		param := CreateJournalParam{
-			UserID:      TestUserID123,
+			UserID:      "user-123",
 			Title:       "测试<script>alert('xss')</script>",
 			Content:     "内容包含特殊字符: & < > \" '",
 			JournalType: PeriodDay,

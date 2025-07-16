@@ -4,6 +4,7 @@ import "errors"
 
 // 通用参数验证错误
 var (
+	ErrInvalidInput  = errors.New("invalid input parameters") // 参数不合法
 	ErrUserIDEmpty   = errors.New("userID is required")       // userID不能为空
 	ErrUserIDInvalid = errors.New("userID format is invalid") // userID格式无效（应为UUID）
 	ErrNoPermission  = errors.New("no permission")            // 无权操作
@@ -43,7 +44,6 @@ var (
 	ErrUserNotFound         = errors.New("user not found")                                // 用户不存在
 	ErrUserDeleteNotAllowed = errors.New("user must delete all tasks and journals first") // 用户删除前需先删除所有任务和日志
 	ErrPasswordIncorrect    = errors.New("incorrect password")                            // 密码错误
-	ErrInvalidInput         = errors.New("invalid input parameters")                      // 输入参数不合法
 )
 
 // 计划相关错误

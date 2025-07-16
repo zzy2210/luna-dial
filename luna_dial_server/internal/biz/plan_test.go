@@ -25,17 +25,165 @@ func createTestPlanUsecase() *PlanUsecase {
 // Mock TaskRepo 实现
 type mockTaskRepo struct{}
 
-func (m *mockTaskRepo) CreateTask(ctx context.Context, task *Task) error            { return nil }
-func (m *mockTaskRepo) UpdateTask(ctx context.Context, task *Task) error            { return nil }
-func (m *mockTaskRepo) DeleteTask(ctx context.Context, taskID, userID string) error { return nil }
+func (m *mockTaskRepo) CreateTask(ctx context.Context, task *Task) error {
+	return nil
+}
+func (m *mockTaskRepo) UpdateTask(ctx context.Context, task *Task) error {
+	return nil
+}
+func (m *mockTaskRepo) DeleteTask(ctx context.Context, taskID, userID string) error {
+	return nil
+}
 func (m *mockTaskRepo) GetTask(ctx context.Context, taskID, userID string) (*Task, error) {
+	// 模拟一些测试数据
+	if taskID == "task-123" && userID == "user-123" {
+		return &Task{
+			ID:       taskID,
+			Title:    "测试任务",
+			UserID:   userID,
+			TaskType: PeriodDay,
+			Tags:     []string{"测试"},
+			Score:    50,
+			TimePeriod: Period{
+				Start: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
+				End:   time.Date(2025, 1, 15, 23, 59, 59, 0, time.UTC),
+			},
+			CreatedAt: time.Date(2025, 1, 15, 10, 0, 0, 0, time.UTC),
+			UpdatedAt: time.Date(2025, 1, 15, 10, 0, 0, 0, time.UTC),
+		}, nil
+	}
+	if taskID == "parent-task-123" && userID == "user-123" {
+		return &Task{
+			ID:       taskID,
+			Title:    "父任务",
+			UserID:   userID,
+			TaskType: PeriodDay,
+			Tags:     []string{"父任务"},
+			Score:    100,
+			TimePeriod: Period{
+				Start: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
+				End:   time.Date(2025, 1, 15, 23, 59, 59, 0, time.UTC),
+			},
+			CreatedAt: time.Date(2025, 1, 15, 9, 0, 0, 0, time.UTC),
+			UpdatedAt: time.Date(2025, 1, 15, 9, 0, 0, 0, time.UTC),
+		}, nil
+	}
+	if taskID == "child-task-123" && userID == "user-123" {
+		return &Task{
+			ID:       taskID,
+			Title:    "子任务",
+			UserID:   userID,
+			TaskType: PeriodDay,
+			Tags:     []string{"子任务"},
+			Score:    30,
+			ParentID: "parent-task-123",
+			TimePeriod: Period{
+				Start: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
+				End:   time.Date(2025, 1, 15, 23, 59, 59, 0, time.UTC),
+			},
+			CreatedAt: time.Date(2025, 1, 15, 11, 0, 0, 0, time.UTC),
+			UpdatedAt: time.Date(2025, 1, 15, 11, 0, 0, 0, time.UTC),
+		}, nil
+	}
+	if userID == "other-user" {
+		return nil, ErrTaskNotFound // 模拟权限错误
+	}
+	if taskID == "non-existent" || taskID == "non-existent-parent" {
+		return nil, ErrTaskNotFound // 模拟任务不存在
+	}
 	return nil, ErrTaskNotFound
 }
-func (m *mockTaskRepo) ListTasks(ctx context.Context, userID string, periodStart, periodEnd time.Time, taskType string) ([]*Task, error) {
-	return nil, nil
+func (m *mockTaskRepo) ListTasks(ctx context.Context, userID string, periodStart, periodEnd time.Time, taskType int) ([]*Task, error) {
+	// 模拟返回一些测试任务
+	if userID == "user-123" {
+		return []*Task{
+			{
+				ID:       "task-1",
+				Title:    "任务1",
+				UserID:   userID,
+				TaskType: PeriodType(taskType),
+				Score:    100,
+				TimePeriod: Period{
+					Start: periodStart.Add(time.Hour),
+					End:   periodStart.Add(2 * time.Hour),
+				},
+			},
+			{
+				ID:       "task-2",
+				Title:    "任务2",
+				UserID:   userID,
+				TaskType: PeriodType(taskType),
+				Score:    50,
+				TimePeriod: Period{
+					Start: periodStart.Add(3 * time.Hour),
+					End:   periodStart.Add(4 * time.Hour),
+				},
+			},
+		}, nil
+	}
+	return []*Task{}, nil
 }
 func (m *mockTaskRepo) ListTaskTree(ctx context.Context, taskID, userID string) ([]*Task, error) {
-	return nil, nil
+	// 模拟返回任务树
+	if taskID == "parent-task-123" && userID == "user-123" {
+		return []*Task{
+			{
+				ID:       "parent-task-123",
+				Title:    "父任务",
+				UserID:   userID,
+				TaskType: PeriodDay,
+				Score:    100,
+			},
+			{
+				ID:       "child-task-1",
+				Title:    "子任务1",
+				UserID:   userID,
+				TaskType: PeriodDay,
+				ParentID: "parent-task-123",
+				Score:    30,
+			},
+			{
+				ID:       "child-task-2",
+				Title:    "子任务2",
+				UserID:   userID,
+				TaskType: PeriodDay,
+				ParentID: "parent-task-123",
+				Score:    20,
+			},
+		}, nil
+	}
+	return []*Task{}, nil
+}
+func (m *mockTaskRepo) ListTaskParentTree(ctx context.Context, taskID, userID string) ([]*Task, error) {
+	// 模拟返回父任务树路径
+	if taskID == "child-task-123" && userID == "user-123" {
+		return []*Task{
+			{
+				ID:       "root-task",
+				Title:    "根任务",
+				UserID:   userID,
+				TaskType: PeriodDay,
+				Score:    200,
+			},
+			{
+				ID:       "parent-task-123",
+				Title:    "父任务",
+				UserID:   userID,
+				TaskType: PeriodDay,
+				ParentID: "root-task",
+				Score:    100,
+			},
+			{
+				ID:       "child-task-123",
+				Title:    "子任务",
+				UserID:   userID,
+				TaskType: PeriodDay,
+				ParentID: "parent-task-123",
+				Score:    30,
+			},
+		}, nil
+	}
+	return []*Task{}, nil
 }
 
 // 测试 NewPlanUsecase 构造函数

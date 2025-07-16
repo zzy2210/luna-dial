@@ -2,9 +2,6 @@ package biz
 
 import (
 	"context"
-	"crypto/rand"
-	"fmt"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -64,19 +61,6 @@ func setupTest() (*UserUsecase, *MockUserRepo) {
 	var userRepo UserRepo = mockRepo
 	usecase := NewUserUsecase(userRepo)
 	return usecase, mockRepo
-}
-
-// 辅助函数：生成随机ID
-func generateID() string {
-	bytes := make([]byte, 16)
-	rand.Read(bytes)
-	return fmt.Sprintf("%x", bytes)
-}
-
-// 辅助函数：验证邮箱格式
-func isValidEmail(email string) bool {
-	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	return emailRegex.MatchString(email)
 }
 
 // TestCreateUser 测试创建用户功能
@@ -812,7 +796,7 @@ func TestHelperFunctions(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			result := isValidEmail(tc.email)
+			result := validEmail(tc.email)
 			assert.Equal(t, tc.valid, result, "邮箱 %s 的验证结果不正确", tc.email)
 		}
 	})
