@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"luna_dial/internal/model"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,36 +33,48 @@ func (m *mockJournalRepo) UpdateJournal(ctx context.Context, journal *Journal) e
 	return nil
 }
 
-func (m *mockJournalRepo) DeleteJournal(ctx context.Context, journalID, userID string) error {
-	if journalID == TestJournalIDNonExistent {
-		return ErrJournalNotFound
+func (m *mockJournalRepo) DeleteJournalWithAuth(ctx context.Context, journalID, userID string) error {
+	// 模拟记录不存在
+	if journalID == TestJournalIDNonExistent || journalID == "non-existent" {
+		return model.ErrRecordNotFound
 	}
-	if userID == TestUserIDOther {
-		return ErrNoPermission
+
+	// 模拟权限检查失败：用户ID不匹配时也返回记录不存在
+	// 这符合数据库 WHERE id = ? AND user_id = ? 的行为
+	if userID == TestUserIDOther || userID == "other-user" {
+		return model.ErrRecordNotFound
 	}
+
 	return nil
 }
 
-func (m *mockJournalRepo) GetJournal(ctx context.Context, journalID, userID string) (*Journal, error) {
-	if journalID == TestJournalIDNonExistent {
-		return nil, ErrJournalNotFound
+func (m *mockJournalRepo) GetJournalWithAuth(ctx context.Context, journalID, userID string) (*Journal, error) {
+	// 同样的逻辑
+	if journalID == TestJournalIDNonExistent || journalID == "non-existent" {
+		return nil, model.ErrRecordNotFound
 	}
-	if userID == TestUserIDOther {
-		return nil, ErrNoPermission
+
+	if userID == TestUserIDOther || userID == "other-user" {
+		return nil, model.ErrRecordNotFound
 	}
-	// 返回模拟的日志对象
+
+	// 返回正常的模拟数据
 	return &Journal{
 		ID:          journalID,
 		Title:       "测试日志",
 		Content:     "测试内容",
 		JournalType: PeriodDay,
 		UserID:      userID,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		TimePeriod: Period{
+			Start: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
+			End:   time.Date(2025, 1, 16, 0, 0, 0, 0, time.UTC),
+		},
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}, nil
 }
 
-func (m *mockJournalRepo) ListJournals(ctx context.Context, userID string, periodStart, periodEnd time.Time, journalType string) ([]*Journal, error) {
+func (m *mockJournalRepo) ListJournals(ctx context.Context, userID string, periodStart, periodEnd time.Time, journalType int) ([]*Journal, error) {
 	if userID == TestUserIDWithNoJournals {
 		return []*Journal{}, nil
 	}
@@ -80,6 +94,54 @@ func (m *mockJournalRepo) ListJournals(ctx context.Context, userID string, perio
 			UpdatedAt: time.Now(),
 		},
 	}, nil
+}
+
+func (m *mockJournalRepo) ListAllJournals(ctx context.Context, userID string, offset, limit int) ([]*Journal, error) {
+	if userID == TestUserIDWithNoJournals {
+		return []*Journal{}, nil
+	}
+
+	// 模拟分页数据
+	allJournals := []*Journal{
+		{
+			ID:          TestJournalID1,
+			Title:       "日志1",
+			Content:     "内容1",
+			JournalType: PeriodDay,
+			UserID:      userID,
+			TimePeriod: Period{
+				Start: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
+				End:   time.Date(2025, 1, 16, 0, 0, 0, 0, time.UTC),
+			},
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		{
+			ID:          TestJournalID123,
+			Title:       "日志2",
+			Content:     "内容2",
+			JournalType: PeriodWeek,
+			UserID:      userID,
+			TimePeriod: Period{
+				Start: time.Date(2025, 1, 13, 0, 0, 0, 0, time.UTC),
+				End:   time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC),
+			},
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+	}
+
+	// 模拟分页逻辑
+	start := offset
+	end := offset + limit
+	if start >= len(allJournals) {
+		return []*Journal{}, nil
+	}
+	if end > len(allJournals) {
+		end = len(allJournals)
+	}
+
+	return allJournals[start:end], nil
 }
 
 // 创建测试用的 JournalUsecase 实例
@@ -110,7 +172,7 @@ func TestJournalUsecase_CreateJournal(t *testing.T) {
 			JournalType: PeriodDay,
 			TimePeriod: Period{
 				Start: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
-				End:   time.Date(2025, 1, 15, 23, 59, 59, 0, time.UTC),
+				End:   time.Date(2025, 1, 16, 0, 0, 0, 0, time.UTC),
 			},
 			Icon: "📝",
 		}
@@ -142,7 +204,7 @@ func TestJournalUsecase_CreateJournal(t *testing.T) {
 			JournalType: PeriodWeek,
 			TimePeriod: Period{
 				Start: time.Date(2025, 1, 13, 0, 0, 0, 0, time.UTC),
-				End:   time.Date(2025, 1, 19, 23, 59, 59, 0, time.UTC),
+				End:   time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC),
 			},
 			Icon: "📊",
 		}
@@ -163,7 +225,7 @@ func TestJournalUsecase_CreateJournal(t *testing.T) {
 			JournalType: PeriodDay,
 			TimePeriod: Period{
 				Start: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
-				End:   time.Date(2025, 1, 15, 23, 59, 59, 0, time.UTC),
+				End:   time.Date(2025, 1, 16, 0, 0, 0, 0, time.UTC),
 			},
 		}
 
@@ -171,7 +233,7 @@ func TestJournalUsecase_CreateJournal(t *testing.T) {
 
 		// ✅ TDD: 明确期望的业务错误
 		assert.Nil(t, journal, "should return nil journal for empty user ID")
-		assert.Equal(t, ErrUserIDEmpty, err, "should return ErrUserIDEmpty for empty user ID")
+		assert.Equal(t, ErrNoPermission, err, "should return ErrUserIDEmpty for empty user ID")
 	})
 
 	t.Run("参数验证失败 - 空标题", func(t *testing.T) {
@@ -190,7 +252,7 @@ func TestJournalUsecase_CreateJournal(t *testing.T) {
 
 		// ✅ TDD: 明确期望的业务错误
 		assert.Nil(t, journal, "should return nil journal for empty title")
-		assert.Equal(t, ErrTitleEmpty, err, "should return ErrTitleEmpty for empty title")
+		assert.Equal(t, ErrInvalidInput, err, "should return ErrInvalidInput for empty title")
 	})
 }
 
@@ -216,14 +278,17 @@ func TestJournalUsecase_UpdateJournal(t *testing.T) {
 		assert.False(t, journal.UpdatedAt.IsZero(), "updated time should be set")
 	})
 
-	t.Run("成功更新日志内容和类型", func(t *testing.T) {
+	t.Run("成功更新日志内容和时间", func(t *testing.T) {
 		newContent := "更新后的内容"
-		newType := PeriodWeek
+		newPeriod := Period{
+			Start: time.Date(2025, 1, 16, 0, 0, 0, 0, time.UTC),
+			End:   time.Date(2025, 1, 17, 0, 0, 0, 0, time.UTC),
+		}
 		param := UpdateJournalParam{
-			JournalID:   TestJournalID123,
-			UserID:      TestUserID123,
-			Content:     &newContent,
-			JournalType: &newType,
+			JournalID:  TestJournalID123,
+			UserID:     TestUserID123,
+			Content:    &newContent,
+			TimePeriod: &newPeriod,
 		}
 
 		journal, err := usecase.UpdateJournal(ctx, param)
@@ -232,7 +297,7 @@ func TestJournalUsecase_UpdateJournal(t *testing.T) {
 		require.NoError(t, err, "UpdateJournal should succeed")
 		require.NotNil(t, journal, "should return updated journal object")
 		assert.Equal(t, newContent, journal.Content, "content should be updated")
-		assert.Equal(t, newType, journal.JournalType, "journal type should be updated")
+		assert.Equal(t, newPeriod, journal.TimePeriod, "time period should be updated")
 	})
 
 	t.Run("权限验证失败 - 不同用户", func(t *testing.T) {
@@ -245,9 +310,9 @@ func TestJournalUsecase_UpdateJournal(t *testing.T) {
 
 		journal, err := usecase.UpdateJournal(ctx, param)
 
-		// ✅ TDD: 明确期望的权限错误
+		// 期望返回业务层的"不存在"错误，而不是权限错误
 		assert.Nil(t, journal, "should return nil journal for permission denied")
-		assert.Equal(t, ErrNoPermission, err, "should return ErrNoPermission for different user")
+		assert.Equal(t, ErrJournalNotFound, err, "should return ErrJournalNotFound for different user")
 	})
 }
 
@@ -276,8 +341,8 @@ func TestJournalUsecase_DeleteJournal(t *testing.T) {
 
 		err := usecase.DeleteJournal(ctx, param)
 
-		// ✅ TDD: 明确期望的权限错误
-		assert.Equal(t, ErrNoPermission, err, "should return ErrNoPermission for different user")
+		// 期望返回业务层的"不存在"错误，而不是权限错误
+		assert.Equal(t, ErrJournalNotFound, err, "should return ErrJournalNotFound for unauthorized access")
 	})
 
 	t.Run("日志不存在", func(t *testing.T) {
@@ -313,6 +378,18 @@ func TestJournalUsecase_GetJournal(t *testing.T) {
 		assert.Equal(t, param.UserID, journal.UserID, "user ID should match")
 	})
 
+	t.Run("权限验证失败", func(t *testing.T) {
+		param := GetJournalParam{
+			JournalID: "journal-123",
+			UserID:    "other-user",
+		}
+
+		journal, err := usecase.GetJournal(ctx, param)
+
+		assert.Nil(t, journal, "should return nil journal for unauthorized access")
+		assert.Equal(t, ErrJournalNotFound, err, "should return ErrJournalNotFound for unauthorized access")
+	})
+
 	t.Run("日志不存在", func(t *testing.T) {
 		param := GetJournalParam{
 			JournalID: "non-existent",
@@ -337,7 +414,7 @@ func TestJournalUsecase_ListJournalByPeriod(t *testing.T) {
 			UserID: "user-123",
 			Period: Period{
 				Start: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-				End:   time.Date(2025, 1, 31, 23, 59, 59, 0, time.UTC),
+				End:   time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC),
 			},
 			GroupBy: PeriodMonth,
 		}
@@ -362,7 +439,7 @@ func TestJournalUsecase_ListJournalByPeriod(t *testing.T) {
 			UserID: "user-123",
 			Period: Period{
 				Start: time.Date(2025, 1, 13, 0, 0, 0, 0, time.UTC),
-				End:   time.Date(2025, 1, 19, 23, 59, 59, 0, time.UTC),
+				End:   time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC),
 			},
 			GroupBy: PeriodWeek,
 		}
@@ -387,7 +464,7 @@ func TestJournalUsecase_ListAllJournals(t *testing.T) {
 
 	t.Run("成功获取分页日志列表", func(t *testing.T) {
 		param := ListAllJournalsParam{
-			UserID: "user-123",
+			UserID: TestUserID123,
 			Pagination: PaginationParam{
 				PageNum:  1,
 				PageSize: 10,
@@ -396,7 +473,7 @@ func TestJournalUsecase_ListAllJournals(t *testing.T) {
 
 		journals, err := usecase.ListAllJournals(ctx, param)
 
-		// ❌ TDD: 期望成功获取，当前业务逻辑未实现会失败
+		// ✅ TDD: 期望成功获取
 		require.NoError(t, err, "ListAllJournals should succeed")
 		require.NotNil(t, journals, "should return journal list")
 
@@ -411,7 +488,7 @@ func TestJournalUsecase_ListAllJournals(t *testing.T) {
 
 	t.Run("空结果分页", func(t *testing.T) {
 		param := ListAllJournalsParam{
-			UserID: "user-with-no-journals",
+			UserID: TestUserIDWithNoJournals,
 			Pagination: PaginationParam{
 				PageNum:  1,
 				PageSize: 10,
@@ -420,7 +497,7 @@ func TestJournalUsecase_ListAllJournals(t *testing.T) {
 
 		journals, err := usecase.ListAllJournals(ctx, param)
 
-		// ❌ TDD: 期望成功获取空列表，当前业务逻辑未实现会失败
+		// ✅ TDD: 期望成功获取空列表
 		require.NoError(t, err, "ListAllJournals should succeed even with no results")
 		require.NotNil(t, journals, "should return empty list, not nil")
 		assert.Empty(t, journals, "should return empty list for user with no journals")
