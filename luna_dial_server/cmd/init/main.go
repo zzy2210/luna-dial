@@ -24,18 +24,23 @@ func main() {
 		log.Fatal("连接数据库失败:", err)
 	}
 
-	// 创建系统配置实例
-	systemConfig := data.NewSystemConfig(db)
+	// 创建数据层实例
+	dataInstance, cleanup, err := data.NewData(db)
+	if err != nil {
+		log.Fatal("创建数据层实例失败:", err)
+	}
+	defer cleanup() // 确保资源清理
+
 	ctx := context.Background()
 
 	// 总是运行初始化（包括迁移检查和基础数据初始化）
 	fmt.Println("开始系统初始化检查...")
-	if err := systemConfig.InitializeSystem(ctx); err != nil {
+	if err := dataInstance.SystemConfig.InitializeSystem(ctx); err != nil {
 		log.Fatal("系统初始化失败:", err)
 	}
 
 	// 显示系统信息
-	jwtSecret, err := systemConfig.GetJWTSecret(ctx)
+	jwtSecret, err := dataInstance.SystemConfig.GetJWTSecret(ctx)
 	if err != nil {
 		log.Printf("获取JWT密钥失败: %v", err)
 	} else {
