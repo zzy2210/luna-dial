@@ -2,6 +2,8 @@ package biz
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"net/mail"
 	"time"
 	"unicode"
@@ -232,6 +234,29 @@ func (uc *UserUsecase) UserLogin(ctx context.Context, param UserLoginParam) (*Us
 
 func hashPassword(password string) []byte {
 	return sm3.Sm3Sum([]byte(password)) // 使用国密SM3算法进行密码哈希
+}
+
+// hashPasswordWithSalt 使用盐值的密码哈希（推荐使用）
+func hashPasswordWithSalt(password, salt string) string {
+	hasher := sm3.New()
+	hasher.Write([]byte(password))
+	hasher.Write([]byte(salt))
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+// generateSalt 生成随机盐值
+func generateSalt() (string, error) {
+	salt := make([]byte, 16)
+	_, err := rand.Read(salt)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(salt), nil
+}
+
+// verifyPasswordWithSalt 验证带盐值的密码
+func verifyPasswordWithSalt(password, salt, hashedPassword string) bool {
+	return hashPasswordWithSalt(password, salt) == hashedPassword
 }
 
 func validEmail(email string) bool {
