@@ -1,22 +1,46 @@
 package service
 
+import (
+	"fmt"
+	"luna_dial/internal/biz"
+	"time"
+)
+
 type LoginRequest struct {
 	Username string `json:"username" validate:"required"`
 	Password string `json:"password" validate:"required"`
 }
 
-// Response 通用响应结构体
-type Response struct {
-	Code      int         `json:"code"`                 // 业务状态码
-	Message   string      `json:"message"`              // 响应消息
-	Data      interface{} `json:"data,omitempty"`       // 响应数据
-	Success   bool        `json:"success"`              // 请求是否成功
-	Timestamp int64       `json:"timestamp"`            // 响应时间戳
-	RequestID string      `json:"request_id,omitempty"` // 请求ID，用于追踪
+type ListTaskRequest struct {
+	PeriodType string    `json:"period_type" validate:"required,oneof=daily weekly monthly yearly"`
+	StartDate  time.Time `json:"start_date" validate:"required"`
+	EndDate    time.Time `json:"end_date" validate:"required"`
 }
 
-// 登录响应模型
-type LoginResponse struct {
-	SessionID string `json:"session_id"` // 会话ID
-	ExpiresIn int64  `json:"expires_in"` // 会话过期时间（秒）
+type CreateTaskRequest struct {
+	Title       string    `json:"title" validate:"required"`
+	Description string    `json:"description"`
+	StartDate   time.Time `json:"start_date" validate:"required"`
+	EndDate     time.Time `json:"end_date" validate:"required"`
+	Priority    string    `json:"priority" validate:"required,oneof=low medium high"`
+	Icon        string    `json:"icon"`
+	Tags        []string  `json:"tags"`
+	Status      string    `json:"status" validate:"required,oneof=pending in-progress completed"`
+}
+
+func PeriodTypeFromString(s string) (biz.PeriodType, error) {
+	switch s {
+	case "day":
+		return biz.PeriodDay, nil
+	case "week":
+		return biz.PeriodWeek, nil
+	case "month":
+		return biz.PeriodMonth, nil
+	case "quarter":
+		return biz.PeriodQuarter, nil
+	case "year":
+		return biz.PeriodYear, nil
+	default:
+		return 0, fmt.Errorf("unknown period type: %s", s)
+	}
 }

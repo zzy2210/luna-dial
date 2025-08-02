@@ -7,33 +7,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// setupSessionRoutes 设置Session相关的路由
-func (s *Service) setupSessionRoutes() {
-
-	// 受保护的路由 - 需要Session认证
-	protected := s.e.Group("/api/v1")
-	protected.Use(s.SessionMiddleware())
-
-	// 用户相关接口
-	protected.GET("/auth/profile", s.handleGetProfile)
-	protected.POST("/auth/logout", s.handleSessionLogout)
-	protected.DELETE("/auth/logout-all", s.handleLogoutAllSessions)
-
-	// 其他业务接口...
-	userGroup := protected.Group("/users")
-	userGroup.GET("/me", s.handleGetCurrentUser)
-
-	journalGroup := protected.Group("/journals")
-	journalGroup.GET("", s.handleListJournals)
-	journalGroup.POST("", s.handleCreateJournal)
-
-	taskGroup := protected.Group("/tasks")
-	taskGroup.GET("", s.handleListTasks)
-	taskGroup.POST("", s.handleCreateTask)
-}
-
-// 示例处理器方法
-
 // handleSessionLogin 用户登录处理器
 func (s *Service) handleSessionLogin(c echo.Context) error {
 	// 解析登录请求
@@ -178,94 +151,6 @@ func (s *Service) handleGetProfile(c echo.Context) error {
 			"name":     user.Name,
 			"email":    user.Email,
 		},
-		Success:   true,
-		Timestamp: time.Now().Unix(),
-	})
-}
-
-// handleGetCurrentUser 获取当前用户详细信息
-func (s *Service) handleGetCurrentUser(c echo.Context) error {
-	session, ok := GetSessionFromContext(c)
-	if !ok {
-		return c.JSON(401, &Response{
-			Code:      401,
-			Message:   "Session not found",
-			Success:   false,
-			Timestamp: time.Now().Unix(),
-		})
-	}
-
-	// 从数据库获取用户完整信息
-	user, err := s.userUsecase.GetUser(c.Request().Context(), biz.GetUserParam{
-		UserID: session.UserID,
-	})
-	if err != nil {
-		return c.JSON(500, &Response{
-			Code:      500,
-			Message:   "Failed to get user information",
-			Success:   false,
-			Timestamp: time.Now().Unix(),
-		})
-	}
-
-	return c.JSON(200, &Response{
-		Code:    200,
-		Message: "success",
-		Data: map[string]interface{}{
-			// 基本信息
-			"user_id":  user.ID,
-			"username": user.Username,
-			"name":     user.Name,
-			"email":    user.Email,
-			
-			// 账户信息
-			"created_at": user.CreatedAt,
-			"updated_at": user.UpdatedAt,
-			
-			// 会话信息
-			"session": map[string]interface{}{
-				"session_id":     session.ID,
-				"last_access_at": session.LastAccessAt,
-				"expires_at":     session.ExpiresAt,
-			},
-		},
-		Success:   true,
-		Timestamp: time.Now().Unix(),
-	})
-}
-
-// 占位符处理器（需要根据业务逻辑实现）
-func (s *Service) handleListJournals(c echo.Context) error {
-	return c.JSON(200, &Response{
-		Code:      200,
-		Message:   "list journals endpoint",
-		Success:   true,
-		Timestamp: time.Now().Unix(),
-	})
-}
-
-func (s *Service) handleCreateJournal(c echo.Context) error {
-	return c.JSON(200, &Response{
-		Code:      200,
-		Message:   "create journal endpoint",
-		Success:   true,
-		Timestamp: time.Now().Unix(),
-	})
-}
-
-func (s *Service) handleListTasks(c echo.Context) error {
-	return c.JSON(200, &Response{
-		Code:      200,
-		Message:   "list tasks endpoint",
-		Success:   true,
-		Timestamp: time.Now().Unix(),
-	})
-}
-
-func (s *Service) handleCreateTask(c echo.Context) error {
-	return c.JSON(200, &Response{
-		Code:      200,
-		Message:   "create task endpoint",
 		Success:   true,
 		Timestamp: time.Now().Unix(),
 	})

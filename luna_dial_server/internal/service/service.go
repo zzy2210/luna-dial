@@ -51,17 +51,34 @@ func (s *Service) setupPublicRoutes() {
 	})
 
 	public := s.e.Group("/api/v1/public")
-	public.GET("/system-info", func(c echo.Context) error {
-		jwtSecret, err := s.systemConfig.GetJWTSecret(c.Request().Context())
-		if err != nil {
-			return c.JSON(500, map[string]string{"error": "获取JWT密钥失败"})
-		}
-		return c.JSON(200, map[string]interface{}{
-			"jwt_secret_length": len(jwtSecret),
-			"admin_account":     "admin",
-			"admin_password":    "admin@123",
-		})
-	})
 	public.POST("/auth/login", s.handleSessionLogin)
 
+}
+
+func (s *Service) setupSessionRoutes() {
+
+	// 受保护的路由 - 需要Session认证
+	protected := s.e.Group("/api/v1")
+	protected.Use(s.SessionMiddleware())
+
+	// 用户相关接口
+	protected.GET("/auth/profile", s.handleGetProfile)
+	protected.POST("/auth/logout", s.handleSessionLogout)
+	protected.DELETE("/auth/logout-all", s.handleLogoutAllSessions)
+
+	// 其他业务接口...
+	userGroup := protected.Group("/users")
+	userGroup.GET("/me", s.handleGetCurrentUser)
+
+	journalGroup := protected.Group("/journals")
+	journalGroup.GET("", s.handleListJournals)
+	journalGroup.POST("", s.handleCreateJournal)
+
+	taskGroup := protected.Group("/tasks")
+	taskGroup.GET("", s.handleListTasks)
+	taskGroup.POST("", s.handleCreateTask)
+
+	planGroup := protected.Group("/plans")
+	planGroup.GET("", s.handleListPlans)
+	planGroup.POST("", s.handleCreatePlan)
 }
