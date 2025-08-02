@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// 查看指定时间段内指定类型的任务
 func (s *Service) handleListTasks(c echo.Context) error {
 	var req ListTaskRequest
 	if err := c.Bind(&req); err != nil {
@@ -46,6 +47,7 @@ func (s *Service) handleListTasks(c echo.Context) error {
 	return c.JSON(200, response)
 }
 
+// 创建任务
 func (s *Service) handleCreateTask(c echo.Context) error {
 	var req CreateTaskRequest
 	if err := c.Bind(&req); err != nil {
@@ -57,12 +59,16 @@ func (s *Service) handleCreateTask(c echo.Context) error {
 		return c.JSON(401, NewErrorResponse(401, "User not found"))
 	}
 
+	if req.Icon != "" && !IsIcon(req.Icon) {
+		return c.JSON(400, NewErrorResponse(400, "Invalid icon format"))
+	}
+
 	pType, err := PeriodTypeFromString(req.Priority)
 	if err != nil {
 		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid priority type: %s", req.Priority)))
 	}
 
-	s.taskUsecase.CreateTask(c.Request().Context(), biz.CreateTaskParam{
+	task, err := s.taskUsecase.CreateTask(c.Request().Context(), biz.CreateTaskParam{
 		Title:  req.Title,
 		UserID: userID,
 		Type:   pType,
@@ -73,7 +79,165 @@ func (s *Service) handleCreateTask(c echo.Context) error {
 		Icon: req.Icon,
 		Tags: req.Tags,
 	})
-	return c.JSON(200, NewSuccessResponseWithMessage("create task endpoint", nil))
+	if err != nil {
+		return c.JSON(500, NewErrorResponse(500, "Failed to create task"))
+	}
+	return c.JSON(200, NewSuccessResponseWithMessage("create task endpoint", task))
+}
+
+// 创建子任务
+func (s *Service) handleCreateSubTask(c echo.Context) error {
+	var req CreateSubTaskRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+	}
+
+	userID, _, err := GetUserFromContext(c)
+	if err != nil {
+		return c.JSON(401, NewErrorResponse(401, "User not found"))
+	}
+
+	if req.Icon != "" && !IsIcon(req.Icon) {
+		return c.JSON(400, NewErrorResponse(400, "Invalid icon format"))
+	}
+
+	pType, err := PeriodTypeFromString(req.Priority)
+	if err != nil {
+		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid priority type: %s", req.Priority)))
+	}
+
+	subTask, err := s.taskUsecase.CreateSubTask(c.Request().Context(), biz.CreateSubTaskParam{
+		ParentID: req.TaskID,
+		UserID:   userID,
+		Type:     pType,
+		Period: biz.Period{
+			Start: req.StartDate,
+			End:   req.EndDate,
+		},
+		Icon: req.Icon,
+	})
+	if err != nil {
+		return c.JSON(500, NewErrorResponse(500, "Failed to create subtask"))
+	}
+	return c.JSON(200, NewSuccessResponseWithMessage("create subtask endpoint", subTask))
+}
+
+// 更新任务
+func (s *Service) handleUpdateTask(c echo.Context) error {
+	var req UpdateTaskRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+	}
+
+	userID, _, err := GetUserFromContext(c)
+	if err != nil {
+		return c.JSON(401, NewErrorResponse(401, "User not found"))
+	}
+
+	if req.Icon != nil && *req.Icon != "" && !IsIcon(*req.Icon) {
+		return c.JSON(400, NewErrorResponse(400, "Invalid icon format"))
+	}
+
+	// 构建更新参数
+	updateParam := biz.UpdateTaskParam{
+		TaskID: req.TaskID,
+		UserID: userID,
+	}
+
+	// 只设置传递了的字段
+	if req.Title != nil {
+		updateParam.Title = req.Title
+	}
+	if req.StartDate != nil && req.EndDate != nil {
+		updateParam.Period = &biz.Period{
+			Start: *req.StartDate,
+			End:   *req.EndDate,
+		}
+	}
+	if req.IsCompleted != nil {
+		updateParam.IsCompleted = req.IsCompleted
+	}
+	if req.Icon != nil {
+		updateParam.Icon = req.Icon
+	}
+	if req.Tags != nil {
+		updateParam.Tags = req.Tags
+	}
+
+	task, err := s.taskUsecase.UpdateTask(c.Request().Context(), updateParam)
+	if err != nil {
+		return c.JSON(500, NewErrorResponse(500, "Failed to update task"))
+	}
+	return c.JSON(200, NewSuccessResponseWithMessage("update task endpoint", task))
+}
+
+// 标记任务完成
+func (s *Service) handleCompleteTask(c echo.Context) error {
+	var req CompleteTaskRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+	}
+
+	userID, _, err := GetUserFromContext(c)
+	if err != nil {
+		return c.JSON(401, NewErrorResponse(401, "User not found"))
+	}
+
+	s.taskUsecase.UpdateTask(c.Request().Context(), biz.UpdateTaskParam{
+		TaskID:      req.TaskID,
+		UserID:      userID,
+		IsCompleted: BoolPtr(true),
+	})
+	return c.JSON(200, NewSuccessResponseWithMessage("complete task endpoint", nil))
+}
+
+// 更新任务分数
+func (s *Service) handleUpdateTaskScore(c echo.Context) error {
+	var req UpdateTaskScoreRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+	}
+
+	userID, _, err := GetUserFromContext(c)
+	if err != nil {
+		return c.JSON(401, NewErrorResponse(401, "User not found"))
+	}
+
+	if req.Score < 0 {
+		return c.JSON(400, NewErrorResponse(400, "Score must be non-negative"))
+	}
+
+	_, err = s.taskUsecase.SetTaskScore(c.Request().Context(), biz.SetTaskScoreParam{
+		TaskID: req.TaskID,
+		UserID: userID,
+		Score:  req.Score,
+	})
+	if err != nil {
+		return c.JSON(500, NewErrorResponse(500, "Failed to update task score"))
+	}
+	return c.JSON(200, NewSuccessResponseWithMessage("update task score endpoint", nil))
+}
+
+// 删除任务
+func (s *Service) handleDeleteTask(c echo.Context) error {
+	var req DeleteTaskRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+	}
+
+	userID, _, err := GetUserFromContext(c)
+	if err != nil {
+		return c.JSON(401, NewErrorResponse(401, "User not found"))
+	}
+
+	err = s.taskUsecase.DeleteTask(c.Request().Context(), biz.DeleteTaskParam{
+		TaskID: req.TaskID,
+		UserID: userID,
+	})
+	if err != nil {
+		return c.JSON(500, NewErrorResponse(500, "Failed to delete task"))
+	}
+	return c.JSON(200, NewSuccessResponseWithMessage("delete task endpoint", nil))
 }
 
 // 检查 string 是否是 icon （emoji）
@@ -122,4 +286,8 @@ func isEmojiRune(r rune) bool {
 		(r >= 0x2B00 && r <= 0x2BFF) || // 杂项符号和箭头 (包含⭐)
 		r == 0xFE0F || // 变异选择器-16 (emoji presentation)
 		r == 0x200D // 零宽连接符 (用于组合emoji)
+}
+
+func BoolPtr(b bool) *bool {
+	return &b
 }

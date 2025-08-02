@@ -25,7 +25,46 @@ type CreateTaskRequest struct {
 	Priority    string    `json:"priority" validate:"required,oneof=low medium high"`
 	Icon        string    `json:"icon"`
 	Tags        []string  `json:"tags"`
-	Status      string    `json:"status" validate:"required,oneof=pending in-progress completed"`
+}
+
+type CreateSubTaskRequest struct {
+	Title       string    `json:"title" validate:"required"`
+	Description string    `json:"description"`
+	StartDate   time.Time `json:"start_date" validate:"required"`
+	EndDate     time.Time `json:"end_date" validate:"required"`
+	Priority    string    `json:"priority" validate:"required,oneof=low medium high"`
+	Icon        string    `json:"icon"`
+	Tags        []string  `json:"tags"`
+	TaskID      string    `json:"task_id" validate:"required"`
+}
+
+// 更新任务
+type UpdateTaskRequest struct {
+	Title       *string    `json:"title,omitempty"`
+	Description *string    `json:"description,omitempty"`
+	StartDate   *time.Time `json:"start_date,omitempty"`
+	EndDate     *time.Time `json:"end_date,omitempty"`
+	Priority    *string    `json:"priority,omitempty" validate:"omitempty,oneof=low medium high"`
+	Icon        *string    `json:"icon,omitempty"`
+	Tags        *[]string  `json:"tags,omitempty"`
+	TaskID      string     `json:"task_id" validate:"required"`
+	IsCompleted *bool      `json:"is_completed,omitempty"`
+}
+
+// 标记任务完成
+type CompleteTaskRequest struct {
+	TaskID string `json:"task_id" validate:"required"`
+}
+
+// 更新任务分数
+type UpdateTaskScoreRequest struct {
+	TaskID string `json:"task_id" validate:"required"`
+	Score  int    `json:"score" validate:"required"`
+}
+
+// 删除任务
+type DeleteTaskRequest struct {
+	TaskID string `json:"task_id" validate:"required"`
 }
 
 func PeriodTypeFromString(s string) (biz.PeriodType, error) {
