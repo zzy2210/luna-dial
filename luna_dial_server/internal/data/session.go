@@ -16,7 +16,7 @@ var (
 // Session 会话结构
 type Session struct {
 	ID           string    `json:"id"`
-	UserID       int64     `json:"user_id"`
+	UserID       string    `json:"user_id"`
 	Username     string    `json:"username"`
 	CreatedAt    time.Time `json:"created_at"`
 	LastAccessAt time.Time `json:"last_access_at"`
@@ -32,7 +32,7 @@ type SessionResponse struct {
 // SessionManager 会话管理器接口
 type SessionManager interface {
 	// CreateSession 创建新的会话
-	CreateSession(ctx context.Context, userID int64, username string) (*SessionResponse, error)
+	CreateSession(ctx context.Context, userID string, username string) (*SessionResponse, error)
 	
 	// ValidateSession 验证会话是否有效
 	ValidateSession(ctx context.Context, sessionID string) (*Session, error)
@@ -44,7 +44,7 @@ type SessionManager interface {
 	DeleteSession(ctx context.Context, sessionID string) error
 	
 	// DeleteUserSessions 删除用户的所有会话
-	DeleteUserSessions(ctx context.Context, userID int64) error
+	DeleteUserSessions(ctx context.Context, userID string) error
 	
 	// CleanupExpired 清理过期的会话
 	CleanupExpired(ctx context.Context) error

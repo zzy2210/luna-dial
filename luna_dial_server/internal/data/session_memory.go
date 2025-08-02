@@ -50,7 +50,7 @@ func (m *MemorySessionManager) generateSessionID() (string, error) {
 }
 
 // CreateSession 创建新的会话
-func (m *MemorySessionManager) CreateSession(ctx context.Context, userID int64, username string) (*SessionResponse, error) {
+func (m *MemorySessionManager) CreateSession(ctx context.Context, userID string, username string) (*SessionResponse, error) {
 	sessionID, err := m.generateSessionID()
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (m *MemorySessionManager) DeleteSession(ctx context.Context, sessionID stri
 }
 
 // DeleteUserSessions 删除用户的所有会话
-func (m *MemorySessionManager) DeleteUserSessions(ctx context.Context, userID int64) error {
+func (m *MemorySessionManager) DeleteUserSessions(ctx context.Context, userID string) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	
@@ -199,7 +199,7 @@ func (m *MemorySessionManager) GetSessionCount() int {
 }
 
 // GetUserSessions 获取用户的所有会话（用于调试）
-func (m *MemorySessionManager) GetUserSessions(userID int64) []*Session {
+func (m *MemorySessionManager) GetUserSessions(userID string) []*Session {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 	

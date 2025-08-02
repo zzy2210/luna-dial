@@ -196,7 +196,7 @@ func (c *UserConverter) BizToData(bizUser *biz.User) *User {
 
 	return &User{
 		ID:        bizUser.ID,
-		UserName:  bizUser.UserName,
+		UserName:  bizUser.Username,
 		Name:      bizUser.Name,
 		Email:     bizUser.Email,
 		Password:  bizUser.Password,
@@ -213,7 +213,7 @@ func (c *UserConverter) DataToBiz(dataUser *User) *biz.User {
 
 	return &biz.User{
 		ID:        dataUser.ID,
-		UserName:  dataUser.UserName,
+		Username:  dataUser.UserName,
 		Name:      dataUser.Name,
 		Email:     dataUser.Email,
 		Password:  dataUser.Password,

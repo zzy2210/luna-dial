@@ -86,7 +86,7 @@ func TestCreateUser(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, user)
 		if user != nil {
-			assert.Equal(t, param.UserName, user.UserName)
+			assert.Equal(t, param.UserName, user.Username)
 			assert.Equal(t, param.Name, user.Name)
 			assert.Equal(t, param.Email, user.Email)
 			assert.NotEmpty(t, user.ID)
@@ -168,7 +168,7 @@ func TestCreateUser(t *testing.T) {
 		// 模拟用户名已存在
 		existingUser := &User{
 			ID:       "existing-id",
-			UserName: "existinguser",
+			Username: "existinguser",
 			Email:    "existing@example.com",
 		}
 		mockRepo.On("GetUserByUserName", mock.Anything, param.UserName).Return(existingUser, nil)
@@ -271,7 +271,7 @@ func TestUpdateUser(t *testing.T) {
 		// 设置 mock 期望
 		existingUser := &User{
 			ID:        "550e8400e29b41d4a716446655440000",
-			UserName:  "testuser",
+			Username:  "testuser",
 			Name:      "原姓名",
 			Email:     "test@example.com",
 			Password:  "hashedpassword",
@@ -339,7 +339,7 @@ func TestDeleteUser(t *testing.T) {
 		// 设置 mock 期望
 		existingUser := &User{
 			ID:       "550e8400e29b41d4a716446655440000",
-			UserName: "testuser",
+			Username: "testuser",
 			Email:    "test@example.com",
 		}
 		mockRepo.On("GetUserByID", mock.Anything, param.UserID).Return(existingUser, nil)
@@ -406,7 +406,7 @@ func TestGetUser(t *testing.T) {
 		// 设置 mock 期望
 		expectedUser := &User{
 			ID:        "550e8400e29b41d4a716446655440000",
-			UserName:  "testuser",
+			Username:  "testuser",
 			Name:      "测试用户",
 			Email:     "test@example.com",
 			Password:  "hashedpassword",
@@ -475,7 +475,7 @@ func TestUserLogin(t *testing.T) {
 		usecase, mockRepo := setupTest()
 
 		param := UserLoginParam{
-			UserName: "testuser",
+			Username: "testuser",
 			Password: "correctpassword",
 		}
 
@@ -484,14 +484,14 @@ func TestUserLogin(t *testing.T) {
 		hashedPassword := string(hashPassword(param.Password))
 		expectedUser := &User{
 			ID:        "550e8400e29b41d4a716446655440000",
-			UserName:  "testuser",
+			Username:  "testuser",
 			Name:      "测试用户",
 			Email:     "test@example.com",
 			Password:  hashedPassword,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-		mockRepo.On("GetUserByUserName", mock.Anything, param.UserName).Return(expectedUser, nil)
+		mockRepo.On("GetUserByUserName", mock.Anything, param.Username).Return(expectedUser, nil)
 
 		user, err := usecase.UserLogin(context.Background(), param)
 
@@ -505,11 +505,11 @@ func TestUserLogin(t *testing.T) {
 		usecase, mockRepo := setupTest()
 
 		param := UserLoginParam{
-			UserName: "nonexistentuser",
+			Username: "nonexistentuser",
 			Password: "anypassword",
 		}
 
-		mockRepo.On("GetUserByUserName", mock.Anything, param.UserName).Return(nil, ErrUserNotFound)
+		mockRepo.On("GetUserByUserName", mock.Anything, param.Username).Return(nil, ErrUserNotFound)
 
 		user, err := usecase.UserLogin(context.Background(), param)
 
@@ -522,16 +522,16 @@ func TestUserLogin(t *testing.T) {
 		usecase, mockRepo := setupTest()
 
 		param := UserLoginParam{
-			UserName: "testuser",
+			Username: "testuser",
 			Password: "wrongpassword",
 		}
 
 		existingUser := &User{
 			ID:       "550e8400e29b41d4a716446655440000",
-			UserName: "testuser",
+			Username: "testuser",
 			Password: "hashed_correctpassword",
 		}
-		mockRepo.On("GetUserByUserName", mock.Anything, param.UserName).Return(existingUser, nil)
+		mockRepo.On("GetUserByUserName", mock.Anything, param.Username).Return(existingUser, nil)
 
 		user, err := usecase.UserLogin(context.Background(), param)
 
@@ -544,7 +544,7 @@ func TestUserLogin(t *testing.T) {
 		usecase, _ := setupTest()
 
 		param := UserLoginParam{
-			UserName: "",
+			Username: "",
 			Password: "password",
 		}
 
@@ -559,7 +559,7 @@ func TestUserLogin(t *testing.T) {
 		usecase, _ := setupTest()
 
 		param := UserLoginParam{
-			UserName: "testuser",
+			Username: "testuser",
 			Password: "",
 		}
 
@@ -574,19 +574,19 @@ func TestUserLogin(t *testing.T) {
 		usecase, mockRepo := setupTest()
 
 		param := UserLoginParam{
-			UserName: "test@example.com",
+			Username: "test@example.com",
 			Password: "correctpassword",
 		}
 
 		// 可以尝试通过邮箱查找用户
 		expectedUser := &User{
 			ID:       "550e8400e29b41d4a716446655440000",
-			UserName: "testuser",
+			Username: "testuser",
 			Email:    "test@example.com",
 			Password: "hashed_correctpassword",
 		}
-		mockRepo.On("GetUserByUserName", mock.Anything, param.UserName).Return(nil, ErrUserNotFound)
-		mockRepo.On("GetUserByEmail", mock.Anything, param.UserName).Return(expectedUser, nil)
+		mockRepo.On("GetUserByUserName", mock.Anything, param.Username).Return(nil, ErrUserNotFound)
+		mockRepo.On("GetUserByEmail", mock.Anything, param.Username).Return(expectedUser, nil)
 
 		user, err := usecase.UserLogin(context.Background(), param)
 
@@ -603,7 +603,7 @@ func TestUser_Fields(t *testing.T) {
 	now := time.Now()
 	user := User{
 		ID:        "550e8400e29b41d4a716446655440000",
-		UserName:  "testuser",
+		Username:  "testuser",
 		Name:      "测试用户",
 		Email:     "test@example.com",
 		Password:  "hashedpassword",
@@ -612,7 +612,7 @@ func TestUser_Fields(t *testing.T) {
 	}
 
 	assert.Equal(t, "550e8400e29b41d4a716446655440000", user.ID)
-	assert.Equal(t, "testuser", user.UserName)
+	assert.Equal(t, "testuser", user.Username)
 	assert.Equal(t, "测试用户", user.Name)
 	assert.Equal(t, "test@example.com", user.Email)
 	assert.Equal(t, "hashedpassword", user.Password)
@@ -664,11 +664,11 @@ func TestUpdateUserParam_Fields(t *testing.T) {
 // TestUserLoginParam_Fields 测试登录参数结构体
 func TestUserLoginParam_Fields(t *testing.T) {
 	param := UserLoginParam{
-		UserName: "loginuser",
+		Username: "loginuser",
 		Password: "loginpassword",
 	}
 
-	assert.Equal(t, "loginuser", param.UserName)
+	assert.Equal(t, "loginuser", param.Username)
 	assert.Equal(t, "loginpassword", param.Password)
 }
 

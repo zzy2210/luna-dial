@@ -112,7 +112,7 @@ func (s *Service) OptionalSessionMiddleware() echo.MiddlewareFunc {
 }
 
 // CreateSession 创建新的session
-func (s *Service) CreateSession(ctx context.Context, userID int64, username string) (*data.SessionResponse, error) {
+func (s *Service) CreateSession(ctx context.Context, userID string, username string) (*data.SessionResponse, error) {
 	return s.sessionManager.CreateSession(ctx, userID, username)
 }
 
@@ -122,7 +122,7 @@ func (s *Service) DeleteSession(ctx context.Context, sessionID string) error {
 }
 
 // DeleteUserSessions 删除用户的所有session
-func (s *Service) DeleteUserSessions(ctx context.Context, userID int64) error {
+func (s *Service) DeleteUserSessions(ctx context.Context, userID string) error {
 	return s.sessionManager.DeleteUserSessions(ctx, userID)
 }
 
@@ -146,4 +146,29 @@ func GetSessionIDFromContext(c echo.Context) (string, bool) {
 
 	sessionID, ok := sessionIDVal.(string)
 	return sessionID, ok
+}
+
+// 从 ctx 获取用户信息 id，name
+func GetUserFromContext(c echo.Context) (string, string, error) {
+	userIDVal := c.Get("user_id")
+	if userIDVal == nil {
+		return "", "", ErrSessionMissing
+	}
+
+	userID, ok := userIDVal.(string)
+	if !ok {
+		return "", "", ErrSessionMissing
+	}
+
+	usernameVal := c.Get("username")
+	if usernameVal == nil {
+		return "", "", ErrSessionMissing
+	}
+
+	username, ok := usernameVal.(string)
+	if !ok {
+		return "", "", ErrSessionMissing
+	}
+
+	return username, userID, nil
 }

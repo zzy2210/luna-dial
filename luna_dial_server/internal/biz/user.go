@@ -14,7 +14,7 @@ import (
 
 type User struct {
 	ID        string    `json:"id"`
-	UserName  string    `json:"user_name"`
+	Username  string    `json:"user_name"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	Password  string    `json:"password"`
@@ -51,7 +51,7 @@ type GetUserParam struct {
 
 // 用户登录参数
 type UserLoginParam struct {
-	UserName string
+	Username string
 	Password string
 }
 
@@ -106,7 +106,7 @@ func (uc *UserUsecase) CreateUser(ctx context.Context, param CreateUserParam) (*
 	id := uuid.NewString()
 	user := &User{
 		ID:        id,
-		UserName:  param.UserName,
+		Username:  param.UserName,
 		Name:      param.Name,
 		Email:     param.Email,
 		Password:  string(hashPassword(param.Password)),
@@ -214,11 +214,11 @@ func (uc *UserUsecase) GetUser(ctx context.Context, param GetUserParam) (*User, 
 
 // 用户登录
 func (uc *UserUsecase) UserLogin(ctx context.Context, param UserLoginParam) (*User, error) {
-	if param.UserName == "" || param.Password == "" {
+	if param.Username == "" || param.Password == "" {
 		return nil, ErrInvalidInput // 参数不合法
 	}
 
-	user, err := uc.UserRepo.GetUserByUserName(ctx, param.UserName)
+	user, err := uc.UserRepo.GetUserByUserName(ctx, param.Username)
 	if err != nil {
 		if err == ErrUserNotFound {
 			return nil, ErrUserNotFound // 用户不存在
