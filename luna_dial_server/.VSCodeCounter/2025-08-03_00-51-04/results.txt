@@ -1,0 +1,92 @@
+Date : 2025-08-03 00:51:04
+Directory : /home/y1nhui/work/github_own/luna-dial/luna_dial_server
+Total : 48 files,  6648 codes, 569 comments, 1268 blanks, all 8485 lines
+
+Languages
++------------------+------------+------------+------------+------------+------------+
+| language         | files      | code       | comment    | blank      | total      |
++------------------+------------+------------+------------+------------+------------+
+| Go               |         38 |      5,825 |        552 |      1,119 |      7,496 |
+| Markdown         |          3 |        514 |          0 |        118 |        632 |
+| Go Checksum File |          1 |        191 |          0 |          1 |        192 |
+| MS SQL           |          4 |         65 |         17 |         22 |        104 |
+| Go Module File   |          1 |         38 |          0 |          4 |         42 |
+| Ini              |          1 |         15 |          0 |          4 |         19 |
++------------------+------------+------------+------------+------------+------------+
+
+Directories
++---------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                              | files      | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                 |         48 |      6,648 |        569 |      1,268 |      8,485 |
+| . (Files)                                                                                         |          2 |        229 |          0 |          5 |        234 |
+| cmd                                                                                               |          2 |         42 |          5 |         13 |         60 |
+| cmd (Files)                                                                                       |          1 |          4 |          0 |          2 |          6 |
+| cmd/init                                                                                          |          1 |         38 |          5 |         11 |         54 |
+| configs                                                                                           |          1 |         15 |          0 |          4 |         19 |
+| doc                                                                                               |          2 |        422 |          0 |         76 |        498 |
+| docs                                                                                              |          1 |         92 |          0 |         42 |        134 |
+| examples                                                                                          |          1 |         33 |          7 |         11 |         51 |
+| internal                                                                                          |         35 |      5,750 |        540 |      1,095 |      7,385 |
+| internal/biz                                                                                      |         15 |      4,207 |        371 |        753 |      5,331 |
+| internal/data                                                                                     |          7 |        838 |        101 |        206 |      1,145 |
+| internal/model                                                                                    |          2 |         15 |          4 |          7 |         26 |
+| internal/server                                                                                   |          1 |          1 |          0 |          1 |          2 |
+| internal/service                                                                                  |         10 |        689 |         64 |        128 |        881 |
+| migrations                                                                                        |          4 |         65 |         17 |         22 |        104 |
++---------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++---------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| filename                                                                                          | language         | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/cmd/init/main.go                          | Go               |         38 |          5 |         11 |         54 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/cmd/main.go                               | Go               |          4 |          0 |          2 |          6 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/configs/config.ini                        | Ini              |         15 |          0 |          4 |         19 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/doc/DDD文档.md                              | Markdown         |        135 |          0 |         36 |        171 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/doc/TDD测试计划.md                            | Markdown         |        287 |          0 |         40 |        327 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/docs/SYSTEM_INIT.md                       | Markdown         |         92 |          0 |         42 |        134 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/examples/main_with_init.go                | Go               |         33 |          7 |         11 |         51 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/go.mod                                    | Go Module File   |         38 |          0 |          4 |         42 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/go.sum                                    | Go Checksum File |        191 |          0 |          1 |        192 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/errors.go                    | Go               |         42 |          5 |          7 |         54 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/journal.go                   | Go               |        201 |         21 |         34 |        256 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/journal_repo.go              | Go               |         13 |          0 |          3 |         16 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/journal_test.go              | Go               |        494 |         53 |        107 |        654 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/period.go                    | Go               |        170 |         25 |         29 |        224 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/period_test.go               | Go               |        810 |         21 |         31 |        862 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/plan.go                      | Go               |         82 |          7 |         18 |        107 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/plan_test.go                 | Go               |        489 |         51 |         82 |        622 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/task.go                      | Go               |        425 |         67 |         81 |        573 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/task_repo.go                 | Go               |         14 |          0 |          3 |         17 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/task_test.go                 | Go               |        560 |         56 |        137 |        753 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/user.go                      | Go               |        247 |         27 |         38 |        312 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/user_repo.go                 | Go               |         10 |          0 |          3 |         13 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/user_test.go                 | Go               |        633 |         37 |        175 |        845 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/biz/util_test.go                 | Go               |         17 |          1 |          5 |         23 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/data/converter.go                | Go               |        196 |         18 |         36 |        250 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/data/data.go                     | Go               |         27 |          5 |          9 |         41 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/data/models.go                   | Go               |         38 |          4 |          5 |         47 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/data/repo.go                     | Go               |        194 |          8 |         51 |        253 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/data/session.go                  | Go               |         41 |         13 |         14 |         68 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/data/session_memory.go           | Go               |        153 |         20 |         42 |        215 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/data/systemConfig.go             | Go               |        189 |         33 |         49 |        271 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/model/errors.go                  | Go               |         10 |          4 |          5 |         19 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/model/request.go                 | Go               |          5 |          0 |          2 |          7 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/server/server.go                 | Go               |          1 |          0 |          1 |          2 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/service/auth_handle.go           | Go               |        134 |          8 |         16 |        158 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/service/journal_handle.go        | Go               |         21 |          1 |          5 |         27 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/service/plan_handle.go           | Go               |         21 |          0 |          5 |         26 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/service/request.go               | Go               |         41 |          0 |          6 |         47 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/service/response.go              | Go               |         83 |         11 |         15 |        109 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/service/service.go               | Go               |         60 |          6 |         19 |         85 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/service/session.go               | Go               |        131 |         18 |         26 |        175 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/service/task_handle.go           | Go               |         95 |         11 |         20 |        126 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/service/task_handle_test.go      | Go               |         56 |          4 |          8 |         68 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/internal/service/user_handle.go           | Go               |         47 |          5 |          8 |         60 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/migrations/0001_init_schema.down.sql      | MS SQL           |          4 |          4 |          4 |         12 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/migrations/0001_init_schema.up.sql        | MS SQL           |         59 |          5 |         13 |         77 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/migrations/0002_init_system_data.down.sql | MS SQL           |          2 |          4 |          3 |          9 |
+| /home/y1nhui/work/github_own/luna-dial/luna_dial_server/migrations/0002_init_system_data.up.sql   | MS SQL           |          0 |          4 |          2 |          6 |
+| Total                                                                                             |                  |      6,648 |        569 |      1,268 |      8,485 |
++---------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
