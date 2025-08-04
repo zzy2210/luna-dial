@@ -1,0 +1,158 @@
+# Luna Dial Server API Test Collection
+# VS Code REST Client Extension
+# 可以单独执行每个请求，使用 ### 分隔
+
+@baseUrl = http://localhost:8081
+@sessionId = b49baaff19259275aeee61d91f017439c674679ec3a4b76c643960e8964b8b86
+
+### 健康检查
+GET {{baseUrl}}/health
+
+### 版本信息
+GET {{baseUrl}}/version
+
+### 用户登录
+# @name login
+POST {{baseUrl}}/api/v1/public/auth/login
+Content-Type: application/json
+
+{
+    "username": "admin",
+    "password": "admin@123"
+}
+
+### 获取用户资料
+GET {{baseUrl}}/api/v1/auth/profile
+Authorization: Bearer {{sessionId}}
+
+### 获取当前用户信息
+GET {{baseUrl}}/api/v1/users/me
+Authorization: Bearer {{sessionId}}
+
+### 用户登出
+POST {{baseUrl}}/api/v1/auth/logout
+Authorization: Bearer {{sessionId}}
+
+### 登出所有设备
+DELETE {{baseUrl}}/api/v1/auth/logout-all
+Authorization: Bearer {{sessionId}}
+
+### 获取日志列表
+GET {{baseUrl}}/api/v1/journals?period=2023-08&page=1&limit=10
+Authorization: Bearer {{sessionId}}
+
+### 创建日志
+POST {{baseUrl}}/api/v1/journals
+Content-Type: application/json
+Authorization: Bearer {{sessionId}}
+
+{
+    "title": "每日工作日志",
+    "content": "今天完成了 Luna Dial 项目的 API 文档编写...",
+    "tags": ["工作", "开发", "文档"]
+}
+
+### 更新日志
+PUT {{baseUrl}}/api/v1/journals/journal_id_here
+Content-Type: application/json
+Authorization: Bearer {{sessionId}}
+
+{
+    "title": "更新的每日工作日志",
+    "content": "今天完成了 Luna Dial 项目的 API 文档编写和测试...",
+    "tags": ["工作", "开发", "文档", "测试"]
+}
+
+### 删除日志
+DELETE {{baseUrl}}/api/v1/journals/journal_id_here
+Authorization: Bearer {{sessionId}}
+
+### 获取任务列表 - 所有任务
+GET {{baseUrl}}/api/v1/tasks
+Authorization: Bearer {{sessionId}}
+
+### 获取任务列表 - 按状态筛选
+GET {{baseUrl}}/api/v1/tasks?status=pending&page=1&limit=10
+Authorization: Bearer {{sessionId}}
+
+### 创建任务
+POST {{baseUrl}}/api/v1/tasks
+Content-Type: application/json
+Authorization: Bearer {{sessionId}}
+
+{
+    "title": "完成项目文档",
+    "description": "编写完整的 API 文档和用户手册",
+    "priority": "high",
+    "due_date": "2023-08-10T18:00:00Z",
+    "tags": ["文档", "API", "重要"]
+}
+
+### 创建子任务
+POST {{baseUrl}}/api/v1/tasks/parent_task_id_here/subtasks
+Content-Type: application/json
+Authorization: Bearer {{sessionId}}
+
+{
+    "title": "审查 API 文档",
+    "description": "检查 API 文档的准确性和完整性",
+    "priority": "medium",
+    "due_date": "2023-08-09T12:00:00Z",
+    "tags": ["审查", "文档"]
+}
+
+### 更新任务
+PUT {{baseUrl}}/api/v1/tasks/task_id_here
+Content-Type: application/json
+Authorization: Bearer {{sessionId}}
+
+{
+    "title": "完成项目文档（更新）",
+    "description": "编写完整的 API 文档、用户手册和部署指南",
+    "priority": "high",
+    "due_date": "2023-08-11T18:00:00Z",
+    "status": "pending"
+}
+
+### 完成任务
+POST {{baseUrl}}/api/v1/tasks/task_id_here/complete
+Authorization: Bearer {{sessionId}}
+
+### 更新任务评分
+PUT {{baseUrl}}/api/v1/tasks/task_id_here/score
+Content-Type: application/json
+Authorization: Bearer {{sessionId}}
+
+{
+    "score": 90,
+    "comment": "文档质量很高，内容详细完整"
+}
+
+### 删除任务
+DELETE {{baseUrl}}/api/v1/tasks/task_id_here
+Authorization: Bearer {{sessionId}}
+
+### 获取计划列表
+GET {{baseUrl}}/api/v1/plans
+Authorization: Bearer {{sessionId}}
+
+### 获取计划列表 - 按类型筛选
+GET {{baseUrl}}/api/v1/plans?type=daily&page=1&limit=10
+Authorization: Bearer {{sessionId}}
+
+### 测试错误处理 - 无效的登录
+POST {{baseUrl}}/api/v1/public/auth/login
+Content-Type: application/json
+
+{
+    "username": "invalid_user",
+    "password": "wrong_password"
+}
+
+### 测试未授权访问
+GET {{baseUrl}}/api/v1/tasks
+# 注意：这里没有 Cookie，应该返回 401
+
+### 测试不存在的资源
+GET {{baseUrl}}/api/v1/tasks/non_existent_task_id
+Authorization: Bearer {{sessionId}}

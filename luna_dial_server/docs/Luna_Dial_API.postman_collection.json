@@ -1,0 +1,515 @@
+{
+  "info": {
+    "name": "Luna Dial Server API",
+    "description": "Luna Dial Server API Collection for testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081",
+      "type": "string"
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Public APIs",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Version Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/version",
+              "host": ["{{baseUrl}}"],
+              "path": ["version"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.session_id) {",
+                  "        pm.collectionVariables.set('sessionId', response.data.session_id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"testpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "public", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            }
+          }
+        },
+        {
+          "name": "Logout All Sessions",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "logout-all"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Journals",
+      "item": [
+        {
+          "name": "List Journals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/journals?period=2023-08&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "journals"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "2023-08"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Journal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Daily Journal\",\n  \"content\": \"Today I worked on the Luna Dial project...\",\n  \"tags\": [\"work\", \"development\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/journals",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "journals"]
+            }
+          }
+        },
+        {
+          "name": "Update Journal",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Daily Journal\",\n  \"content\": \"Today I worked on the Luna Dial project and finished the API documentation...\",\n  \"tags\": [\"work\", \"development\", \"documentation\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/journals/:journal_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "journals", ":journal_id"],
+              "variable": [
+                {
+                  "key": "journal_id",
+                  "value": "your_journal_id"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Journal",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/journals/:journal_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "journals", ":journal_id"],
+              "variable": [
+                {
+                  "key": "journal_id",
+                  "value": "your_journal_id"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "List Tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks?status=pending&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Complete API Documentation\",\n  \"description\": \"Write comprehensive API documentation for Luna Dial Server\",\n  \"priority\": \"high\",\n  \"due_date\": \"2023-08-10T18:00:00Z\",\n  \"tags\": [\"documentation\", \"api\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks"]
+            }
+          }
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Complete API Documentation\",\n  \"description\": \"Write comprehensive API documentation for Luna Dial Server with examples\",\n  \"priority\": \"high\",\n  \"due_date\": \"2023-08-10T18:00:00Z\",\n  \"status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/:task_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", ":task_id"],
+              "variable": [
+                {
+                  "key": "task_id",
+                  "value": "your_task_id"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Subtask",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Review documentation\",\n  \"description\": \"Review the API documentation for accuracy\",\n  \"priority\": \"medium\",\n  \"due_date\": \"2023-08-09T12:00:00Z\",\n  \"tags\": [\"review\", \"documentation\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/:task_id/subtasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", ":task_id", "subtasks"],
+              "variable": [
+                {
+                  "key": "task_id",
+                  "value": "your_parent_task_id"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Complete Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/:task_id/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", ":task_id", "complete"],
+              "variable": [
+                {
+                  "key": "task_id",
+                  "value": "your_task_id"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Task Score",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 85,\n  \"comment\": \"Good work, documentation is comprehensive\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/:task_id/score",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", ":task_id", "score"],
+              "variable": [
+                {
+                  "key": "task_id",
+                  "value": "your_task_id"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/:task_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", ":task_id"],
+              "variable": [
+                {
+                  "key": "task_id",
+                  "value": "your_task_id"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plans",
+      "item": [
+        {
+          "name": "List Plans",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "session_id={{sessionId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/plans?type=daily&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "plans"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "daily"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

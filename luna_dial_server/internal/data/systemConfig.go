@@ -130,11 +130,11 @@ func (sc *SystemConfig) runMigrations(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("创建迁移实例失败: %w", err)
 	}
-	defer m.Close()
 
 	// 运行迁移 - migrate会自动判断哪些需要执行
 	err = m.Up()
 	if err != nil && err != migrate.ErrNoChange {
+		// 不关闭迁移实例，因为这可能会影响数据库连接
 		return fmt.Errorf("执行迁移失败: %w", err)
 	}
 
@@ -144,6 +144,7 @@ func (sc *SystemConfig) runMigrations(ctx context.Context) error {
 		log.Println("数据库迁移完成")
 	}
 
+	// 不调用 m.Close() 以避免关闭底层数据库连接
 	return nil
 }
 
@@ -242,7 +243,7 @@ func (sc *SystemConfig) createAdminUser(ctx context.Context) error {
 		UserName:  "admin",
 		Name:      "系统管理员",
 		Email:     "admin@luna-dial.com",
-		Password:  string(hashedPassword),
+		Password:  fmt.Sprintf("%x", hashedPassword), // 转换为十六进制字符串
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}

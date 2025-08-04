@@ -1,0 +1,156 @@
+# Luna Dial Server API Test Collection (Advanced)
+# VS Code REST Client Extension
+# 包含变量提取和自动化测试流程
+
+@baseUrl = http://localhost:8081
+
+### 1. 健康检查
+GET {{baseUrl}}/health
+
+### 2. 版本信息
+GET {{baseUrl}}/version
+
+### 3. 登录并提取 Session ID
+# @name login
+POST {{baseUrl}}/api/v1/public/auth/login
+Content-Type: application/json
+
+{
+    "username": "testuser",
+    "password": "testpassword"
+}
+
+### 4. 获取用户资料（使用登录响应中的 session）
+GET {{baseUrl}}/api/v1/auth/profile
+Cookie: session_id={{login.response.body.data.session_id}}
+
+### 5. 创建任务并提取任务 ID
+# @name createTask
+POST {{baseUrl}}/api/v1/tasks
+Content-Type: application/json
+Cookie: session_id={{login.response.body.data.session_id}}
+
+{
+    "title": "API 测试任务",
+    "description": "使用 REST Client 测试 Luna Dial API",
+    "priority": "high",
+    "due_date": "2023-08-15T18:00:00Z",
+    "tags": ["测试", "API"]
+}
+
+### 6. 为上面创建的任务添加子任务
+POST {{baseUrl}}/api/v1/tasks/{{createTask.response.body.data.id}}/subtasks
+Content-Type: application/json
+Cookie: session_id={{login.response.body.data.session_id}}
+
+{
+    "title": "子任务：测试所有接口",
+    "description": "逐一测试每个 API 接口的功能",
+    "priority": "medium",
+    "due_date": "2023-08-14T12:00:00Z",
+    "tags": ["子任务", "测试"]
+}
+
+### 7. 更新刚创建的任务
+PUT {{baseUrl}}/api/v1/tasks/{{createTask.response.body.data.id}}
+Content-Type: application/json
+Cookie: session_id={{login.response.body.data.session_id}}
+
+{
+    "title": "API 测试任务（已更新）",
+    "description": "使用 REST Client 全面测试 Luna Dial API 的所有功能",
+    "priority": "high",
+    "due_date": "2023-08-16T18:00:00Z",
+    "status": "pending"
+}
+
+### 8. 获取任务列表（验证任务已创建）
+GET {{baseUrl}}/api/v1/tasks
+Cookie: session_id={{login.response.body.data.session_id}}
+
+### 9. 完成任务
+POST {{baseUrl}}/api/v1/tasks/{{createTask.response.body.data.id}}/complete
+Cookie: session_id={{login.response.body.data.session_id}}
+
+### 10. 为任务评分
+PUT {{baseUrl}}/api/v1/tasks/{{createTask.response.body.data.id}}/score
+Content-Type: application/json
+Cookie: session_id={{login.response.body.data.session_id}}
+
+{
+    "score": 95,
+    "comment": "API 测试完成度很高，功能正常"
+}
+
+### 11. 创建日志并提取日志 ID
+# @name createJournal
+POST {{baseUrl}}/api/v1/journals
+Content-Type: application/json
+Cookie: session_id={{login.response.body.data.session_id}}
+
+{
+    "title": "API 测试日志",
+    "content": "今天使用 VS Code REST Client 对 Luna Dial API 进行了全面测试。所有接口都工作正常，响应格式符合预期。",
+    "tags": ["测试", "API", "日志"]
+}
+
+### 12. 更新刚创建的日志
+PUT {{baseUrl}}/api/v1/journals/{{createJournal.response.body.data.id}}
+Content-Type: application/json
+Cookie: session_id={{login.response.body.data.session_id}}
+
+{
+    "title": "API 测试日志（完整版）",
+    "content": "今天使用 VS Code REST Client 对 Luna Dial API 进行了全面测试。\n\n测试结果：\n- 所有接口都工作正常\n- 响应格式符合预期\n- Session 认证机制运行良好\n- 错误处理适当\n\n建议：无",
+    "tags": ["测试", "API", "日志", "完成"]
+}
+
+### 13. 获取日志列表
+GET {{baseUrl}}/api/v1/journals?period=2023-08&page=1&limit=5
+Cookie: session_id={{login.response.body.data.session_id}}
+
+### 14. 获取计划列表
+GET {{baseUrl}}/api/v1/plans
+Cookie: session_id={{login.response.body.data.session_id}}
+
+### 15. 登出当前会话
+POST {{baseUrl}}/api/v1/auth/logout
+Cookie: session_id={{login.response.body.data.session_id}}
+
+### ========== 错误测试 ==========
+
+### E1. 测试无效登录
+POST {{baseUrl}}/api/v1/public/auth/login
+Content-Type: application/json
+
+{
+    "username": "invalid_user",
+    "password": "wrong_password"
+}
+
+### E2. 测试未授权访问
+GET {{baseUrl}}/api/v1/tasks
+
+### E3. 测试无效的任务 ID
+GET {{baseUrl}}/api/v1/tasks/invalid_task_id
+Cookie: session_id={{login.response.body.data.session_id}}
+
+### E4. 测试无效的请求体
+POST {{baseUrl}}/api/v1/tasks
+Content-Type: application/json
+Cookie: session_id={{login.response.body.data.session_id}}
+
+{
+    "title": "",
+    "invalid_field": "should_be_ignored"
+}
+
+### ========== 性能测试 ==========
+
+### P1. 批量获取任务（测试分页）
+GET {{baseUrl}}/api/v1/tasks?page=1&limit=100
+Cookie: session_id={{login.response.body.data.session_id}}
+
+### P2. 获取大量日志
+GET {{baseUrl}}/api/v1/journals?page=1&limit=50
+Cookie: session_id={{login.response.body.data.session_id}}

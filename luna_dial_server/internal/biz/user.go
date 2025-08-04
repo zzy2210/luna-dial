@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"net/mail"
 	"time"
 	"unicode"
@@ -109,7 +110,7 @@ func (uc *UserUsecase) CreateUser(ctx context.Context, param CreateUserParam) (*
 		Username:  param.UserName,
 		Name:      param.Name,
 		Email:     param.Email,
-		Password:  string(hashPassword(param.Password)),
+		Password:  hashPasswordToHex(param.Password), // 使用统一的哈希方法
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -149,7 +150,7 @@ func (uc *UserUsecase) UpdateUser(ctx context.Context, param UpdateUserParam) (*
 			return nil, ErrPasswordTooWeak // 密码强度不足
 		}
 		// 使用国密进行密码hash
-		user.Password = string(hashPassword(*param.Password))
+		user.Password = hashPasswordToHex(*param.Password)
 	}
 	if !(isValidName(*param.Name)) {
 		return nil, ErrUserNameInvalid // 用户名格式不合法
@@ -225,13 +226,21 @@ func (uc *UserUsecase) UserLogin(ctx context.Context, param UserLoginParam) (*Us
 		}
 		return nil, err // 其他错误
 	}
-	if user.Password != string(hashPassword(param.Password)) {
+	if user.Password != hashPasswordToHex(param.Password) {
 		return nil, ErrPasswordIncorrect // 密码错误
 	}
 
 	return user, nil
 }
 
+// hashPasswordToHex 将密码哈希为十六进制字符串（统一的哈希方法）
+func hashPasswordToHex(password string) string {
+	hasher := sm3.New()
+	hasher.Write([]byte(password))
+	return fmt.Sprintf("%x", hasher.Sum(nil))
+}
+
+// hashPassword 旧版本的哈希函数，保留用于兼容性
 func hashPassword(password string) []byte {
 	return sm3.Sm3Sum([]byte(password)) // 使用国密SM3算法进行密码哈希
 }

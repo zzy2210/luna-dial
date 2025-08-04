@@ -1,25 +1,31 @@
 package service
 
 import (
-	"time"
+	"luna_dial/internal/biz"
 
 	"github.com/labstack/echo/v4"
 )
 
 func (s *Service) handleListPlans(c echo.Context) error {
-	return c.JSON(200, &Response{
-		Code:      200,
-		Message:   "list plans endpoint",
-		Success:   true,
-		Timestamp: time.Now().Unix(),
+	var req ListPlansRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+	}
+	userID, _, err := GetUserFromContext(c)
+	if err != nil {
+		return c.JSON(401, NewErrorResponse(401, "User not found"))
+	}
+	groupBy, err := PeriodTypeFromString(req.PeriodType)
+	if err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid period type"))
+	}
+	s.planUsecase.GetPlanByPeriod(c.Request().Context(), biz.GetPlanByPeriodParam{
+		UserID: userID,
+		Period: biz.Period{
+			Start: req.StartDate,
+			End:   req.EndDate,
+		},
+		GroupBy: groupBy,
 	})
-}
-
-func (s *Service) handleCreatePlan(c echo.Context) error {
-	return c.JSON(200, &Response{
-		Code:      200,
-		Message:   "create plan endpoint",
-		Success:   true,
-		Timestamp: time.Now().Unix(),
-	})
+	return c.JSON(200, NewSuccessResponse("Plans retrieved successfully"))
 }

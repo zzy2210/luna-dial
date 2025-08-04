@@ -16,6 +16,7 @@ type Service struct {
 	journalUsecase *biz.JournalUsecase
 	userUsecase    *biz.UserUsecase
 	taskUsecase    *biz.TaskUsecase
+	planUsecase    *biz.PlanUsecase
 }
 
 func NewService(ctx context.Context, e *echo.Echo, dataInstance *data.Data) *Service {
@@ -24,7 +25,7 @@ func NewService(ctx context.Context, e *echo.Echo, dataInstance *data.Data) *Ser
 	journalRepo := data.NewJournalRepo(dataInstance.DB)
 	userRepo := data.NewUserRepo(dataInstance.DB)
 
-	return &Service{
+	s := &Service{
 		e:              e,
 		systemConfig:   dataInstance.SystemConfig,
 		sessionManager: dataInstance.SessionManager,
@@ -32,6 +33,8 @@ func NewService(ctx context.Context, e *echo.Echo, dataInstance *data.Data) *Ser
 		userUsecase:    biz.NewUserUsecase(userRepo),
 		taskUsecase:    biz.NewTaskUsecase(taskRepo),
 	}
+	s.planUsecase = biz.NewPlanUsecase(s.taskUsecase, s.journalUsecase)
+	return s
 }
 
 func (s *Service) SetupRouter() {
@@ -79,6 +82,7 @@ func (s *Service) setupSessionRoutes() {
 	taskGroup := protected.Group("/tasks")
 	taskGroup.GET("", s.handleListTasks)
 	taskGroup.POST("", s.handleCreateTask)
+	taskGroup.POST("/:task_id/subtasks", s.handleCreateSubTask)
 	taskGroup.PUT("/:task_id", s.handleUpdateTask)
 	taskGroup.DELETE("/:task_id", s.handleDeleteTask)
 	taskGroup.POST("/:task_id/complete", s.handleCompleteTask)
@@ -86,5 +90,4 @@ func (s *Service) setupSessionRoutes() {
 
 	planGroup := protected.Group("/plans")
 	planGroup.GET("", s.handleListPlans)
-	planGroup.POST("", s.handleCreatePlan)
 }

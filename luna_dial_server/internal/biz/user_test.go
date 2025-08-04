@@ -481,7 +481,7 @@ func TestUserLogin(t *testing.T) {
 
 		// 设置 mock 期望
 
-		hashedPassword := string(hashPassword(param.Password))
+		hashedPassword := hashPasswordToHex(param.Password)
 		expectedUser := &User{
 			ID:        "550e8400e29b41d4a716446655440000",
 			Username:  "testuser",

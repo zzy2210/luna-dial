@@ -95,6 +95,13 @@ type UpdateJournalRequest struct {
 	Icon *string `json:"icon,omitempty"`
 }
 
+// 查看list
+type ListPlansRequest struct {
+	PeriodType string    `json:"period_type" validate:"required,oneof=day week month quarter year"`
+	StartDate  time.Time `json:"start_date" validate:"required"`
+	EndDate    time.Time `json:"end_date" validate:"required"`
+}
+
 func PeriodTypeFromString(s string) (biz.PeriodType, error) {
 	switch s {
 	case "day":

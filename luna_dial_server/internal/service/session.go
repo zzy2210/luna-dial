@@ -18,29 +18,30 @@ var (
 func (s *Service) SessionMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			// 从请求头获取Authorization session
+			var sessionID string
+
+			// 首先尝试从Authorization header获取session
 			authHeader := c.Request().Header.Get("Authorization")
-			if authHeader == "" {
-				return echo.NewHTTPError(401, map[string]string{
-					"error":   "unauthorized",
-					"message": "Authorization header is required",
-				})
+			if authHeader != "" {
+				const bearerPrefix = "Bearer "
+				if strings.HasPrefix(authHeader, bearerPrefix) {
+					sessionID = authHeader[len(bearerPrefix):]
+				}
 			}
 
-			// 验证Bearer session格式
-			const bearerPrefix = "Bearer "
-			if !strings.HasPrefix(authHeader, bearerPrefix) {
-				return echo.NewHTTPError(401, map[string]string{
-					"error":   "unauthorized",
-					"message": "Authorization header must start with 'Bearer '",
-				})
+			// 如果Authorization header中没有，则尝试从Cookie获取
+			if sessionID == "" {
+				cookie, err := c.Cookie("session_id")
+				if err == nil {
+					sessionID = cookie.Value
+				}
 			}
 
-			sessionID := authHeader[len(bearerPrefix):]
+			// 如果都没有找到session ID，返回错误
 			if sessionID == "" {
 				return echo.NewHTTPError(401, map[string]string{
 					"error":   "unauthorized",
-					"message": "Session ID is required",
+					"message": "Authorization header or session cookie is required",
 				})
 			}
 
