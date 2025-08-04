@@ -121,7 +121,6 @@ func (uc *JournalUsecase) CreateJournal(ctx context.Context, param CreateJournal
 // 编辑日志
 // 一样，暂时不支持更新时间类型
 func (uc *JournalUsecase) UpdateJournal(ctx context.Context, param UpdateJournalParam) (*Journal, error) {
-	// TODO: 添加权限验证和更新逻辑
 	if param.JournalID == "" || param.UserID == "" {
 		return nil, ErrInvalidInput
 	}

@@ -71,12 +71,18 @@ func (s *Service) setupSessionRoutes() {
 	userGroup.GET("/me", s.handleGetCurrentUser)
 
 	journalGroup := protected.Group("/journals")
-	journalGroup.GET("", s.handleListJournals)
+	journalGroup.GET("", s.handleListJournalsByPeriod)
 	journalGroup.POST("", s.handleCreateJournal)
+	journalGroup.PUT("/:journal_id", s.handleUpdateJournal)
+	journalGroup.DELETE("/:journal_id", s.handleDeleteJournal)
 
 	taskGroup := protected.Group("/tasks")
 	taskGroup.GET("", s.handleListTasks)
 	taskGroup.POST("", s.handleCreateTask)
+	taskGroup.PUT("/:task_id", s.handleUpdateTask)
+	taskGroup.DELETE("/:task_id", s.handleDeleteTask)
+	taskGroup.POST("/:task_id/complete", s.handleCompleteTask)
+	taskGroup.PUT("/:task_id/score", s.handleUpdateTaskScore)
 
 	planGroup := protected.Group("/plans")
 	planGroup.GET("", s.handleListPlans)

@@ -67,6 +67,34 @@ type DeleteTaskRequest struct {
 	TaskID string `json:"task_id" validate:"required"`
 }
 
+type ListJournalByPeriodRequest struct {
+	PeriodType string    `json:"period_type" validate:"required,oneof=day week month quarter year"`
+	StartDate  time.Time `json:"start_date" validate:"required"`
+	EndDate    time.Time `json:"end_date" validate:"required"`
+}
+
+// 新建日志请求
+type CreateJournalRequest struct {
+	Title       string    `json:"title" validate:"required"`
+	Content     string    `json:"content" validate:"required"`
+	JournalType string    `json:"journal_type" validate:"required,oneof=day week month quarter year"`
+	StartDate   time.Time `json:"start_date" validate:"required"`
+	EndDate     time.Time `json:"end_date" validate:"required"`
+
+	Icon string `json:"icon"`
+}
+
+// 更新日志请求
+type UpdateJournalRequest struct {
+	JournalID   string  `json:"journal_id" validate:"required"`
+	Title       *string `json:"title,omitempty"`
+	Content     *string `json:"content,omitempty"`
+	JournalType *string `json:"journal_type,omitempty" validate:"omitempty,oneof=day week month quarter year"`
+	// StartDate   *time.Time `json:"start_date,omitempty"`
+	// EndDate     *time.Time `json:"end_date,omitempty"`
+	Icon *string `json:"icon,omitempty"`
+}
+
 func PeriodTypeFromString(s string) (biz.PeriodType, error) {
 	switch s {
 	case "day":
