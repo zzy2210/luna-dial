@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"luna_dial/internal/biz"
 	"time"
 
@@ -9,19 +10,19 @@ import (
 
 // handleGetCurrentUser 获取当前用户详细信息
 func (s *Service) handleGetCurrentUser(c echo.Context) error {
-	session, ok := GetSessionFromContext(c)
-	if !ok {
-		return c.JSON(401, &Response{
-			Code:      401,
-			Message:   "Session not found",
-			Success:   false,
-			Timestamp: time.Now().Unix(),
-		})
+	userID, _, err := GetUserFromContext(c)
+	if err != nil {
+		return c.JSON(401, NewErrorResponse(401, fmt.Sprintf("Unauthorized: %v", err)))
+	}
+
+	session, flag := GetSessionFromContext(c)
+	if !flag {
+		return c.JSON(401, NewErrorResponse(401, "Unauthorized"))
 	}
 
 	// 从数据库获取用户完整信息
 	user, err := s.userUsecase.GetUser(c.Request().Context(), biz.GetUserParam{
-		UserID: session.UserID,
+		UserID: userID,
 	})
 	if err != nil {
 		return c.JSON(500, &Response{

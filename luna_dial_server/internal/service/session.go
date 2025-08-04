@@ -171,5 +171,5 @@ func GetUserFromContext(c echo.Context) (string, string, error) {
 		return "", "", ErrSessionMissing
 	}
 
-	return username, userID, nil
+	return userID, username, nil
 }
