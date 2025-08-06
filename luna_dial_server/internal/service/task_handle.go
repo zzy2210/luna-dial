@@ -65,19 +65,25 @@ func (s *Service) handleCreateTask(c echo.Context) error {
 
 	pType, err := PeriodTypeFromString(req.Priority)
 	if err != nil {
-		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid priority type: %s", req.Priority)))
+		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid period type: %s", req.Priority)))
+	}
+
+	priority, err := TaskPriorityFromString(req.Priority)
+	if err != nil {
+		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid priority: %s", req.Priority)))
 	}
 
 	task, err := s.taskUsecase.CreateTask(c.Request().Context(), biz.CreateTaskParam{
-		Title:  req.Title,
-		UserID: userID,
-		Type:   pType,
-		Period: biz.Period{
+		Title:    req.Title,
+		UserID:   userID,
+		Type:     pType,
+		Period:   biz.Period{
 			Start: req.StartDate,
 			End:   req.EndDate,
 		},
-		Icon: req.Icon,
-		Tags: req.Tags,
+		Icon:     req.Icon,
+		Tags:     req.Tags,
+		Priority: priority,
 	})
 	if err != nil {
 		return c.JSON(500, NewErrorResponse(500, "Failed to create task"))
@@ -154,8 +160,19 @@ func (s *Service) handleUpdateTask(c echo.Context) error {
 			End:   *req.EndDate,
 		}
 	}
-	if req.IsCompleted != nil {
-		updateParam.IsCompleted = req.IsCompleted
+	if req.Status != nil {
+		status, err := TaskStatusFromString(*req.Status)
+		if err != nil {
+			return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid status: %s", *req.Status)))
+		}
+		updateParam.Status = &status
+	}
+	if req.Priority != nil {
+		priority, err := TaskPriorityFromString(*req.Priority)
+		if err != nil {
+			return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid priority: %s", *req.Priority)))
+		}
+		updateParam.Priority = &priority
 	}
 	if req.Icon != nil {
 		updateParam.Icon = req.Icon
@@ -183,10 +200,11 @@ func (s *Service) handleCompleteTask(c echo.Context) error {
 		return c.JSON(401, NewErrorResponse(401, "User not found"))
 	}
 
+	status := biz.TaskStatusCompleted
 	s.taskUsecase.UpdateTask(c.Request().Context(), biz.UpdateTaskParam{
-		TaskID:      req.TaskID,
-		UserID:      userID,
-		IsCompleted: BoolPtr(true),
+		TaskID: req.TaskID,
+		UserID: userID,
+		Status: &status,
 	})
 	return c.JSON(200, NewSuccessResponseWithMessage("complete task endpoint", nil))
 }

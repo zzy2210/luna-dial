@@ -9,19 +9,40 @@ import (
 	"github.com/google/uuid"
 )
 
+// TaskStatus 任务状态枚举
+type TaskStatus int
+
+const (
+	TaskStatusNotStarted TaskStatus = iota // 未开始
+	TaskStatusInProgress                   // 进行中
+	TaskStatusCompleted                    // 已完成
+	TaskStatusCancelled                    // 已取消
+)
+
+// TaskPriority 任务优先级枚举
+type TaskPriority int
+
+const (
+	TaskPriorityLow    TaskPriority = iota // 低
+	TaskPriorityMedium                     // 中
+	TaskPriorityHigh                       // 高
+	TaskPriorityUrgent                     // 紧急
+)
+
 type Task struct {
-	ID          string     `json:"id"`
-	Title       string     `json:"title"`
-	TaskType    PeriodType `json:"type"`
-	TimePeriod  Period     `json:"period"`
-	Tags        []string   `json:"tags"`
-	Icon        string     `json:"icon"`
-	Score       int        `json:"score"`
-	IsCompleted bool       `json:"is_completed"`
-	ParentID    string     `json:"parent_id"`
-	UserID      string     `json:"user_id"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	ID         string       `json:"id"`
+	Title      string       `json:"title"`
+	TaskType   PeriodType   `json:"type"`
+	TimePeriod Period       `json:"period"`
+	Tags       []string     `json:"tags"`
+	Icon       string       `json:"icon"`
+	Score      int          `json:"score"`
+	Status     TaskStatus   `json:"status"`
+	Priority   TaskPriority `json:"priority"`
+	ParentID   string       `json:"parent_id"`
+	UserID     string       `json:"user_id"`
+	CreatedAt  time.Time    `json:"created_at"`
+	UpdatedAt  time.Time    `json:"updated_at"`
 }
 
 // 创建任务参数
@@ -33,6 +54,7 @@ type CreateTaskParam struct {
 	Tags     []string
 	Icon     string
 	Score    int
+	Priority TaskPriority
 	ParentID string
 }
 
@@ -42,11 +64,12 @@ type UpdateTaskParam struct {
 	UserID string
 	Title  *string
 	// Type        *PeriodType 暂时不运行修改任务类型吧
-	Period      *Period
-	Tags        *[]string
-	Icon        *string
-	Score       *int
-	IsCompleted *bool
+	Period   *Period
+	Tags     *[]string
+	Icon     *string
+	Score    *int
+	Status   *TaskStatus
+	Priority *TaskPriority
 }
 
 // 删除任务参数
@@ -162,6 +185,8 @@ func (uc *TaskUsecase) CreateTask(ctx context.Context, param CreateTaskParam) (*
 		Tags:       tags,
 		Icon:       param.Icon,
 		Score:      param.Score,
+		Status:     TaskStatusNotStarted, // 默认状态为未开始
+		Priority:   param.Priority,       // 使用传入的优先级，如果为0则默认为低优先级
 		UserID:     param.UserID,
 		ParentID:   param.ParentID,
 		CreatedAt:  time.Now(),
@@ -220,8 +245,11 @@ func (uc *TaskUsecase) UpdateTask(ctx context.Context, param UpdateTaskParam) (*
 	if param.Score != nil {
 		task.Score = *param.Score
 	}
-	if param.IsCompleted != nil {
-		task.IsCompleted = *param.IsCompleted
+	if param.Status != nil {
+		task.Status = *param.Status
+	}
+	if param.Priority != nil {
+		task.Priority = *param.Priority
 	}
 	err = uc.repo.UpdateTask(ctx, task)
 	if err != nil {
@@ -333,6 +361,8 @@ func (uc *TaskUsecase) CreateSubTask(ctx context.Context, param CreateSubTaskPar
 		Tags:       tags,
 		Icon:       param.Icon,
 		Score:      param.Score,
+		Status:     TaskStatusNotStarted, // 子任务默认状态为未开始
+		Priority:   parentTask.Priority,  // 等级与父任务一致
 		UserID:     param.UserID,
 		ParentID:   param.ParentID,
 		CreatedAt:  time.Now(),
