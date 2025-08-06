@@ -90,12 +90,15 @@ POST /api/v1/public/auth/login
   "success": true,
   "timestamp": 1691234567,
   "data": {
-    "session_id": "string",
-    "user_id": "string",
-    "username": "string"
+    "session_id": "9e936d7b20c034cad9ca192c108a7ae45a0bc40df9256d87a6bed145f47e5f62",
+    "expires_in": 86400
   }
 }
 ```
+
+**字段说明**:
+- `session_id`: 会话ID，用于后续认证
+- `expires_in`: 会话过期时间（秒）
 
 **错误响应**:
 ```json
@@ -121,26 +124,56 @@ POST /api/v1/public/auth/login
 GET /api/v1/auth/profile
 ```
 
-**描述**: 获取当前登录用户的详细信息
+**描述**: 获取当前登录用户的基本信息
 
 **响应**:
 ```json
 {
   "code": 200,
-  "message": "Success",
+  "message": "success",
   "success": true,
   "timestamp": 1691234567,
   "data": {
-    "id": "string",
-    "username": "string",
-    "email": "string",
-    "created_at": "2023-08-05T10:30:00Z",
-    "updated_at": "2023-08-05T10:30:00Z"
+    "user_id": "user_456",
+    "username": "john_doe",
+    "name": "John Doe",
+    "email": "john.doe@example.com"
   }
 }
 ```
 
-##### 2. 用户登出
+##### 2. 获取当前用户详细信息
+
+```http
+GET /api/v1/users/me
+```
+
+**描述**: 获取当前登录用户的详细信息，包含会话信息
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "success": true,
+  "timestamp": 1691234567,
+  "data": {
+    "user_id": "user_456",
+    "username": "john_doe",
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "created_at": "2023-08-01T10:30:00Z",
+    "updated_at": "2023-08-05T15:45:00Z",
+    "session": {
+      "session_id": "9e936d7b20c034cad9ca192c108a7ae45a0bc40df9256d87a6bed145f47e5f62",
+      "last_access_at": "2023-08-05T16:20:00Z",
+      "expires_at": "2023-08-06T10:30:00Z"
+    }
+  }
+}
+```
+
+##### 3. 用户登出
 
 ```http
 POST /api/v1/auth/logout
@@ -176,70 +209,58 @@ DELETE /api/v1/auth/logout-all
 }
 ```
 
-#### 用户管理
+#### 日志管理
 
-##### 1. 获取当前用户信息
+##### 1. 获取日志列表（按时间周期）
 
 ```http
-GET /api/v1/users/me
+GET /api/v1/journals
 ```
 
-**描述**: 获取当前登录用户的基本信息
+**描述**: 根据指定的时间周期类型和时间范围获取日志列表
 
-**响应**:
+**请求体**:
 ```json
 {
-  "code": 200,
-  "message": "Success",
-  "success": true,
-  "timestamp": 1691234567,
-  "data": {
-    "id": "string",
-    "username": "string",
-    "email": "string"
-  }
+  "period_type": "day|week|month|quarter|year",
+  "start_date": "2023-08-05T00:00:00Z",
+  "end_date": "2023-08-06T00:00:00Z"
 }
 ```
 
-#### 日志管理
-
-##### 1. 获取日志列表
-
-```http
-GET /api/v1/journals?period=2023-08&page=1&limit=10
-```
-
-**描述**: 按时间周期获取日志列表
-
-**查询参数**:
-- `period` (string): 时间周期，格式 YYYY-MM
-- `page` (int, 可选): 页码，默认 1
-- `limit` (int, 可选): 每页数量，默认 10
+**查询参数说明**:
+- `period_type` (string, 必填): 时间周期类型
+  - `day`: 日志，时间范围必须是完整的一天（00:00:00 到次日 00:00:00）
+  - `week`: 周志，时间范围必须是完整的一周（周一 00:00:00 到下周一 00:00:00）
+  - `month`: 月志，时间范围必须是完整的一个月
+  - `quarter`: 季志，时间范围必须是完整的一个季度
+  - `year`: 年志，时间范围必须是完整的一年
+- `start_date` (string, 必填): 开始时间，ISO 8601 格式
+- `end_date` (string, 必填): 结束时间，ISO 8601 格式，必须大于开始时间
 
 **响应**:
 ```json
 {
   "code": 200,
-  "message": "Success",
+  "message": "success",
   "success": true,
   "timestamp": 1691234567,
-  "data": {
-    "journals": [
-      {
-        "id": "string",
-        "title": "string",
-        "content": "string",
-        "created_at": "2023-08-05T10:30:00Z",
-        "updated_at": "2023-08-05T10:30:00Z"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 10,
-      "total": 50,
-      "total_pages": 5
+  "data": [
+    {
+      "id": "journal_123",
+      "title": "每日总结",
+      "content": "今天完成了项目需求分析...",
+      "journal_type": "day",
+      "time_period": {
+        "start": "2023-08-05T00:00:00Z",
+        "end": "2023-08-06T00:00:00Z"
+      },
+      "icon": "📝",
+      "created_at": "2023-08-05T10:30:00Z",
+      "updated_at": "2023-08-05T15:45:00Z",
+      "user_id": "user_456"
     }
-  }
+  ]
 }
 ```
 
@@ -254,24 +275,43 @@ POST /api/v1/journals
 **请求体**:
 ```json
 {
-  "title": "string",
-  "content": "string",
-  "tags": ["string"]
+  "title": "每日工作总结",
+  "content": "今天主要完成了以下工作：\n1. 完成了API文档编写\n2. 修复了数据库连接问题",
+  "journal_type": "day",
+  "start_date": "2023-08-05T00:00:00Z",
+  "end_date": "2023-08-06T00:00:00Z",
+  "icon": "📝"
 }
 ```
+
+**字段说明**:
+- `title` (string, 必填): 日志标题
+- `content` (string, 必填): 日志内容
+- `journal_type` (string, 必填): 日志类型 (`day`|`week`|`month`|`quarter`|`year`)
+- `start_date` (string, 必填): 日志时间段开始时间
+- `end_date` (string, 必填): 日志时间段结束时间
+- `icon` (string, 可选): 日志图标
 
 **响应**:
 ```json
 {
-  "code": 200,
-  "message": "Journal created successfully",
+  "code": 201,
+  "message": "success",
   "success": true,
   "timestamp": 1691234567,
   "data": {
-    "id": "string",
-    "title": "string",
-    "content": "string",
-    "created_at": "2023-08-05T10:30:00Z"
+    "id": "journal_123",
+    "title": "每日工作总结",
+    "content": "今天主要完成了以下工作：\n1. 完成了API文档编写\n2. 修复了数据库连接问题",
+    "journal_type": "day",
+    "time_period": {
+      "start": "2023-08-05T00:00:00Z",
+      "end": "2023-08-06T00:00:00Z"
+    },
+    "icon": "📝",
+    "created_at": "2023-08-05T10:30:00Z",
+    "updated_at": "2023-08-05T10:30:00Z",
+    "user_id": "user_456"
   }
 }
 ```
@@ -287,27 +327,46 @@ PUT /api/v1/journals/{journal_id}
 **路径参数**:
 - `journal_id` (string): 日志 ID
 
-**请求体**:
+**请求体** (所有字段均为可选):
 ```json
 {
-  "title": "string",
-  "content": "string",
-  "tags": ["string"]
+  "journal_id": "journal_123",
+  "title": "更新后的标题",
+  "content": "更新后的内容",
+  "journal_type": "day",
+  "icon": "📖"
 }
 ```
+
+**字段说明**:
+- `journal_id` (string, 必填): 日志 ID（在请求体中）
+- `title` (string, 可选): 新的日志标题
+- `content` (string, 可选): 新的日志内容  
+- `journal_type` (string, 可选): 新的日志类型
+- `icon` (string, 可选): 新的日志图标
+
+**注意**: 至少需要提供一个要更新的字段
 
 **响应**:
 ```json
 {
   "code": 200,
-  "message": "Journal updated successfully",
+  "message": "success",
   "success": true,
   "timestamp": 1691234567,
   "data": {
-    "id": "string",
-    "title": "string",
-    "content": "string",
-    "updated_at": "2023-08-05T10:30:00Z"
+    "id": "journal_123",
+    "title": "更新后的标题",
+    "content": "更新后的内容",
+    "journal_type": "day",
+    "time_period": {
+      "start": "2023-08-05T00:00:00Z",
+      "end": "2023-08-06T00:00:00Z"
+    },
+    "icon": "📖",
+    "created_at": "2023-08-05T10:30:00Z",
+    "updated_at": "2023-08-05T16:20:00Z",
+    "user_id": "user_456"
   }
 }
 ```
@@ -324,59 +383,71 @@ DELETE /api/v1/journals/{journal_id}
 - `journal_id` (string): 日志 ID
 
 **响应**:
-```json
-{
-  "code": 200,
-  "message": "Journal deleted successfully",
-  "success": true,
-  "timestamp": 1691234567
-}
+```
+HTTP/1.1 204 No Content
 ```
 
 #### 任务管理
 
-##### 1. 获取任务列表
+##### 1. 获取任务列表（按时间周期）
 
 ```http
-GET /api/v1/tasks?status=pending&page=1&limit=10
+GET /api/v1/tasks
 ```
 
-**描述**: 获取用户的任务列表
+**描述**: 根据指定的时间周期类型和时间范围获取任务列表
 
-**查询参数**:
-- `status` (string, 可选): 任务状态 (pending, completed, cancelled)
-- `page` (int, 可选): 页码，默认 1
-- `limit` (int, 可选): 每页数量，默认 10
+**请求体**:
+```json
+{
+  "period_type": "daily|weekly|monthly|yearly",
+  "start_date": "2023-08-05T00:00:00Z",
+  "end_date": "2023-08-12T00:00:00Z"
+}
+```
+
+**查询参数说明**:
+- `period_type` (string, 必填): 时间周期类型，支持的值：
+  - `daily`: 获取指定时间范围内的日任务
+  - `weekly`: 获取指定时间范围内的周任务
+  - `monthly`: 获取指定时间范围内的月任务
+  - `yearly`: 获取指定时间范围内的年任务
+- `start_date` (string, 必填): 开始时间，ISO 8601 格式
+- `end_date` (string, 必填): 结束时间，ISO 8601 格式
 
 **响应**:
 ```json
 {
   "code": 200,
-  "message": "Success",
+  "message": "success",
   "success": true,
   "timestamp": 1691234567,
-  "data": {
-    "tasks": [
-      {
-        "id": "string",
-        "title": "string",
-        "description": "string",
-        "status": "pending",
-        "priority": "high",
-        "due_date": "2023-08-10T18:00:00Z",
-        "created_at": "2023-08-05T10:30:00Z",
-        "updated_at": "2023-08-05T10:30:00Z"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 10,
-      "total": 25,
-      "total_pages": 3
+  "data": [
+    {
+      "id": "task_123",
+      "title": "完成API文档编写",
+      "type": "daily",
+      "period": {
+        "start": "2023-08-05T09:00:00Z",
+        "end": "2023-08-05T18:00:00Z"
+      },
+      "tags": ["开发", "文档"],
+      "icon": "📝",
+      "score": 85,
+      "status": 2,
+      "priority": 2,
+      "parent_id": "",
+      "user_id": "user_456",
+      "created_at": "2023-08-05T08:00:00Z",
+      "updated_at": "2023-08-05T17:30:00Z"
     }
-  }
+  ]
 }
 ```
+
+**状态码说明**:
+- `status`: 0=未开始, 1=进行中, 2=已完成, 3=已取消
+- `priority`: 0=低, 1=中, 2=高, 3=紧急
 
 ##### 2. 创建任务
 
@@ -389,29 +460,49 @@ POST /api/v1/tasks
 **请求体**:
 ```json
 {
-  "title": "string",
-  "description": "string",
-  "priority": "high|medium|low",
-  "due_date": "2023-08-10T18:00:00Z",
-  "tags": ["string"]
+  "title": "完成项目文档",
+  "description": "编写 API 文档和用户手册",
+  "start_date": "2023-08-05T09:00:00Z",
+  "end_date": "2023-08-10T18:00:00Z",
+  "priority": "high",
+  "icon": "📝",
+  "tags": ["开发", "文档"]
 }
 ```
+
+**字段说明**:
+- `title` (string, 必填): 任务标题
+- `description` (string, 可选): 任务描述
+- `start_date` (string, 必填): 任务开始时间
+- `end_date` (string, 必填): 任务结束时间
+- `priority` (string, 必填): 优先级 (`low`|`medium`|`high`|`urgent`)
+- `icon` (string, 可选): 任务图标（emoji）
+- `tags` (array, 可选): 任务标签数组
 
 **响应**:
 ```json
 {
   "code": 200,
-  "message": "Task created successfully",
+  "message": "create task endpoint",
   "success": true,
   "timestamp": 1691234567,
   "data": {
-    "id": "string",
-    "title": "string",
-    "description": "string",
-    "status": "pending",
-    "priority": "high",
-    "due_date": "2023-08-10T18:00:00Z",
-    "created_at": "2023-08-05T10:30:00Z"
+    "id": "task_123",
+    "title": "完成项目文档",
+    "type": "daily",
+    "period": {
+      "start": "2023-08-05T09:00:00Z",
+      "end": "2023-08-10T18:00:00Z"
+    },
+    "tags": ["开发", "文档"],
+    "icon": "📝",
+    "score": 0,
+    "status": 0,
+    "priority": 2,
+    "parent_id": "",
+    "user_id": "user_456",
+    "created_at": "2023-08-05T10:30:00Z",
+    "updated_at": "2023-08-05T10:30:00Z"
   }
 }
 ```
@@ -427,14 +518,57 @@ PUT /api/v1/tasks/{task_id}
 **路径参数**:
 - `task_id` (string): 任务 ID
 
-**请求体**:
+**请求体** (所有字段均为可选):
 ```json
 {
-  "title": "string",
-  "description": "string",
-  "priority": "high|medium|low",
-  "due_date": "2023-08-10T18:00:00Z",
-  "status": "pending|completed|cancelled"
+  "task_id": "task_123",
+  "title": "更新后的任务标题",
+  "description": "更新后的任务描述",
+  "start_date": "2023-08-05T09:00:00Z",
+  "end_date": "2023-08-10T18:00:00Z",
+  "priority": "urgent",
+  "status": "in_progress",
+  "icon": "🚀",
+  "tags": ["开发", "文档", "紧急"]
+}
+```
+
+**字段说明**:
+- `task_id` (string, 必填): 任务 ID（在请求体中）
+- `title` (string, 可选): 新的任务标题
+- `description` (string, 可选): 新的任务描述
+- `start_date` (string, 可选): 新的开始时间
+- `end_date` (string, 可选): 新的结束时间（与start_date必须同时提供）
+- `priority` (string, 可选): 新的优先级
+- `status` (string, 可选): 新的状态 (`not_started`|`in_progress`|`completed`|`cancelled`)
+- `icon` (string, 可选): 新的图标
+- `tags` (array, 可选): 新的标签数组
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "update task endpoint",
+  "success": true,
+  "timestamp": 1691234567,
+  "data": {
+    "id": "task_123",
+    "title": "更新后的任务标题",
+    "type": "daily",
+    "period": {
+      "start": "2023-08-05T09:00:00Z",
+      "end": "2023-08-10T18:00:00Z"
+    },
+    "tags": ["开发", "文档", "紧急"],
+    "icon": "🚀",
+    "score": 0,
+    "status": 1,
+    "priority": 3,
+    "parent_id": "",
+    "user_id": "user_456",
+    "created_at": "2023-08-05T10:30:00Z",
+    "updated_at": "2023-08-05T16:20:00Z"
+  }
 }
 ```
 
@@ -449,6 +583,23 @@ DELETE /api/v1/tasks/{task_id}
 **路径参数**:
 - `task_id` (string): 任务 ID
 
+**请求体**:
+```json
+{
+  "task_id": "task_123"
+}
+```
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "delete task endpoint",
+  "success": true,
+  "timestamp": 1691234567
+}
+```
+
 ##### 5. 完成任务
 
 ```http
@@ -460,18 +611,20 @@ POST /api/v1/tasks/{task_id}/complete
 **路径参数**:
 - `task_id` (string): 任务 ID
 
+**请求体**:
+```json
+{
+  "task_id": "task_123"
+}
+```
+
 **响应**:
 ```json
 {
   "code": 200,
-  "message": "Task completed successfully",
+  "message": "complete task endpoint",
   "success": true,
-  "timestamp": 1691234567,
-  "data": {
-    "id": "string",
-    "status": "completed",
-    "completed_at": "2023-08-05T15:30:00Z"
-  }
+  "timestamp": 1691234567
 }
 ```
 
@@ -489,30 +642,45 @@ POST /api/v1/tasks/{task_id}/subtasks
 **请求体**:
 ```json
 {
-  "title": "string",
-  "description": "string",
-  "priority": "high|medium|low",
-  "due_date": "2023-08-10T18:00:00Z",
-  "tags": ["string"]
+  "title": "子任务标题",
+  "description": "子任务描述",
+  "start_date": "2023-08-06T09:00:00Z",
+  "end_date": "2023-08-06T18:00:00Z",
+  "priority": "medium",
+  "icon": "📋",
+  "tags": ["子任务"],
+  "task_id": "parent_task_123"
 }
 ```
+
+**字段说明**:
+- `task_id` (string, 必填): 父任务 ID（在请求体中）
+- 其他字段与创建任务相同
 
 **响应**:
 ```json
 {
   "code": 200,
-  "message": "Subtask created successfully",
+  "message": "create subtask endpoint",
   "success": true,
   "timestamp": 1691234567,
   "data": {
-    "id": "string",
-    "parent_task_id": "string",
-    "title": "string",
-    "description": "string",
-    "status": "pending",
-    "priority": "high",
-    "due_date": "2023-08-10T18:00:00Z",
-    "created_at": "2023-08-05T10:30:00Z"
+    "id": "subtask_456",
+    "title": "子任务标题",
+    "type": "daily",
+    "period": {
+      "start": "2023-08-06T09:00:00Z",
+      "end": "2023-08-06T18:00:00Z"
+    },
+    "tags": ["子任务"],
+    "icon": "📋",
+    "score": 0,
+    "status": 0,
+    "priority": 1,
+    "parent_id": "parent_task_123",
+    "user_id": "user_456",
+    "created_at": "2023-08-05T11:00:00Z",
+    "updated_at": "2023-08-05T11:00:00Z"
   }
 }
 ```
@@ -531,55 +699,139 @@ PUT /api/v1/tasks/{task_id}/score
 **请求体**:
 ```json
 {
-  "score": 85,
-  "comment": "string"
+  "task_id": "task_123",
+  "score": 85
 }
 ```
 
-#### 计划管理
-
-##### 1. 获取计划列表
-
-```http
-GET /api/v1/plans?type=daily&page=1&limit=10
-```
-
-**描述**: 获取用户的计划列表
-
-**查询参数**:
-- `type` (string, 可选): 计划类型 (daily, weekly, monthly)
-- `page` (int, 可选): 页码，默认 1
-- `limit` (int, 可选): 每页数量，默认 10
+**字段说明**:
+- `task_id` (string, 必填): 任务 ID
+- `score` (int, 必填): 评分（非负整数）
 
 **响应**:
 ```json
 {
   "code": 200,
-  "message": "Success",
+  "message": "update task score endpoint",
+  "success": true,
+  "timestamp": 1691234567
+}
+```
+
+#### 计划管理
+
+##### 1. 获取计划列表（按时间周期）
+
+```http
+GET /api/v1/plans
+```
+
+**描述**: 根据指定的时间周期类型和时间范围获取计划信息，包含该时间段内的任务、日志和统计信息
+
+**请求体**:
+```json
+{
+  "period_type": "day|week|month|quarter|year",
+  "start_date": "2023-08-05T00:00:00Z",
+  "end_date": "2023-08-12T00:00:00Z"
+}
+```
+
+**查询参数说明**:
+- `period_type` (string, 必填): 时间周期类型
+  - `day`: 日计划
+  - `week`: 周计划
+  - `month`: 月计划
+  - `quarter`: 季度计划
+  - `year`: 年度计划
+- `start_date` (string, 必填): 开始时间，ISO 8601 格式
+- `end_date` (string, 必填): 结束时间，ISO 8601 格式
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
   "success": true,
   "timestamp": 1691234567,
   "data": {
-    "plans": [
+    "tasks": [
       {
-        "id": "string",
-        "title": "string",
-        "description": "string",
+        "id": "task_123",
+        "title": "完成API文档编写",
         "type": "daily",
-        "start_date": "2023-08-05T00:00:00Z",
-        "end_date": "2023-08-05T23:59:59Z",
-        "tasks": ["task_id_1", "task_id_2"],
-        "created_at": "2023-08-05T10:30:00Z"
+        "period": {
+          "start": "2023-08-05T09:00:00Z",
+          "end": "2023-08-05T18:00:00Z"
+        },
+        "tags": ["开发", "文档"],
+        "icon": "📝",
+        "score": 85,
+        "status": 2,
+        "priority": 2,
+        "parent_id": "",
+        "user_id": "user_456",
+        "created_at": "2023-08-05T08:00:00Z",
+        "updated_at": "2023-08-05T17:30:00Z"
       }
     ],
-    "pagination": {
-      "page": 1,
-      "limit": 10,
-      "total": 15,
-      "total_pages": 2
-    }
+    "tasks_total": 5,
+    "journals": [
+      {
+        "id": "journal_456",
+        "title": "工作日志",
+        "content": "今天完成了API文档编写...",
+        "journal_type": "day",
+        "time_period": {
+          "start": "2023-08-05T00:00:00Z",
+          "end": "2023-08-06T00:00:00Z"
+        },
+        "icon": "📖",
+        "created_at": "2023-08-05T18:00:00Z",
+        "updated_at": "2023-08-05T18:30:00Z",
+        "user_id": "user_456"
+      }
+    ],
+    "journals_total": 3,
+    "plan_type": "week",
+    "plan_period": {
+      "start": "2023-08-05T00:00:00Z",
+      "end": "2023-08-12T00:00:00Z"
+    },
+    "score_total": 425,
+    "group_stats": [
+      {
+        "group_key": "2023-08-05",
+        "task_count": 2,
+        "score_total": 85
+      },
+      {
+        "group_key": "2023-08-06", 
+        "task_count": 1,
+        "score_total": 92
+      }
+    ]
   }
 }
 ```
+
+**响应字段说明**:
+- `tasks`: 该时间段内的任务列表
+- `tasks_total`: 任务总数
+- `journals`: 该时间段内的日志列表  
+- `journals_total`: 日志总数
+- `plan_type`: 计划类型（与请求的period_type相同）
+- `plan_period`: 计划时间段
+- `score_total`: 总分数（所有任务分数之和）
+- `group_stats`: 分组统计信息
+  - `group_key`: 分组键（根据plan_type不同格式不同）
+    - day: "2023-08-05" (日期)
+    - week: "2023-W32" (ISO周)  
+    - month: "2023-08" (年月)
+    - quarter: "2023-Q3" (季度)
+    - year: "2023" (年份)
+  - `task_count`: 该分组内的任务数量
+  - `score_total`: 该分组内的分数总和
 
 ---
 
@@ -649,17 +901,136 @@ curl -X POST http://localhost:8081/api/v1/tasks \
   }'
 ```
 
-### 3. 创建子任务
+### 3. 创建日志
 
 ```bash
-curl -X POST http://localhost:8081/api/v1/tasks/parent_task_id/subtasks \
+# 创建一个日志条目
+curl -X POST http://localhost:8081/api/v1/journals \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your_session_id" \
   -d '{
-    "title": "审查文档",
-    "description": "审查 API 文档的准确性",
+    "title": "每日工作总结",
+    "content": "今天完成了API文档的编写工作，修复了3个bug，完成度85%",
+    "journal_type": "day",
+    "start_date": "2023-08-05T00:00:00Z",
+    "end_date": "2023-08-06T00:00:00Z",
+    "icon": "📝"
+  }'
+```
+
+### 4. 获取日志列表
+
+```bash
+# 获取某一天的日志
+curl -X GET http://localhost:8081/api/v1/journals \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_session_id" \
+  -d '{
+    "period_type": "day",
+    "start_date": "2023-08-05T00:00:00Z",
+    "end_date": "2023-08-06T00:00:00Z"
+  }'
+
+# 获取某一周的日志
+curl -X GET http://localhost:8081/api/v1/journals \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_session_id" \
+  -d '{
+    "period_type": "week", 
+    "start_date": "2023-07-31T00:00:00Z",
+    "end_date": "2023-08-07T00:00:00Z"
+  }'
+```
+
+### 5. 更新日志
+
+```bash
+# 更新日志内容
+curl -X PUT http://localhost:8081/api/v1/journals/journal_123 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_session_id" \
+  -d '{
+    "journal_id": "journal_123",
+    "title": "每日工作总结（已更新）",
+    "content": "今天完成了API文档的编写工作，修复了5个bug，完成度90%"
+  }'
+```
+
+### 6. 创建任务
+
+```bash
+curl -X POST http://localhost:8081/api/v1/tasks \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_session_id" \
+  -d '{
+    "title": "完成项目文档",
+    "description": "编写 API 文档和用户手册",
+    "priority": "high",
+    "start_date": "2023-08-05T09:00:00Z",
+    "end_date": "2023-08-10T18:00:00Z"
+  }'
+```
+
+### 6. 创建任务
+
+```bash
+curl -X POST http://localhost:8081/api/v1/tasks \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_session_id" \
+  -d '{
+    "title": "完成项目文档",
+    "description": "编写 API 文档和用户手册",
+    "priority": "high",
+    "start_date": "2023-08-05T09:00:00Z",
+    "end_date": "2023-08-10T18:00:00Z",
+    "icon": "📝",
+    "tags": ["开发", "文档"]
+  }'
+```
+
+### 7. 获取任务列表
+
+```bash
+# 获取某一周的任务
+curl -X GET http://localhost:8081/api/v1/tasks \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_session_id" \
+  -d '{
+    "period_type": "weekly",
+    "start_date": "2023-07-31T00:00:00Z",
+    "end_date": "2023-08-07T00:00:00Z"
+  }'
+```
+
+### 8. 获取计划信息
+
+```bash
+# 获取某一周的计划（包含任务和日志）
+curl -X GET http://localhost:8081/api/v1/plans \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_session_id" \
+  -d '{
+    "period_type": "week",
+    "start_date": "2023-07-31T00:00:00Z", 
+    "end_date": "2023-08-07T00:00:00Z"
+  }'
+```
+
+### 9. 创建子任务
+
+```bash
+curl -X POST http://localhost:8081/api/v1/tasks/parent_task_123/subtasks \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_session_id" \
+  -d '{
+    "title": "审查API文档",
+    "description": "审查 API 文档的准确性和完整性",
     "priority": "medium",
-    "due_date": "2023-08-09T12:00:00Z"
+    "start_date": "2023-08-08T09:00:00Z",
+    "end_date": "2023-08-08T17:00:00Z",
+    "task_id": "parent_task_123",
+    "icon": "🔍",
+    "tags": ["审查", "文档"]
   }'
 ```
 
