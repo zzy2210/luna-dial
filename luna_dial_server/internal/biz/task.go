@@ -136,12 +136,6 @@ type ListTaskParentTreeParam struct {
 	TaskID string
 }
 
-// 获取某个任务的整个任务树参数
-type ListTaskTreeParam struct {
-	UserID string
-	TaskID string
-}
-
 type GetTaskStatsParam struct {
 	UserID  string
 	Period  Period
@@ -458,38 +452,6 @@ func (uc *TaskUsecase) ListTaskByPeriod(ctx context.Context, param ListTaskByPer
 	// 注意：这里假设 GroupBy 参数用于过滤任务类型
 	taskType := int(param.GroupBy)
 	tasks, err := uc.repo.ListTasks(ctx, param.UserID, param.Period.Start, param.Period.End, taskType)
-	if err != nil {
-		return nil, err // 返回仓库层的错误
-	}
-
-	// 将 []*Task 转换为 []Task
-	result := make([]Task, 0, len(tasks))
-	for _, task := range tasks {
-		if task != nil {
-			result = append(result, *task)
-		}
-	}
-
-	return result, nil
-}
-
-// 获取某个任务的任务树 (整个树)
-func (uc *TaskUsecase) ListTaskTree(ctx context.Context, param ListTaskTreeParam) ([]Task, error) {
-	if param.TaskID == "" || param.UserID == "" {
-		return nil, ErrInvalidInput // 参数不合法
-	}
-
-	// 首先检查根任务是否存在并且属于该用户
-	rootTask, err := uc.repo.GetTask(ctx, param.TaskID, param.UserID)
-	if err != nil {
-		return nil, err // 返回仓库层的错误
-	}
-	if rootTask == nil {
-		return nil, ErrTaskNotFound // 任务不存在
-	}
-
-	// 调用仓库层获取任务树
-	tasks, err := uc.repo.ListTaskTree(ctx, param.TaskID, param.UserID)
 	if err != nil {
 		return nil, err // 返回仓库层的错误
 	}

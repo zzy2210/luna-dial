@@ -122,37 +122,7 @@ func (m *mockTaskRepo) ListTasks(ctx context.Context, userID string, periodStart
 	}
 	return []*Task{}, nil
 }
-func (m *mockTaskRepo) ListTaskTree(ctx context.Context, taskID, userID string) ([]*Task, error) {
-	// 模拟返回任务树
-	if taskID == "parent-task-123" && userID == "user-123" {
-		return []*Task{
-			{
-				ID:       "parent-task-123",
-				Title:    "父任务",
-				UserID:   userID,
-				TaskType: PeriodDay,
-				Score:    100,
-			},
-			{
-				ID:       "child-task-1",
-				Title:    "子任务1",
-				UserID:   userID,
-				TaskType: PeriodDay,
-				ParentID: "parent-task-123",
-				Score:    30,
-			},
-			{
-				ID:       "child-task-2",
-				Title:    "子任务2",
-				UserID:   userID,
-				TaskType: PeriodDay,
-				ParentID: "parent-task-123",
-				Score:    20,
-			},
-		}, nil
-	}
-	return []*Task{}, nil
-}
+
 func (m *mockTaskRepo) ListTaskParentTree(ctx context.Context, taskID, userID string) ([]*Task, error) {
 	// 模拟返回父任务树路径
 	if taskID == "child-task-123" && userID == "user-123" {

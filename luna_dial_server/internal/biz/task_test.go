@@ -535,33 +535,6 @@ func TestTaskUsecase_ListTaskByPeriod(t *testing.T) {
 	})
 }
 
-// 测试 ListTaskTree 方法
-func TestTaskUsecase_ListTaskTree(t *testing.T) {
-	usecase := createTestTaskUsecase()
-	ctx := context.Background()
-
-	t.Run("成功获取任务树", func(t *testing.T) {
-		param := ListTaskTreeParam{
-			UserID: "user-123",
-			TaskID: "parent-task-123",
-		}
-
-		tasks, err := usecase.ListTaskTree(ctx, param)
-
-		// ❌ TDD: 期望成功获取，当前业务逻辑未实现会失败
-		require.NoError(t, err, "ListTaskTree should succeed")
-		require.NotNil(t, tasks, "should return task tree list")
-
-		// 验证任务树结构 - mock 返回3个任务（1个父任务 + 2个子任务）
-		assert.GreaterOrEqual(t, len(tasks), 1, "should return at least root task")
-
-		// 验证返回的任务都属于正确的用户
-		for _, task := range tasks {
-			assert.Equal(t, param.UserID, task.UserID, "should only return user's tasks")
-		}
-	})
-}
-
 // 测试 ListTaskParentTree 方法
 func TestTaskUsecase_ListTaskParentTree(t *testing.T) {
 	usecase := createTestTaskUsecase()

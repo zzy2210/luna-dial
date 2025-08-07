@@ -11,6 +11,5 @@ type TaskRepo interface {
 	DeleteTask(ctx context.Context, taskID, userID string) error
 	GetTask(ctx context.Context, taskID, userID string) (*Task, error)
 	ListTasks(ctx context.Context, userID string, periodStart, periodEnd time.Time, taskType int) ([]*Task, error)
-	ListTaskTree(ctx context.Context, taskID, userID string) ([]*Task, error)
 	ListTaskParentTree(ctx context.Context, taskID, userID string) ([]*Task, error)
 }
