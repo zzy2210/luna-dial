@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/labstack/gommon/log"
 )
 
 // TaskStatus 任务状态枚举
@@ -715,8 +716,8 @@ func (uc *TaskUsecase) CreateTaskWithTreeOptimization(ctx context.Context, param
 	err = uc.repo.UpdateTreeOptimizationFields(ctx, task.ID, task.UserID)
 	if err != nil {
 		// 记录错误但不影响创建结果
-		// TODO: 添加日志记录
-		// log.Warnf("Failed to update tree optimization fields for task %s: %v", task.ID, err)
+
+		log.Warnf("Failed to update tree optimization fields for task %s: %v", task.ID, err)
 	}
 
 	// 如果有父任务，也需要更新父任务的子任务计数
@@ -725,6 +726,7 @@ func (uc *TaskUsecase) CreateTaskWithTreeOptimization(ctx context.Context, param
 		if err != nil {
 			// 记录错误但不影响创建结果
 			// TODO: 添加日志记录
+			log.Warnf("Failed to update tree optimization fields for parent task %s: %v", task.ParentID, err)
 		}
 	}
 

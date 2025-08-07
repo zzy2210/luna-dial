@@ -23,10 +23,3 @@ UPDATE tasks SET
     has_children = (SELECT COUNT(*) > 0 FROM tasks t2 WHERE t2.parent_id = tasks.id),
     children_count = (SELECT COUNT(*) FROM tasks t2 WHERE t2.parent_id = tasks.id)
 WHERE parent_id IS NULL OR parent_id = '';
-
--- 为非根任务设置初始值（这里简化处理，实际的tree_depth和root_task_id需要递归计算）
--- 在后续的应用逻辑中会正确维护这些字段
-UPDATE tasks SET 
-    has_children = (SELECT COUNT(*) > 0 FROM tasks t2 WHERE t2.parent_id = tasks.id),
-    children_count = (SELECT COUNT(*) FROM tasks t2 WHERE t2.parent_id = tasks.id)
-WHERE parent_id IS NOT NULL AND parent_id != '';

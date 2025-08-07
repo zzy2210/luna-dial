@@ -8,6 +8,11 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+var (
+	// 用于分割逗号分隔的状态参数的正则表达式
+	statusSeparatorRegex = regexp.MustCompile(`\s*,\s*`)
+)
+
 // 查看指定时间段内指定类型的任务
 func (s *Service) handleListTasks(c echo.Context) error {
 	var req ListTaskRequest
@@ -428,7 +433,7 @@ func (s *Service) handleGetTaskTree(c echo.Context) error {
 	statusFilters := []biz.TaskStatus{}
 	if statusParam := c.QueryParam("status"); statusParam != "" {
 		// 支持多个状态过滤，用逗号分隔
-		for _, statusStr := range []string{statusParam} {
+		for _, statusStr := range statusSeparatorRegex.Split(statusParam, -1) {
 			status, err := TaskStatusFromString(statusStr)
 			if err != nil {
 				return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid status: %s", statusStr)))
