@@ -718,6 +718,321 @@ PUT /api/v1/tasks/{task_id}/score
 }
 ```
 
+#### 🆕 任务树优化API（阶段五新增）
+
+##### 9. 分页查询根任务
+
+```http
+GET /api/v1/tasks/roots
+```
+
+**描述**: 分页获取用户的根任务列表（无父任务的任务）
+
+**查询参数**:
+- `page` (int, 可选): 页码，默认为1
+- `page_size` (int, 可选): 每页大小，默认为20，最大100
+- `status` (string[], 可选): 状态过滤，可选值：`not_started`, `in_progress`, `completed`, `cancelled`
+- `priority` (string[], 可选): 优先级过滤，可选值：`low`, `medium`, `high`, `urgent`
+- `task_type` (string[], 可选): 任务类型过滤，可选值：`day`, `week`, `month`, `quarter`, `year`
+
+**请求示例**:
+```http
+GET /api/v1/tasks/roots?page=1&page_size=10&status=not_started&status=in_progress
+```
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "success": true,
+  "timestamp": 1691234567,
+  "data": {
+    "items": [
+      {
+        "id": "task_123",
+        "title": "2024年度目标",
+        "type": "year",
+        "has_children": true,
+        "children_count": 4,
+        "tree_depth": 0,
+        "root_task_id": "task_123",
+        "status": 1,
+        "priority": 2,
+        "created_at": "2024-01-01T00:00:00Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "page_size": 10,
+      "total": 25,
+      "total_pages": 3,
+      "has_next": true,
+      "has_prev": false
+    }
+  }
+}
+```
+
+##### 10. 全局任务树视图（分页）
+
+```http
+GET /api/v1/tasks/tree
+```
+
+**描述**: 分页获取用户的完整任务树，返回嵌套的树形结构
+
+**查询参数**:
+- `page` (int, 可选): 页码，默认为1
+- `page_size` (int, 可选): 每页大小，默认为10，最大50
+- `status` (string[], 可选): 状态过滤
+- `include_empty` (bool, 可选): 是否包含无子任务的根任务，默认true
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "success": true,
+  "timestamp": 1691234567,
+  "data": {
+    "items": [
+      {
+        "id": "task_123",
+        "title": "2024年度目标",
+        "type": "year",
+        "has_children": true,
+        "children_count": 2,
+        "tree_depth": 0,
+        "children": [
+          {
+            "id": "task_124",
+            "title": "Q1目标",
+            "type": "quarter",
+            "parent_id": "task_123",
+            "tree_depth": 1,
+            "has_children": true,
+            "children_count": 1,
+            "children": [
+              {
+                "id": "task_125",
+                "title": "1月任务",
+                "type": "month",
+                "parent_id": "task_124",
+                "tree_depth": 2,
+                "has_children": false,
+                "children_count": 0,
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "page_size": 10,
+      "total": 5,
+      "total_pages": 1,
+      "has_next": false,
+      "has_prev": false
+    }
+  }
+}
+```
+
+##### 11. 获取指定任务的完整任务树
+
+```http
+GET /api/v1/tasks/{task_id}/tree
+```
+
+**描述**: 获取指定任务及其所有子任务的完整树形结构
+
+**路径参数**:
+- `task_id` (string): 任务ID
+
+**查询参数**:
+- `status` (string, 可选): 状态过滤
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "success": true,
+  "timestamp": 1691234567,
+  "data": {
+    "id": "task_123",
+    "title": "2024年度目标",
+    "type": "year",
+    "has_children": true,
+    "children_count": 2,
+    "children": [
+      {
+        "id": "task_124",
+        "title": "Q1目标",
+        "parent_id": "task_123",
+        "children": [...]
+      }
+    ]
+  }
+}
+```
+
+##### 12. 获取任务的父任务链
+
+```http
+GET /api/v1/tasks/{task_id}/parents
+```
+
+**描述**: 获取指定任务的所有父任务，从根任务到直接父任务的链路
+
+**路径参数**:
+- `task_id` (string): 任务ID
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "success": true,
+  "timestamp": 1691234567,
+  "data": [
+    {
+      "id": "task_123",
+      "title": "2024年度目标",
+      "type": "year",
+      "tree_depth": 0
+    },
+    {
+      "id": "task_124", 
+      "title": "Q1目标",
+      "type": "quarter",
+      "tree_depth": 1,
+      "parent_id": "task_123"
+    }
+  ]
+}
+```
+
+##### 13. 移动任务
+
+```http
+PUT /api/v1/tasks/{task_id}/move
+```
+
+**描述**: 移动任务到新的父任务下或移动到根级别
+
+**路径参数**:
+- `task_id` (string): 要移动的任务ID
+
+**请求体**:
+```json
+{
+  "task_id": "task_125",
+  "new_parent_id": "task_456"
+}
+```
+
+**字段说明**:
+- `task_id` (string, 必填): 要移动的任务ID
+- `new_parent_id` (string, 可选): 新的父任务ID，为空或null表示移动到根级别
+
+**响应**:
+```json
+{
+  "code": 501,
+  "message": "Task move functionality is not yet implemented",
+  "success": false,
+  "timestamp": 1691234567
+}
+```
+
+**注意**: 任务移动功能的业务逻辑尚未实现，将在后续版本中提供。
+
+##### 14. 优化的任务创建
+
+```http
+POST /api/v1/tasks/optimized
+```
+
+**描述**: 使用树结构优化的任务创建方法，自动维护树形结构的冗余字段
+
+**请求体**: 与创建任务接口相同
+
+**响应**: 
+```json
+{
+  "code": 200,
+  "message": "Task created with tree optimization",
+  "success": true,
+  "timestamp": 1691234567,
+  "data": {
+    "id": "task_789",
+    "title": "新任务",
+    "has_children": false,
+    "children_count": 0,
+    "tree_depth": 0,
+    "root_task_id": "task_789"
+  }
+}
+```
+
+##### 15. 分页查询日志（支持过滤）
+
+```http
+GET /api/v1/journals/paginated
+```
+
+**描述**: 分页查询用户日志，支持按类型和时间范围过滤
+
+**查询参数**:
+- `page` (int, 可选): 页码，默认为1
+- `page_size` (int, 可选): 每页大小，默认为20，最大100
+- `journal_type` (string, 可选): 日志类型过滤，可选值：`day`, `week`, `month`, `quarter`, `year`
+- `start_date` (string, 可选): 开始时间过滤，ISO 8601格式
+- `end_date` (string, 可选): 结束时间过滤，ISO 8601格式
+
+**请求示例**:
+```http
+GET /api/v1/journals/paginated?page=1&page_size=20&journal_type=week&start_date=2024-01-01T00:00:00Z
+```
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "success": true,
+  "timestamp": 1691234567,
+  "data": {
+    "items": [
+      {
+        "id": "journal_123",
+        "title": "第1周工作总结",
+        "content": "本周完成了...",
+        "journal_type": "week",
+        "time_period": {
+          "start": "2024-01-01T00:00:00Z",
+          "end": "2024-01-07T23:59:59Z"
+        },
+        "icon": "📝",
+        "created_at": "2024-01-07T20:00:00Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "page_size": 20,
+      "total": 15,
+      "total_pages": 1,
+      "has_next": false,
+      "has_prev": false
+    }
+  }
+}
+```
+
 #### 计划管理
 
 ##### 1. 获取计划列表（按时间周期）

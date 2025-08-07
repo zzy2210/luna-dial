@@ -104,6 +104,38 @@ type ListPlansRequest struct {
 	EndDate    time.Time `json:"end_date" validate:"required"`
 }
 
+// 分页查询根任务请求
+type ListRootTasksRequest struct {
+	Page     int      `json:"page" validate:"min=1"`                                                              // 页码，默认1
+	PageSize int      `json:"page_size" validate:"min=1,max=100"`                                                 // 每页大小，默认20
+	Status   []string `json:"status,omitempty" validate:"dive,oneof=not_started in_progress completed cancelled"` // 状态过滤
+	Priority []string `json:"priority,omitempty" validate:"dive,oneof=low medium high urgent"`                    // 优先级过滤
+	TaskType []string `json:"task_type,omitempty" validate:"dive,oneof=day week month quarter year"`              // 任务类型过滤
+}
+
+// 获取全局任务树请求（分页）
+type ListGlobalTaskTreeRequest struct {
+	Page         int      `json:"page" validate:"min=1"`                                                              // 页码，默认1
+	PageSize     int      `json:"page_size" validate:"min=1,max=50"`                                                  // 每页大小，默认10，最大50
+	Status       []string `json:"status,omitempty" validate:"dive,oneof=not_started in_progress completed cancelled"` // 状态过滤
+	IncludeEmpty bool     `json:"include_empty,omitempty"`                                                            // 是否包含无子任务的根任务，默认true
+}
+
+// 移动任务请求
+type MoveTaskRequest struct {
+	TaskID      string `json:"task_id" validate:"required"` // 要移动的任务ID
+	NewParentID string `json:"new_parent_id,omitempty"`     // 新父任务ID，空表示移动到根级别
+}
+
+// 分页查询日志请求（新版本，支持过滤）
+type ListJournalsWithPaginationRequest struct {
+	Page        int        `json:"page" validate:"min=1"`                                                         // 页码，默认1
+	PageSize    int        `json:"page_size" validate:"min=1,max=100"`                                            // 每页大小，默认20
+	JournalType *string    `json:"journal_type,omitempty" validate:"omitempty,oneof=day week month quarter year"` // 日志类型过滤
+	StartDate   *time.Time `json:"start_date,omitempty"`                                                          // 时间范围过滤开始
+	EndDate     *time.Time `json:"end_date,omitempty"`                                                            // 时间范围过滤结束
+}
+
 func PeriodTypeFromString(s string) (biz.PeriodType, error) {
 	switch s {
 	case "day":
