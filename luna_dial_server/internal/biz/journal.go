@@ -77,6 +77,16 @@ type ListJournalByPeriodParam struct {
 	GroupBy PeriodType
 }
 
+// 第四阶段新增：分页查询日志参数
+type ListJournalsWithPaginationParam struct {
+	UserID      string
+	Page        int
+	PageSize    int
+	JournalType *int       // 可选：日志类型过滤
+	PeriodStart *time.Time // 可选：开始时间过滤
+	PeriodEnd   *time.Time // 可选：结束时间过滤
+}
+
 func NewJournalUsecase(repo JournalRepo) *JournalUsecase {
 	return &JournalUsecase{repo: repo}
 }
@@ -251,4 +261,34 @@ func (uc *JournalUsecase) ListAllJournals(ctx context.Context, param ListAllJour
 	}
 
 	return journals, nil
+}
+
+// ListJournalsWithPagination 分页查询日志并返回总数
+func (uc *JournalUsecase) ListJournalsWithPagination(ctx context.Context, param ListJournalsWithPaginationParam) ([]*Journal, int64, error) {
+	if param.UserID == "" {
+		return nil, 0, ErrUserIDEmpty
+	}
+
+	if param.Page <= 0 {
+		param.Page = 1
+	}
+	if param.PageSize <= 0 || param.PageSize > 100 {
+		param.PageSize = 20 // 默认每页20条
+	}
+
+	// 调用仓库层进行分页查询
+	journals, total, err := uc.repo.ListJournalsWithPagination(
+		ctx,
+		param.UserID,
+		param.Page,
+		param.PageSize,
+		param.JournalType,
+		param.PeriodStart,
+		param.PeriodEnd,
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return journals, total, nil
 }

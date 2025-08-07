@@ -22,7 +22,8 @@ type CreateTaskRequest struct {
 	Description string    `json:"description"`
 	StartDate   time.Time `json:"start_date" validate:"required"`
 	EndDate     time.Time `json:"end_date" validate:"required"`
-	Priority    string    `json:"priority" validate:"required,oneof=low medium high"`
+	PeriodType  string    `json:"period_type" validate:"required,oneof=day week month quarter year"`
+	Priority    string    `json:"priority" validate:"required,oneof=low medium high urgent"`
 	Icon        string    `json:"icon"`
 	Tags        []string  `json:"tags"`
 }
@@ -32,7 +33,8 @@ type CreateSubTaskRequest struct {
 	Description string    `json:"description"`
 	StartDate   time.Time `json:"start_date" validate:"required"`
 	EndDate     time.Time `json:"end_date" validate:"required"`
-	Priority    string    `json:"priority" validate:"required,oneof=low medium high"`
+	PeriodType  string    `json:"period_type" validate:"required,oneof=day week month quarter year"`
+	Priority    string    `json:"priority" validate:"required,oneof=low medium high urgent"`
 	Icon        string    `json:"icon"`
 	Tags        []string  `json:"tags"`
 	TaskID      string    `json:"task_id" validate:"required"`
@@ -44,11 +46,11 @@ type UpdateTaskRequest struct {
 	Description *string    `json:"description,omitempty"`
 	StartDate   *time.Time `json:"start_date,omitempty"`
 	EndDate     *time.Time `json:"end_date,omitempty"`
-	Priority    *string    `json:"priority,omitempty" validate:"omitempty,oneof=low medium high"`
+	Priority    *string    `json:"priority,omitempty" validate:"omitempty,oneof=low medium high urgent"`
+	Status      *string    `json:"status,omitempty" validate:"omitempty,oneof=not_started in_progress completed cancelled"`
 	Icon        *string    `json:"icon,omitempty"`
 	Tags        *[]string  `json:"tags,omitempty"`
 	TaskID      string     `json:"task_id" validate:"required"`
-	IsCompleted *bool      `json:"is_completed,omitempty"`
 }
 
 // 标记任务完成
@@ -102,6 +104,38 @@ type ListPlansRequest struct {
 	EndDate    time.Time `json:"end_date" validate:"required"`
 }
 
+// 分页查询根任务请求
+type ListRootTasksRequest struct {
+	Page     int      `json:"page" validate:"min=1"`                                                              // 页码，默认1
+	PageSize int      `json:"page_size" validate:"min=1,max=100"`                                                 // 每页大小，默认20
+	Status   []string `json:"status,omitempty" validate:"dive,oneof=not_started in_progress completed cancelled"` // 状态过滤
+	Priority []string `json:"priority,omitempty" validate:"dive,oneof=low medium high urgent"`                    // 优先级过滤
+	TaskType []string `json:"task_type,omitempty" validate:"dive,oneof=day week month quarter year"`              // 任务类型过滤
+}
+
+// 获取全局任务树请求（分页）
+type ListGlobalTaskTreeRequest struct {
+	Page         int      `json:"page" validate:"min=1"`                                                              // 页码，默认1
+	PageSize     int      `json:"page_size" validate:"min=1,max=50"`                                                  // 每页大小，默认10，最大50
+	Status       []string `json:"status,omitempty" validate:"dive,oneof=not_started in_progress completed cancelled"` // 状态过滤
+	IncludeEmpty bool     `json:"include_empty,omitempty"`                                                            // 是否包含无子任务的根任务，默认true
+}
+
+// 移动任务请求
+type MoveTaskRequest struct {
+	TaskID      string `json:"task_id" validate:"required"` // 要移动的任务ID
+	NewParentID string `json:"new_parent_id,omitempty"`     // 新父任务ID，空表示移动到根级别
+}
+
+// 分页查询日志请求（新版本，支持过滤）
+type ListJournalsWithPaginationRequest struct {
+	Page        int        `json:"page" validate:"min=1"`                                                         // 页码，默认1
+	PageSize    int        `json:"page_size" validate:"min=1,max=100"`                                            // 每页大小，默认20
+	JournalType *string    `json:"journal_type,omitempty" validate:"omitempty,oneof=day week month quarter year"` // 日志类型过滤
+	StartDate   *time.Time `json:"start_date,omitempty"`                                                          // 时间范围过滤开始
+	EndDate     *time.Time `json:"end_date,omitempty"`                                                            // 时间范围过滤结束
+}
+
 func PeriodTypeFromString(s string) (biz.PeriodType, error) {
 	switch s {
 	case "day":
@@ -116,5 +150,35 @@ func PeriodTypeFromString(s string) (biz.PeriodType, error) {
 		return biz.PeriodYear, nil
 	default:
 		return 0, fmt.Errorf("unknown period type: %s", s)
+	}
+}
+
+func TaskStatusFromString(s string) (biz.TaskStatus, error) {
+	switch s {
+	case "not_started":
+		return biz.TaskStatusNotStarted, nil
+	case "in_progress":
+		return biz.TaskStatusInProgress, nil
+	case "completed":
+		return biz.TaskStatusCompleted, nil
+	case "cancelled":
+		return biz.TaskStatusCancelled, nil
+	default:
+		return 0, fmt.Errorf("unknown task status: %s", s)
+	}
+}
+
+func TaskPriorityFromString(s string) (biz.TaskPriority, error) {
+	switch s {
+	case "low":
+		return biz.TaskPriorityLow, nil
+	case "medium":
+		return biz.TaskPriorityMedium, nil
+	case "high":
+		return biz.TaskPriorityHigh, nil
+	case "urgent":
+		return biz.TaskPriorityUrgent, nil
+	default:
+		return 0, fmt.Errorf("unknown task priority: %s", s)
 	}
 }

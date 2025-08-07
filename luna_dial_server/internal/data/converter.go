@@ -26,11 +26,19 @@ func (c *TaskConverter) BizToData(bizTask *biz.Task) *Task {
 		PeriodStart: bizTask.TimePeriod.Start,
 		PeriodEnd:   bizTask.TimePeriod.End,
 		Score:       bizTask.Score,
-		IsCompleted: bizTask.IsCompleted,
+		Status:      int(bizTask.Status),
+		Priority:    int(bizTask.Priority),
 		ParentID:    bizTask.ParentID,
 		Icon:        bizTask.Icon,
 		CreatedAt:   bizTask.CreatedAt,
 		UpdatedAt:   bizTask.UpdatedAt,
+		
+		// 新增：树结构优化字段转换
+		// 这些字段直接从业务层同步到数据层，确保数据一致性
+		HasChildren:   bizTask.HasChildren,
+		ChildrenCount: bizTask.ChildrenCount,
+		RootTaskID:    bizTask.RootTaskID,
+		TreeDepth:     bizTask.TreeDepth,
 	}
 
 	// 处理Tags数组转逗号分隔字符串
@@ -56,12 +64,24 @@ func (c *TaskConverter) DataToBiz(dataTask *Task) *biz.Task {
 			Start: dataTask.PeriodStart,
 			End:   dataTask.PeriodEnd,
 		},
-		Score:       dataTask.Score,
-		IsCompleted: dataTask.IsCompleted,
-		ParentID:    dataTask.ParentID,
+		Score:    dataTask.Score,
+		Status:   biz.TaskStatus(dataTask.Status),
+		Priority: biz.TaskPriority(dataTask.Priority),
+		ParentID: dataTask.ParentID,
 		Icon:        dataTask.Icon,
 		CreatedAt:   dataTask.CreatedAt,
 		UpdatedAt:   dataTask.UpdatedAt,
+		
+		// 新增：树结构优化字段转换
+		// 从数据库字段同步到业务层，为后续树构建提供基础数据
+		HasChildren:   dataTask.HasChildren,
+		ChildrenCount: dataTask.ChildrenCount,
+		RootTaskID:    dataTask.RootTaskID,
+		TreeDepth:     dataTask.TreeDepth,
+		
+		// Children字段在这里初始化为空切片，由上层业务逻辑负责构建树结构
+		// 设计思路：转换器只负责基础数据转换，树关系构建由专门的业务方法处理
+		Children: make([]*biz.Task, 0),
 	}
 
 	// 处理Tags逗号分隔字符串转数组

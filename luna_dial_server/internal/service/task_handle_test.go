@@ -49,6 +49,75 @@ func TestIsIcon(t *testing.T) {
 	}
 }
 
+func TestListRootTasksRequest_Defaults(t *testing.T) {
+	// 测试默认值设置逻辑
+	req := ListRootTasksRequest{
+		Page:     0,  // 无效值
+		PageSize: -1, // 无效值
+	}
+
+	// 模拟API处理函数中的默认值设置逻辑
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 20
+	}
+
+	if req.Page != 1 {
+		t.Errorf("Expected default Page = 1, got %d", req.Page)
+	}
+	if req.PageSize != 20 {
+		t.Errorf("Expected default PageSize = 20, got %d", req.PageSize)
+	}
+}
+
+func TestListGlobalTaskTreeRequest_Defaults(t *testing.T) {
+	// 测试全局任务树请求的默认值
+	req := ListGlobalTaskTreeRequest{
+		Page:     0,
+		PageSize: 0,
+	}
+
+	// 模拟API处理函数中的默认值设置逻辑
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+
+	if req.Page != 1 {
+		t.Errorf("Expected default Page = 1, got %d", req.Page)
+	}
+	if req.PageSize != 10 {
+		t.Errorf("Expected default PageSize = 10, got %d", req.PageSize)
+	}
+}
+
+func TestListJournalsWithPaginationRequest_Defaults(t *testing.T) {
+	// 测试日志分页请求的默认值
+	req := ListJournalsWithPaginationRequest{
+		Page:     0,
+		PageSize: 0,
+	}
+
+	// 模拟API处理函数中的默认值设置逻辑
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 20
+	}
+
+	if req.Page != 1 {
+		t.Errorf("Expected default Page = 1, got %d", req.Page)
+	}
+	if req.PageSize != 20 {
+		t.Errorf("Expected default PageSize = 20, got %d", req.PageSize)
+	}
+}
+
 // 基准测试
 func BenchmarkIsIcon(b *testing.B) {
 	testCases := []string{

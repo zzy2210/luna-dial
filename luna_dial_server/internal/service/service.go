@@ -78,6 +78,8 @@ func (s *Service) setupSessionRoutes() {
 	journalGroup.POST("", s.handleCreateJournal)
 	journalGroup.PUT("/:journal_id", s.handleUpdateJournal)
 	journalGroup.DELETE("/:journal_id", s.handleDeleteJournal)
+	// 阶段五新增：分页查询日志
+	journalGroup.GET("/paginated", s.handleListJournalsWithPagination)
 
 	taskGroup := protected.Group("/tasks")
 	taskGroup.GET("", s.handleListTasks)
@@ -87,6 +89,13 @@ func (s *Service) setupSessionRoutes() {
 	taskGroup.DELETE("/:task_id", s.handleDeleteTask)
 	taskGroup.POST("/:task_id/complete", s.handleCompleteTask)
 	taskGroup.PUT("/:task_id/score", s.handleUpdateTaskScore)
+	// 阶段五新增：任务树优化相关API
+	taskGroup.GET("/roots", s.handleListRootTasks)                   // 分页查询根任务
+	taskGroup.GET("/tree", s.handleListGlobalTaskTree)               // 全局任务树视图（分页）
+	taskGroup.GET("/:task_id/tree", s.handleGetTaskTree)             // 获取指定任务的完整任务树
+	taskGroup.GET("/:task_id/parents", s.handleGetTaskParents)       // 获取任务的父任务链
+	taskGroup.PUT("/:task_id/move", s.handleMoveTask)                // 移动任务
+	taskGroup.POST("/optimized", s.handleCreateTaskWithOptimization) // 使用优化的任务创建
 
 	planGroup := protected.Group("/plans")
 	planGroup.GET("", s.handleListPlans)

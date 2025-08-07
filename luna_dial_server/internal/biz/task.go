@@ -7,21 +7,54 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/labstack/gommon/log"
+)
+
+// TaskStatus 任务状态枚举
+type TaskStatus int
+
+const (
+	TaskStatusNotStarted TaskStatus = iota // 未开始
+	TaskStatusInProgress                   // 进行中
+	TaskStatusCompleted                    // 已完成
+	TaskStatusCancelled                    // 已取消
+)
+
+// TaskPriority 任务优先级枚举
+type TaskPriority int
+
+const (
+	TaskPriorityLow    TaskPriority = iota // 低
+	TaskPriorityMedium                     // 中
+	TaskPriorityHigh                       // 高
+	TaskPriorityUrgent                     // 紧急
 )
 
 type Task struct {
-	ID          string     `json:"id"`
-	Title       string     `json:"title"`
-	TaskType    PeriodType `json:"type"`
-	TimePeriod  Period     `json:"period"`
-	Tags        []string   `json:"tags"`
-	Icon        string     `json:"icon"`
-	Score       int        `json:"score"`
-	IsCompleted bool       `json:"is_completed"`
-	ParentID    string     `json:"parent_id"`
-	UserID      string     `json:"user_id"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	ID         string       `json:"id"`
+	Title      string       `json:"title"`
+	TaskType   PeriodType   `json:"type"`
+	TimePeriod Period       `json:"period"`
+	Tags       []string     `json:"tags"`
+	Icon       string       `json:"icon"`
+	Score      int          `json:"score"`
+	Status     TaskStatus   `json:"status"`
+	Priority   TaskPriority `json:"priority"`
+	ParentID   string       `json:"parent_id"`
+	UserID     string       `json:"user_id"`
+	CreatedAt  time.Time    `json:"created_at"`
+	UpdatedAt  time.Time    `json:"updated_at"`
+
+	// 新增：树结构优化字段（与数据库字段对应）
+	HasChildren   bool   `json:"has_children"`   // 是否有子任务：前端可据此判断是否显示展开按钮
+	ChildrenCount int    `json:"children_count"` // 直接子任务数量：前端显示子任务计数
+	RootTaskID    string `json:"root_task_id"`   // 根任务ID：用于批量查询和任务树重组
+	TreeDepth     int    `json:"tree_depth"`     // 树深度：前端渲染缩进层级
+
+	// 新增：内存构建的子任务列表（不存储到数据库）
+	// 设计说明：通过 root_task_id 批量查询获取所有相关任务后，在内存中构建这个树结构
+	// 优势：避免 N+1 查询问题，一次数据库查询 + 内存构建完整树
+	Children []*Task `json:"children,omitempty"`
 }
 
 // 创建任务参数
@@ -33,6 +66,7 @@ type CreateTaskParam struct {
 	Tags     []string
 	Icon     string
 	Score    int
+	Priority TaskPriority
 	ParentID string
 }
 
@@ -42,11 +76,12 @@ type UpdateTaskParam struct {
 	UserID string
 	Title  *string
 	// Type        *PeriodType 暂时不运行修改任务类型吧
-	Period      *Period
-	Tags        *[]string
-	Icon        *string
-	Score       *int
-	IsCompleted *bool
+	Period   *Period
+	Tags     *[]string
+	Icon     *string
+	Score    *int
+	Status   *TaskStatus
+	Priority *TaskPriority
 }
 
 // 删除任务参数
@@ -69,6 +104,7 @@ type CreateSubTaskParam struct {
 	Title    string
 	Type     PeriodType
 	Period   Period
+	Priority TaskPriority
 	Tags     []string
 	Icon     string
 	Score    int
@@ -101,16 +137,39 @@ type ListTaskParentTreeParam struct {
 	TaskID string
 }
 
-// 获取某个任务的整个任务树参数
-type ListTaskTreeParam struct {
-	UserID string
-	TaskID string
-}
-
 type GetTaskStatsParam struct {
 	UserID  string
 	Period  Period
 	GroupBy PeriodType
+}
+
+// 分页查询根任务参数
+type ListRootTasksParam struct {
+	UserID        string
+	Page          int
+	PageSize      int
+	IncludeStatus []TaskStatus // 可选：指定要包含的状态，为空时默认排除已取消状态
+}
+
+// 全局任务树视图参数（分页）
+type ListGlobalTaskTreeParam struct {
+	UserID        string
+	Page          int
+	PageSize      int
+	IncludeStatus []TaskStatus // 可选：指定要包含的状态，为空时默认排除已取消状态
+}
+
+// 获取完整任务树参数
+type GetCompleteTaskTreeParam struct {
+	UserID        string
+	TaskID        string
+	IncludeStatus []TaskStatus // 可选：指定要包含的状态，为空时包含所有状态
+}
+
+// 获取任务父级链参数
+type GetTaskParentChainParam struct {
+	UserID string
+	TaskID string
 }
 
 type TaskUsecase struct {
@@ -162,6 +221,8 @@ func (uc *TaskUsecase) CreateTask(ctx context.Context, param CreateTaskParam) (*
 		Tags:       tags,
 		Icon:       param.Icon,
 		Score:      param.Score,
+		Status:     TaskStatusNotStarted, // 默认状态为未开始
+		Priority:   param.Priority,       // 使用传入的优先级，如果为0则默认为低优先级
 		UserID:     param.UserID,
 		ParentID:   param.ParentID,
 		CreatedAt:  time.Now(),
@@ -220,8 +281,11 @@ func (uc *TaskUsecase) UpdateTask(ctx context.Context, param UpdateTaskParam) (*
 	if param.Score != nil {
 		task.Score = *param.Score
 	}
-	if param.IsCompleted != nil {
-		task.IsCompleted = *param.IsCompleted
+	if param.Status != nil {
+		task.Status = *param.Status
+	}
+	if param.Priority != nil {
+		task.Priority = *param.Priority
 	}
 	err = uc.repo.UpdateTask(ctx, task)
 	if err != nil {
@@ -333,6 +397,8 @@ func (uc *TaskUsecase) CreateSubTask(ctx context.Context, param CreateSubTaskPar
 		Tags:       tags,
 		Icon:       param.Icon,
 		Score:      param.Score,
+		Status:     TaskStatusNotStarted, // 子任务默认状态为未开始
+		Priority:   param.Priority,       // 使用传入的优先级，由前端逻辑定义它与父任务等级一致
 		UserID:     param.UserID,
 		ParentID:   param.ParentID,
 		CreatedAt:  time.Now(),
@@ -416,38 +482,6 @@ func (uc *TaskUsecase) ListTaskByPeriod(ctx context.Context, param ListTaskByPer
 	// 注意：这里假设 GroupBy 参数用于过滤任务类型
 	taskType := int(param.GroupBy)
 	tasks, err := uc.repo.ListTasks(ctx, param.UserID, param.Period.Start, param.Period.End, taskType)
-	if err != nil {
-		return nil, err // 返回仓库层的错误
-	}
-
-	// 将 []*Task 转换为 []Task
-	result := make([]Task, 0, len(tasks))
-	for _, task := range tasks {
-		if task != nil {
-			result = append(result, *task)
-		}
-	}
-
-	return result, nil
-}
-
-// 获取某个任务的任务树 (整个树)
-func (uc *TaskUsecase) ListTaskTree(ctx context.Context, param ListTaskTreeParam) ([]Task, error) {
-	if param.TaskID == "" || param.UserID == "" {
-		return nil, ErrInvalidInput // 参数不合法
-	}
-
-	// 首先检查根任务是否存在并且属于该用户
-	rootTask, err := uc.repo.GetTask(ctx, param.TaskID, param.UserID)
-	if err != nil {
-		return nil, err // 返回仓库层的错误
-	}
-	if rootTask == nil {
-		return nil, ErrTaskNotFound // 任务不存在
-	}
-
-	// 调用仓库层获取任务树
-	tasks, err := uc.repo.ListTaskTree(ctx, param.TaskID, param.UserID)
 	if err != nil {
 		return nil, err // 返回仓库层的错误
 	}
@@ -564,6 +598,139 @@ func (uc *TaskUsecase) generateGroupKey(t time.Time, groupBy PeriodType) string 
 	default:
 		return t.Format("2006-01-02") // 默认按日分组
 	}
+}
+
+// ListRootTasks 分页查询根任务
+func (uc *TaskUsecase) ListRootTasks(ctx context.Context, param ListRootTasksParam) ([]*Task, int64, error) {
+	if param.UserID == "" {
+		return nil, 0, ErrInvalidInput
+	}
+
+	if param.Page <= 0 {
+		param.Page = 1
+	}
+	if param.PageSize <= 0 || param.PageSize > 100 {
+		param.PageSize = 20 // 默认每页20条
+	}
+
+	// 调用仓库层进行分页查询
+	tasks, total, err := uc.repo.ListRootTasksWithPagination(ctx, param.UserID, param.Page, param.PageSize, param.IncludeStatus)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return tasks, total, nil
+}
+
+// ListGlobalTaskTree 分页查看全部任务（按任务树形式排列）
+func (uc *TaskUsecase) ListGlobalTaskTree(ctx context.Context, param ListGlobalTaskTreeParam) ([]*Task, int64, error) {
+	if param.UserID == "" {
+		return nil, 0, ErrInvalidInput
+	}
+
+	if param.Page <= 0 {
+		param.Page = 1
+	}
+	if param.PageSize <= 0 || param.PageSize > 50 {
+		param.PageSize = 10 // 全局树视图每页较少，避免嵌套过深
+	}
+
+	// 步骤1：分页获取根任务列表
+	rootTasks, total, err := uc.repo.ListRootTasksWithPagination(ctx, param.UserID, param.Page, param.PageSize, param.IncludeStatus)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if len(rootTasks) == 0 {
+		return []*Task{}, total, nil
+	}
+
+	// 步骤2：收集根任务ID
+	rootTaskIDs := make([]string, len(rootTasks))
+	for i, task := range rootTasks {
+		rootTaskIDs[i] = task.ID
+	}
+
+	// 步骤3：批量获取所有子任务
+	allTasks, err := uc.repo.ListTasksByRootIDs(ctx, param.UserID, rootTaskIDs, param.IncludeStatus)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 步骤4：在内存中构建完整的树结构
+	// 注意：allTasks已经包含了根任务和所有子任务，由repo层的buildTreeStructure处理
+	return allTasks, total, nil
+}
+
+// GetCompleteTaskTree 获取包含指定任务的完整任务树
+func (uc *TaskUsecase) GetCompleteTaskTree(ctx context.Context, param GetCompleteTaskTreeParam) ([]*Task, error) {
+	if param.UserID == "" || param.TaskID == "" {
+		return nil, ErrInvalidInput
+	}
+
+	// 首先验证任务是否存在且属于用户
+	_, err := uc.repo.GetTask(ctx, param.TaskID, param.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 调用仓库层获取完整任务树
+	tasks, err := uc.repo.GetCompleteTaskTree(ctx, param.TaskID, param.UserID, param.IncludeStatus)
+	if err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
+// GetTaskParentChain 获取任务的父级链路
+func (uc *TaskUsecase) GetTaskParentChain(ctx context.Context, param GetTaskParentChainParam) ([]*Task, error) {
+	if param.UserID == "" || param.TaskID == "" {
+		return nil, ErrInvalidInput
+	}
+
+	// 首先验证任务是否存在且属于用户
+	_, err := uc.repo.GetTask(ctx, param.TaskID, param.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 调用仓库层获取父级链路
+	parentChain, err := uc.repo.GetTaskParentChain(ctx, param.TaskID, param.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return parentChain, nil
+}
+
+// 优化CreateTask方法：自动维护树字段
+func (uc *TaskUsecase) CreateTaskWithTreeOptimization(ctx context.Context, param CreateTaskParam) (*Task, error) {
+	// 复用原有的CreateTask逻辑
+	task, err := uc.CreateTask(ctx, param)
+	if err != nil {
+		return nil, err
+	}
+
+	// 创建完成后，更新树优化字段
+	err = uc.repo.UpdateTreeOptimizationFields(ctx, task.ID, task.UserID)
+	if err != nil {
+		// 记录错误但不影响创建结果
+
+		log.Warnf("Failed to update tree optimization fields for task %s: %v", task.ID, err)
+	}
+
+	// 如果有父任务，也需要更新父任务的子任务计数
+	if task.ParentID != "" {
+		err = uc.repo.UpdateTreeOptimizationFields(ctx, task.ParentID, task.UserID)
+		if err != nil {
+			// 记录错误但不影响创建结果
+			// TODO: 添加日志记录
+			log.Warnf("Failed to update tree optimization fields for parent task %s: %v", task.ParentID, err)
+		}
+	}
+
+	return task, nil
 }
 
 func generateID() string {

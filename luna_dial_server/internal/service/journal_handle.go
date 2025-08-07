@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"luna_dial/internal/biz"
 
 	"github.com/labstack/echo/v4"
@@ -130,4 +131,53 @@ func (s *Service) handleDeleteJournal(c echo.Context) error {
 		return c.JSON(500, NewErrorResponse(500, "Failed to delete journal"))
 	}
 	return c.NoContent(204)
+}
+
+// 分页查询日志列表（支持过滤）
+func (s *Service) handleListJournalsWithPagination(c echo.Context) error {
+	var req ListJournalsWithPaginationRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+	}
+
+	// 获取当前用户ID
+	userID, _, err := GetUserFromContext(c)
+	if err != nil {
+		return c.JSON(401, NewErrorResponse(401, "User not found"))
+	}
+
+	// 设置默认值
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 20
+	}
+
+	// 转换日志类型过滤条件
+	var journalType *int
+	if req.JournalType != nil {
+		pType, err := PeriodTypeFromString(*req.JournalType)
+		if err != nil {
+			return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid journal type: %s", *req.JournalType)))
+		}
+		intType := int(pType)
+		journalType = &intType
+	}
+
+	// 调用业务层
+	journals, total, err := s.journalUsecase.ListJournalsWithPagination(c.Request().Context(), biz.ListJournalsWithPaginationParam{
+		UserID:      userID,
+		Page:        req.Page,
+		PageSize:    req.PageSize,
+		JournalType: journalType,
+		PeriodStart: req.StartDate,
+		PeriodEnd:   req.EndDate,
+	})
+	if err != nil {
+		return c.JSON(500, NewErrorResponse(500, "Failed to get journals"))
+	}
+
+	// 返回分页响应
+	return c.JSON(200, NewPaginatedResponse(journals, req.Page, req.PageSize, total))
 }
