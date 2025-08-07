@@ -43,6 +43,17 @@ type Task struct {
 	UserID     string       `json:"user_id"`
 	CreatedAt  time.Time    `json:"created_at"`
 	UpdatedAt  time.Time    `json:"updated_at"`
+	
+	// 新增：树结构优化字段（与数据库字段对应）
+	HasChildren   bool   `json:"has_children"`   // 是否有子任务：前端可据此判断是否显示展开按钮
+	ChildrenCount int    `json:"children_count"` // 直接子任务数量：前端显示子任务计数
+	RootTaskID    string `json:"root_task_id"`   // 根任务ID：用于批量查询和任务树重组
+	TreeDepth     int    `json:"tree_depth"`     // 树深度：前端渲染缩进层级
+	
+	// 新增：内存构建的子任务列表（不存储到数据库）
+	// 设计说明：通过 root_task_id 批量查询获取所有相关任务后，在内存中构建这个树结构
+	// 优势：避免 N+1 查询问题，一次数据库查询 + 内存构建完整树
+	Children []*Task `json:"children,omitempty"`
 }
 
 // 创建任务参数

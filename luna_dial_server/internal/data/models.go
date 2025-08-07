@@ -28,6 +28,24 @@ type Task struct {
 	Status      int       `gorm:"default:0;not null" json:"status"`
 	Priority    int       `gorm:"default:0;not null" json:"priority"`
 	ParentID    string    `gorm:"type:varchar(36);index" json:"parent_id"`
+	
+	// 新增：树结构优化字段
+	// 设计思路：通过冗余字段减少递归查询，提升性能
+	// 查询策略：利用 root_task_id 批量查询整个树，然后在内存中构建父子关系
+	
+	HasChildren   bool   `gorm:"default:false" json:"has_children"`     // 是否有子任务：快速判断节点类型，避免额外查询
+	ChildrenCount int    `gorm:"default:0" json:"children_count"`       // 直接子任务数量：用于统计和分页计算
+	RootTaskID    string `gorm:"type:varchar(36);index" json:"root_task_id"` // 根任务ID：批量查询整个树的关键字段
+	TreeDepth     int    `gorm:"default:0" json:"tree_depth"`           // 树深度：排序和层级控制，根任务depth=0
+	
+	// 查询示例：
+	// 1. 获取指定任务的完整任务树（任意层级的taskID）：
+	//    步骤1：SELECT root_task_id FROM tasks WHERE id = ? AND user_id = ?
+	//    步骤2：SELECT * FROM tasks WHERE user_id = ? AND (id = root_task_id OR root_task_id = root_task_id) ORDER BY tree_depth
+	// 2. 获取以指定任务为根的子树：SELECT * FROM tasks WHERE user_id = ? AND root_task_id = ? ORDER BY tree_depth
+	// 3. 获取根任务分页：SELECT * FROM tasks WHERE user_id = ? AND (parent_id IS NULL OR parent_id = '') LIMIT ? OFFSET ?
+	// 4. 批量获取子任务：SELECT * FROM tasks WHERE user_id = ? AND root_task_id IN (?, ?, ?) ORDER BY root_task_id, tree_depth
+	
 	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
