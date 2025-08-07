@@ -315,3 +315,227 @@ func isEmojiRune(r rune) bool {
 func BoolPtr(b bool) *bool {
 	return &b
 }
+
+// 分页获取根任务列表
+func (s *Service) handleListRootTasks(c echo.Context) error {
+	var req ListRootTasksRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+	}
+
+	// 获取当前用户ID
+	userID, _, err := GetUserFromContext(c)
+	if err != nil {
+		return c.JSON(401, NewErrorResponse(401, "User not found"))
+	}
+
+	// 设置默认值
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 20
+	}
+
+	// 转换状态过滤条件
+	var statusFilters []biz.TaskStatus
+	for _, statusStr := range req.Status {
+		status, err := TaskStatusFromString(statusStr)
+		if err != nil {
+			return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid status: %s", statusStr)))
+		}
+		statusFilters = append(statusFilters, status)
+	}
+
+	// 注意：当前业务层不支持优先级和任务类型过滤，这些过滤条件将被忽略
+	// TODO: 未来版本可以扩展业务层支持更多过滤条件
+
+	// 调用业务层
+	tasks, total, err := s.taskUsecase.ListRootTasks(c.Request().Context(), biz.ListRootTasksParam{
+		UserID:        userID,
+		Page:          req.Page,
+		PageSize:      req.PageSize,
+		IncludeStatus: statusFilters,
+	})
+	if err != nil {
+		return c.JSON(500, NewErrorResponse(500, "Failed to get root tasks"))
+	}
+
+	// 返回分页响应
+	return c.JSON(200, NewPaginatedResponse(tasks, req.Page, req.PageSize, total))
+}
+
+// 获取全局任务树（分页）
+func (s *Service) handleListGlobalTaskTree(c echo.Context) error {
+	var req ListGlobalTaskTreeRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+	}
+
+	// 获取当前用户ID
+	userID, _, err := GetUserFromContext(c)
+	if err != nil {
+		return c.JSON(401, NewErrorResponse(401, "User not found"))
+	}
+
+	// 设置默认值
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+
+	// 转换状态过滤条件
+	var statusFilters []biz.TaskStatus
+	for _, statusStr := range req.Status {
+		status, err := TaskStatusFromString(statusStr)
+		if err != nil {
+			return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid status: %s", statusStr)))
+		}
+		statusFilters = append(statusFilters, status)
+	}
+
+	// 调用业务层
+	taskTrees, total, err := s.taskUsecase.ListGlobalTaskTree(c.Request().Context(), biz.ListGlobalTaskTreeParam{
+		UserID:        userID,
+		Page:          req.Page,
+		PageSize:      req.PageSize,
+		IncludeStatus: statusFilters,
+	})
+	if err != nil {
+		return c.JSON(500, NewErrorResponse(500, "Failed to get global task tree"))
+	}
+
+	// 返回分页响应
+	return c.JSON(200, NewPaginatedResponse(taskTrees, req.Page, req.PageSize, total))
+}
+
+// 获取指定任务的完整任务树
+func (s *Service) handleGetTaskTree(c echo.Context) error {
+	taskID := c.Param("task_id")
+	if taskID == "" {
+		return c.JSON(400, NewErrorResponse(400, "Task ID is required"))
+	}
+
+	// 获取当前用户ID
+	userID, _, err := GetUserFromContext(c)
+	if err != nil {
+		return c.JSON(401, NewErrorResponse(401, "User not found"))
+	}
+
+	// 可选的状态过滤
+	statusFilters := []biz.TaskStatus{}
+	if statusParam := c.QueryParam("status"); statusParam != "" {
+		// 支持多个状态过滤，用逗号分隔
+		for _, statusStr := range []string{statusParam} {
+			status, err := TaskStatusFromString(statusStr)
+			if err != nil {
+				return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid status: %s", statusStr)))
+			}
+			statusFilters = append(statusFilters, status)
+		}
+	}
+
+	// 调用业务层
+	taskTree, err := s.taskUsecase.GetCompleteTaskTree(c.Request().Context(), biz.GetCompleteTaskTreeParam{
+		UserID:        userID,
+		TaskID:        taskID,
+		IncludeStatus: statusFilters,
+	})
+	if err != nil {
+		return c.JSON(500, NewErrorResponse(500, "Failed to get task tree"))
+	}
+
+	// 返回树形结构响应
+	return c.JSON(200, NewSuccessResponse(taskTree))
+}
+
+// 获取任务的父任务链
+func (s *Service) handleGetTaskParents(c echo.Context) error {
+	taskID := c.Param("task_id")
+	if taskID == "" {
+		return c.JSON(400, NewErrorResponse(400, "Task ID is required"))
+	}
+
+	// 获取当前用户ID
+	userID, _, err := GetUserFromContext(c)
+	if err != nil {
+		return c.JSON(401, NewErrorResponse(401, "User not found"))
+	}
+
+	// 调用业务层
+	parentChain, err := s.taskUsecase.GetTaskParentChain(c.Request().Context(), biz.GetTaskParentChainParam{
+		UserID: userID,
+		TaskID: taskID,
+	})
+	if err != nil {
+		return c.JSON(500, NewErrorResponse(500, "Failed to get task parent chain"))
+	}
+
+	// 返回父任务链
+	return c.JSON(200, NewSuccessResponse(parentChain))
+}
+
+// 移动任务
+func (s *Service) handleMoveTask(c echo.Context) error {
+	var req MoveTaskRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+	}
+
+	// 获取当前用户ID
+	_, _, err := GetUserFromContext(c)
+	if err != nil {
+		return c.JSON(401, NewErrorResponse(401, "User not found"))
+	}
+
+	// TODO: 实现任务移动逻辑（当前业务层尚未实现MoveTask方法）
+	// 这里先返回一个提示信息
+	return c.JSON(501, NewErrorResponse(501, "Task move functionality is not yet implemented"))
+}
+
+// 使用优化的任务创建方法
+func (s *Service) handleCreateTaskWithOptimization(c echo.Context) error {
+	var req CreateTaskRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+	}
+
+	userID, _, err := GetUserFromContext(c)
+	if err != nil {
+		return c.JSON(401, NewErrorResponse(401, "User not found"))
+	}
+
+	if req.Icon != "" && !IsIcon(req.Icon) {
+		return c.JSON(400, NewErrorResponse(400, "Invalid icon format"))
+	}
+
+	pType, err := PeriodTypeFromString(req.PeriodType)
+	if err != nil {
+		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid period type: %s", req.PeriodType)))
+	}
+
+	priority, err := TaskPriorityFromString(req.Priority)
+	if err != nil {
+		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid priority: %s", req.Priority)))
+	}
+
+	// 使用优化的创建方法
+	task, err := s.taskUsecase.CreateTaskWithTreeOptimization(c.Request().Context(), biz.CreateTaskParam{
+		Title:  req.Title,
+		UserID: userID,
+		Type:   pType,
+		Period: biz.Period{
+			Start: req.StartDate,
+			End:   req.EndDate,
+		},
+		Icon:     req.Icon,
+		Tags:     req.Tags,
+		Priority: priority,
+	})
+	if err != nil {
+		return c.JSON(500, NewErrorResponse(500, "Failed to create task"))
+	}
+	return c.JSON(200, NewSuccessResponseWithMessage("Task created with tree optimization", task))
+}

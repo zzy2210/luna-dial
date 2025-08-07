@@ -199,7 +199,7 @@ func (m *mockJournalRepo) ListJournalsWithPagination(ctx context.Context, userID
 		if journalType != nil && int(journal.JournalType) != *journalType {
 			continue
 		}
-		
+
 		// 如果指定了时间范围过滤
 		if periodStart != nil && journal.TimePeriod.Start.Before(*periodStart) {
 			continue
@@ -207,7 +207,7 @@ func (m *mockJournalRepo) ListJournalsWithPagination(ctx context.Context, userID
 		if periodEnd != nil && journal.TimePeriod.End.After(*periodEnd) {
 			continue
 		}
-		
+
 		filteredJournals = append(filteredJournals, journal)
 	}
 
@@ -710,7 +710,7 @@ func TestJournalUsecase_ListJournalsWithPagination(t *testing.T) {
 	t.Run("按时间范围过滤", func(t *testing.T) {
 		startTime := time.Date(2025, 1, 14, 0, 0, 0, 0, time.UTC)
 		endTime := time.Date(2025, 1, 16, 23, 59, 59, 0, time.UTC)
-		
+
 		param := ListJournalsWithPaginationParam{
 			UserID:      TestUserID123,
 			Page:        1,
@@ -767,8 +767,8 @@ func TestJournalUsecase_ListJournalsWithPagination(t *testing.T) {
 	t.Run("参数自动调整 - 无效分页参数", func(t *testing.T) {
 		param := ListJournalsWithPaginationParam{
 			UserID:   TestUserID123,
-			Page:     -1,    // 无效页码
-			PageSize: 0,     // 无效页大小
+			Page:     -1, // 无效页码
+			PageSize: 0,  // 无效页大小
 		}
 
 		journals, total, err := usecase.ListJournalsWithPagination(ctx, param)

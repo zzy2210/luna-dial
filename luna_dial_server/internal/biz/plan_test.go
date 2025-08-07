@@ -155,6 +155,96 @@ func (m *mockTaskRepo) ListTaskParentTree(ctx context.Context, taskID, userID st
 	return []*Task{}, nil
 }
 
+// ========== 阶段五新增：mockTaskRepo缺失方法实现 ==========
+
+func (m *mockTaskRepo) ListRootTasksWithPagination(ctx context.Context, userID string, page, pageSize int, includeStatus []TaskStatus) ([]*Task, int64, error) {
+	// 模拟分页根任务数据
+	if userID == "user-123" {
+		rootTasks := []*Task{
+			{
+				ID:            "root-task-1",
+				Title:         "2024年度目标",
+				UserID:        userID,
+				TaskType:      PeriodYear,
+				HasChildren:   true,
+				ChildrenCount: 4,
+				TreeDepth:     0,
+				RootTaskID:    "root-task-1",
+			},
+			{
+				ID:            "root-task-2", 
+				Title:         "个人项目",
+				UserID:        userID,
+				TaskType:      PeriodMonth,
+				HasChildren:   false,
+				ChildrenCount: 0,
+				TreeDepth:     0,
+				RootTaskID:    "root-task-2",
+			},
+		}
+		
+		total := int64(len(rootTasks))
+		start := (page - 1) * pageSize
+		end := start + pageSize
+		
+		if start >= len(rootTasks) {
+			return []*Task{}, total, nil
+		}
+		if end > len(rootTasks) {
+			end = len(rootTasks)
+		}
+		
+		return rootTasks[start:end], total, nil
+	}
+	return []*Task{}, 0, nil
+}
+
+func (m *mockTaskRepo) ListTasksByRootIDs(ctx context.Context, userID string, rootTaskIDs []string, includeStatus []TaskStatus) ([]*Task, error) {
+	// 模拟按根任务ID批量查询
+	if userID == "user-123" && len(rootTaskIDs) > 0 {
+		tasks := []*Task{}
+		for _, rootID := range rootTaskIDs {
+			if rootID == "root-task-1" {
+				tasks = append(tasks, []*Task{
+					{ID: rootID, Title: "2024年度目标", TreeDepth: 0, RootTaskID: rootID},
+					{ID: "child-1", Title: "Q1目标", TreeDepth: 1, RootTaskID: rootID, ParentID: rootID},
+					{ID: "child-2", Title: "1月任务", TreeDepth: 2, RootTaskID: rootID, ParentID: "child-1"},
+				}...)
+			}
+		}
+		return tasks, nil
+	}
+	return []*Task{}, nil
+}
+
+func (m *mockTaskRepo) GetCompleteTaskTree(ctx context.Context, taskID, userID string, includeStatus []TaskStatus) ([]*Task, error) {
+	// 模拟获取完整任务树
+	if taskID == "root-task-1" && userID == "user-123" {
+		return []*Task{
+			{ID: taskID, Title: "2024年度目标", TreeDepth: 0, RootTaskID: taskID},
+			{ID: "child-1", Title: "Q1目标", TreeDepth: 1, RootTaskID: taskID, ParentID: taskID},
+			{ID: "child-2", Title: "1月任务", TreeDepth: 2, RootTaskID: taskID, ParentID: "child-1"},
+		}, nil
+	}
+	return []*Task{}, nil
+}
+
+func (m *mockTaskRepo) GetTaskParentChain(ctx context.Context, taskID, userID string) ([]*Task, error) {
+	// 模拟获取父任务链
+	if taskID == "child-2" && userID == "user-123" {
+		return []*Task{
+			{ID: "root-task-1", Title: "2024年度目标", TreeDepth: 0},
+			{ID: "child-1", Title: "Q1目标", TreeDepth: 1, ParentID: "root-task-1"},
+		}, nil
+	}
+	return []*Task{}, nil
+}
+
+func (m *mockTaskRepo) UpdateTreeOptimizationFields(ctx context.Context, taskID, userID string) error {
+	// 模拟更新树优化字段
+	return nil
+}
+
 // 测试 NewPlanUsecase 构造函数
 func TestNewPlanUsecase(t *testing.T) {
 	taskRepo := &mockTaskRepo{}
