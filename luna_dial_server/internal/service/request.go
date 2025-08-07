@@ -22,7 +22,8 @@ type CreateTaskRequest struct {
 	Description string    `json:"description"`
 	StartDate   time.Time `json:"start_date" validate:"required"`
 	EndDate     time.Time `json:"end_date" validate:"required"`
-	Priority    string    `json:"priority" validate:"required,oneof=low medium high"`
+	PeriodType  string    `json:"period_type" validate:"required,oneof=day week month quarter year"`
+	Priority    string    `json:"priority" validate:"required,oneof=low medium high urgent"`
 	Icon        string    `json:"icon"`
 	Tags        []string  `json:"tags"`
 }
@@ -32,7 +33,8 @@ type CreateSubTaskRequest struct {
 	Description string    `json:"description"`
 	StartDate   time.Time `json:"start_date" validate:"required"`
 	EndDate     time.Time `json:"end_date" validate:"required"`
-	Priority    string    `json:"priority" validate:"required,oneof=low medium high"`
+	PeriodType  string    `json:"period_type" validate:"required,oneof=day week month quarter year"`
+	Priority    string    `json:"priority" validate:"required,oneof=low medium high urgent"`
 	Icon        string    `json:"icon"`
 	Tags        []string  `json:"tags"`
 	TaskID      string    `json:"task_id" validate:"required"`
@@ -44,11 +46,11 @@ type UpdateTaskRequest struct {
 	Description *string    `json:"description,omitempty"`
 	StartDate   *time.Time `json:"start_date,omitempty"`
 	EndDate     *time.Time `json:"end_date,omitempty"`
-	Priority    *string    `json:"priority,omitempty" validate:"omitempty,oneof=low medium high"`
+	Priority    *string    `json:"priority,omitempty" validate:"omitempty,oneof=low medium high urgent"`
+	Status      *string    `json:"status,omitempty" validate:"omitempty,oneof=not_started in_progress completed cancelled"`
 	Icon        *string    `json:"icon,omitempty"`
 	Tags        *[]string  `json:"tags,omitempty"`
 	TaskID      string     `json:"task_id" validate:"required"`
-	IsCompleted *bool      `json:"is_completed,omitempty"`
 }
 
 // 标记任务完成
@@ -116,5 +118,35 @@ func PeriodTypeFromString(s string) (biz.PeriodType, error) {
 		return biz.PeriodYear, nil
 	default:
 		return 0, fmt.Errorf("unknown period type: %s", s)
+	}
+}
+
+func TaskStatusFromString(s string) (biz.TaskStatus, error) {
+	switch s {
+	case "not_started":
+		return biz.TaskStatusNotStarted, nil
+	case "in_progress":
+		return biz.TaskStatusInProgress, nil
+	case "completed":
+		return biz.TaskStatusCompleted, nil
+	case "cancelled":
+		return biz.TaskStatusCancelled, nil
+	default:
+		return 0, fmt.Errorf("unknown task status: %s", s)
+	}
+}
+
+func TaskPriorityFromString(s string) (biz.TaskPriority, error) {
+	switch s {
+	case "low":
+		return biz.TaskPriorityLow, nil
+	case "medium":
+		return biz.TaskPriorityMedium, nil
+	case "high":
+		return biz.TaskPriorityHigh, nil
+	case "urgent":
+		return biz.TaskPriorityUrgent, nil
+	default:
+		return 0, fmt.Errorf("unknown task priority: %s", s)
 	}
 }

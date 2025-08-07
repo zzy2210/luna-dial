@@ -60,7 +60,8 @@ func TestTaskUsecase_CreateTask(t *testing.T) {
 
 		// 验证自动设置的字段
 		assert.NotEmpty(t, task.ID, "ID should be generated")
-		assert.False(t, task.IsCompleted, "new task should be incomplete")
+		assert.Equal(t, TaskStatusNotStarted, task.Status, "new task should be not started")
+		assert.Equal(t, TaskPriorityLow, task.Priority, "new task should have low priority")
 		assert.False(t, task.CreatedAt.IsZero(), "created time should be set")
 		assert.False(t, task.UpdatedAt.IsZero(), "updated time should be set")
 	})
@@ -187,12 +188,12 @@ func TestTaskUsecase_UpdateTask(t *testing.T) {
 		assert.False(t, task.UpdatedAt.IsZero(), "updated time should be set")
 	})
 
-	t.Run("成功更新任务完成状态", func(t *testing.T) {
-		completed := true
+	t.Run("成功更新任务状态", func(t *testing.T) {
+		status := TaskStatusCompleted
 		param := UpdateTaskParam{
-			TaskID:      "task-123",
-			UserID:      "user-123",
-			IsCompleted: &completed,
+			TaskID: "task-123",
+			UserID: "user-123",
+			Status: &status,
 		}
 
 		task, err := usecase.UpdateTask(ctx, param)
@@ -200,7 +201,7 @@ func TestTaskUsecase_UpdateTask(t *testing.T) {
 		// ❌ TDD: 期望成功更新，当前业务逻辑未实现会失败
 		require.NoError(t, err, "UpdateTask should succeed for completion status")
 		require.NotNil(t, task, "should return updated task")
-		assert.True(t, task.IsCompleted, "task should be marked as completed")
+		assert.Equal(t, TaskStatusCompleted, task.Status, "task should be marked as completed")
 	})
 
 	t.Run("成功更新任务分数和标签", func(t *testing.T) {
@@ -220,6 +221,41 @@ func TestTaskUsecase_UpdateTask(t *testing.T) {
 		require.NotNil(t, task, "should return updated task")
 		assert.Equal(t, newScore, task.Score, "score should be updated")
 		assert.Equal(t, newTags, task.Tags, "tags should be updated")
+	})
+
+	t.Run("成功更新任务优先级", func(t *testing.T) {
+		priority := TaskPriorityUrgent
+		param := UpdateTaskParam{
+			TaskID:   "task-123",
+			UserID:   "user-123",
+			Priority: &priority,
+		}
+
+		task, err := usecase.UpdateTask(ctx, param)
+
+		// ❌ TDD: 期望成功更新，当前业务逻辑未实现会失败
+		require.NoError(t, err, "UpdateTask should succeed for priority")
+		require.NotNil(t, task, "should return updated task")
+		assert.Equal(t, TaskPriorityUrgent, task.Priority, "priority should be updated to urgent")
+	})
+
+	t.Run("成功更新任务状态和优先级", func(t *testing.T) {
+		status := TaskStatusInProgress
+		priority := TaskPriorityHigh
+		param := UpdateTaskParam{
+			TaskID:   "task-123",
+			UserID:   "user-123",
+			Status:   &status,
+			Priority: &priority,
+		}
+
+		task, err := usecase.UpdateTask(ctx, param)
+
+		// ❌ TDD: 期望成功更新，当前业务逻辑未实现会失败
+		require.NoError(t, err, "UpdateTask should succeed for status and priority")
+		require.NotNil(t, task, "should return updated task")
+		assert.Equal(t, TaskStatusInProgress, task.Status, "status should be updated to in progress")
+		assert.Equal(t, TaskPriorityHigh, task.Priority, "priority should be updated to high")
 	})
 
 	t.Run("权限验证失败 - 不同用户", func(t *testing.T) {
@@ -592,14 +628,15 @@ func TestTask_Fields(t *testing.T) {
 			Start: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
 			End:   time.Date(2025, 1, 15, 23, 59, 59, 0, time.UTC),
 		},
-		Tags:        []string{"测试", "任务"},
-		Icon:        "📝",
-		Score:       80,
-		IsCompleted: false,
-		ParentID:    "",
-		UserID:      "user-123",
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		Tags:      []string{"测试", "任务"},
+		Icon:      "📝",
+		Score:     80,
+		Status:    TaskStatusNotStarted,
+		Priority:  TaskPriorityLow,
+		ParentID:  "",
+		UserID:    "user-123",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	if task.ID != "task-123" {
@@ -618,8 +655,12 @@ func TestTask_Fields(t *testing.T) {
 		t.Errorf("期望分数为 80, 得到 %d", task.Score)
 	}
 
-	if task.IsCompleted {
-		t.Error("期望任务为未完成状态")
+	if task.Status != TaskStatusNotStarted {
+		t.Error("期望任务为未开始状态")
+	}
+
+	if task.Priority != TaskPriorityLow {
+		t.Error("期望任务为低优先级")
 	}
 
 	if len(task.Tags) != 2 {
@@ -747,6 +788,78 @@ func TestTaskUsecase_EdgeCases(t *testing.T) {
 			if strings.Contains(task.Title, "<script>") {
 				t.Error("可能存在XSS风险，需要转义HTML标签")
 			}
+		}
+	})
+}
+
+// 测试任务状态和优先级枚举
+func TestTaskUsecase_StatusAndPriority(t *testing.T) {
+	usecase := createTestTaskUsecase()
+	ctx := context.Background()
+
+	t.Run("测试所有任务状态", func(t *testing.T) {
+		statuses := []TaskStatus{
+			TaskStatusNotStarted,
+			TaskStatusInProgress,
+			TaskStatusCompleted,
+			TaskStatusCancelled,
+		}
+
+		for _, status := range statuses {
+			param := UpdateTaskParam{
+				TaskID: "task-123",
+				UserID: "user-123",
+				Status: &status,
+			}
+
+			task, err := usecase.UpdateTask(ctx, param)
+			if err == nil && task != nil {
+				assert.Equal(t, status, task.Status, "status should be updated correctly")
+			}
+		}
+	})
+
+	t.Run("测试所有优先级", func(t *testing.T) {
+		priorities := []TaskPriority{
+			TaskPriorityLow,
+			TaskPriorityMedium,
+			TaskPriorityHigh,
+			TaskPriorityUrgent,
+		}
+
+		for _, priority := range priorities {
+			param := UpdateTaskParam{
+				TaskID:   "task-123",
+				UserID:   "user-123",
+				Priority: &priority,
+			}
+
+			task, err := usecase.UpdateTask(ctx, param)
+			if err == nil && task != nil {
+				assert.Equal(t, priority, task.Priority, "priority should be updated correctly")
+			}
+		}
+	})
+
+	t.Run("创建任务时指定优先级", func(t *testing.T) {
+		param := CreateTaskParam{
+			UserID: "user-123",
+			Title:  "高优先级任务",
+			Type:   PeriodDay,
+			Period: Period{
+				Start: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
+				End:   time.Date(2025, 1, 16, 0, 0, 0, 0, time.UTC),
+			},
+			Tags:     []string{"测试", "优先级"},
+			Icon:     "🔥",
+			Score:    100,
+			Priority: TaskPriorityHigh,
+		}
+
+		task, err := usecase.CreateTask(ctx, param)
+		if err == nil && task != nil {
+			assert.Equal(t, TaskStatusNotStarted, task.Status, "new task should be not started by default")
+			assert.Equal(t, TaskPriorityHigh, task.Priority, "priority should match param")
 		}
 	})
 }
