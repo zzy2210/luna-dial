@@ -26,7 +26,7 @@ type Task struct {
 	Icon        string    `gorm:"type:varchar(10)" json:"icon"`
 	Score       int       `gorm:"default:0" json:"score"`
 	Status      int       `gorm:"default:0;not null" json:"status"`
-	Priority    int       `gorm:"default:1;not null" json:"priority"`
+	Priority    int       `gorm:"default:0;not null" json:"priority"`
 	ParentID    string    `gorm:"type:varchar(36);index" json:"parent_id"`
 	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`

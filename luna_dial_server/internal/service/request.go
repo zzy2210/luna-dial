@@ -22,6 +22,7 @@ type CreateTaskRequest struct {
 	Description string    `json:"description"`
 	StartDate   time.Time `json:"start_date" validate:"required"`
 	EndDate     time.Time `json:"end_date" validate:"required"`
+	PeriodType  string    `json:"period_type" validate:"required,oneof=day week month quarter year"`
 	Priority    string    `json:"priority" validate:"required,oneof=low medium high urgent"`
 	Icon        string    `json:"icon"`
 	Tags        []string  `json:"tags"`
@@ -32,6 +33,7 @@ type CreateSubTaskRequest struct {
 	Description string    `json:"description"`
 	StartDate   time.Time `json:"start_date" validate:"required"`
 	EndDate     time.Time `json:"end_date" validate:"required"`
+	PeriodType  string    `json:"period_type" validate:"required,oneof=day week month quarter year"`
 	Priority    string    `json:"priority" validate:"required,oneof=low medium high urgent"`
 	Icon        string    `json:"icon"`
 	Tags        []string  `json:"tags"`

@@ -92,6 +92,7 @@ type CreateSubTaskParam struct {
 	Title    string
 	Type     PeriodType
 	Period   Period
+	Priority TaskPriority
 	Tags     []string
 	Icon     string
 	Score    int
@@ -362,7 +363,7 @@ func (uc *TaskUsecase) CreateSubTask(ctx context.Context, param CreateSubTaskPar
 		Icon:       param.Icon,
 		Score:      param.Score,
 		Status:     TaskStatusNotStarted, // 子任务默认状态为未开始
-		Priority:   parentTask.Priority,  // 等级与父任务一致
+		Priority:   param.Priority,       // 使用传入的优先级，由前端逻辑定义它与父任务等级一致
 		UserID:     param.UserID,
 		ParentID:   param.ParentID,
 		CreatedAt:  time.Now(),

@@ -63,9 +63,9 @@ func (s *Service) handleCreateTask(c echo.Context) error {
 		return c.JSON(400, NewErrorResponse(400, "Invalid icon format"))
 	}
 
-	pType, err := PeriodTypeFromString(req.Priority)
+	pType, err := PeriodTypeFromString(req.PeriodType)
 	if err != nil {
-		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid period type: %s", req.Priority)))
+		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid period type: %s", req.PeriodType)))
 	}
 
 	priority, err := TaskPriorityFromString(req.Priority)
@@ -74,10 +74,10 @@ func (s *Service) handleCreateTask(c echo.Context) error {
 	}
 
 	task, err := s.taskUsecase.CreateTask(c.Request().Context(), biz.CreateTaskParam{
-		Title:    req.Title,
-		UserID:   userID,
-		Type:     pType,
-		Period:   biz.Period{
+		Title:  req.Title,
+		UserID: userID,
+		Type:   pType,
+		Period: biz.Period{
 			Start: req.StartDate,
 			End:   req.EndDate,
 		},
@@ -107,20 +107,26 @@ func (s *Service) handleCreateSubTask(c echo.Context) error {
 		return c.JSON(400, NewErrorResponse(400, "Invalid icon format"))
 	}
 
-	pType, err := PeriodTypeFromString(req.Priority)
+	periodType, err := PeriodTypeFromString(req.PeriodType)
 	if err != nil {
-		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid priority type: %s", req.Priority)))
+		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid period type: %s", req.PeriodType)))
+	}
+
+	priority, err := TaskPriorityFromString(req.Priority)
+	if err != nil {
+		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid priority: %s", req.Priority)))
 	}
 
 	subTask, err := s.taskUsecase.CreateSubTask(c.Request().Context(), biz.CreateSubTaskParam{
 		ParentID: req.TaskID,
 		UserID:   userID,
-		Type:     pType,
+		Type:     periodType,
 		Period: biz.Period{
 			Start: req.StartDate,
 			End:   req.EndDate,
 		},
-		Icon: req.Icon,
+		Icon:     req.Icon,
+		Priority: priority,
 	})
 	if err != nil {
 		return c.JSON(500, NewErrorResponse(500, "Failed to create subtask"))
