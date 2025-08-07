@@ -144,6 +144,89 @@ func (m *mockJournalRepo) ListAllJournals(ctx context.Context, userID string, of
 	return allJournals[start:end], nil
 }
 
+func (m *mockJournalRepo) ListJournalsWithPagination(ctx context.Context, userID string, page, pageSize int, journalType *int, periodStart, periodEnd *time.Time) ([]*Journal, int64, error) {
+	if userID == TestUserIDWithNoJournals {
+		return []*Journal{}, 0, nil
+	}
+
+	// 模拟完整的分页数据
+	allJournals := []*Journal{
+		{
+			ID:          TestJournalID1,
+			Title:       "日志1",
+			Content:     "内容1",
+			JournalType: PeriodDay,
+			UserID:      userID,
+			TimePeriod: Period{
+				Start: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
+				End:   time.Date(2025, 1, 16, 0, 0, 0, 0, time.UTC),
+			},
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		{
+			ID:          TestJournalID123,
+			Title:       "日志2",
+			Content:     "内容2",
+			JournalType: PeriodWeek,
+			UserID:      userID,
+			TimePeriod: Period{
+				Start: time.Date(2025, 1, 13, 0, 0, 0, 0, time.UTC),
+				End:   time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC),
+			},
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		{
+			ID:          "test-journal-3",
+			Title:       "日志3",
+			Content:     "内容3",
+			JournalType: PeriodMonth,
+			UserID:      userID,
+			TimePeriod: Period{
+				Start: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+				End:   time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC),
+			},
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+	}
+
+	// 应用过滤条件
+	filteredJournals := []*Journal{}
+	for _, journal := range allJournals {
+		// 如果指定了日志类型过滤
+		if journalType != nil && int(journal.JournalType) != *journalType {
+			continue
+		}
+		
+		// 如果指定了时间范围过滤
+		if periodStart != nil && journal.TimePeriod.Start.Before(*periodStart) {
+			continue
+		}
+		if periodEnd != nil && journal.TimePeriod.End.After(*periodEnd) {
+			continue
+		}
+		
+		filteredJournals = append(filteredJournals, journal)
+	}
+
+	total := int64(len(filteredJournals))
+
+	// 计算分页
+	offset := (page - 1) * pageSize
+	end := offset + pageSize
+
+	if offset >= len(filteredJournals) {
+		return []*Journal{}, total, nil
+	}
+	if end > len(filteredJournals) {
+		end = len(filteredJournals)
+	}
+
+	return filteredJournals[offset:end], total, nil
+}
+
 // 创建测试用的 JournalUsecase 实例
 func createTestJournalUsecase() *JournalUsecase {
 	repo := &mockJournalRepo{}
@@ -572,6 +655,131 @@ func TestPaginationParam_Fields(t *testing.T) {
 
 	assert.Equal(t, 2, param.PageNum, "page number should match")
 	assert.Equal(t, 20, param.PageSize, "page size should match")
+}
+
+// 测试 ListJournalsWithPagination 方法
+func TestJournalUsecase_ListJournalsWithPagination(t *testing.T) {
+	usecase := createTestJournalUsecase()
+	ctx := context.Background()
+
+	t.Run("成功获取分页日志列表", func(t *testing.T) {
+		param := ListJournalsWithPaginationParam{
+			UserID:   TestUserID123,
+			Page:     1,
+			PageSize: 10,
+		}
+
+		journals, total, err := usecase.ListJournalsWithPagination(ctx, param)
+
+		// ✅ TDD: 期望成功获取
+		require.NoError(t, err, "ListJournalsWithPagination should succeed")
+		require.NotNil(t, journals, "should return journal list")
+
+		// 验证分页大小
+		assert.LessOrEqual(t, len(journals), param.PageSize, "returned count should not exceed page size")
+		assert.GreaterOrEqual(t, total, int64(len(journals)), "total should be greater than or equal to returned count")
+
+		// 验证所有日志都属于指定用户
+		for _, journal := range journals {
+			assert.Equal(t, param.UserID, journal.UserID, "all journals should belong to specified user")
+		}
+	})
+
+	t.Run("按日志类型过滤", func(t *testing.T) {
+		dayType := int(PeriodDay)
+		param := ListJournalsWithPaginationParam{
+			UserID:      TestUserID123,
+			Page:        1,
+			PageSize:    10,
+			JournalType: &dayType,
+		}
+
+		journals, total, err := usecase.ListJournalsWithPagination(ctx, param)
+
+		// ✅ TDD: 期望成功获取过滤后的结果
+		require.NoError(t, err, "ListJournalsWithPagination with filter should succeed")
+		require.NotNil(t, journals, "should return filtered journal list")
+		assert.GreaterOrEqual(t, total, int64(0), "total should be non-negative")
+
+		// 验证所有返回的日志都是指定类型
+		for _, journal := range journals {
+			assert.Equal(t, PeriodDay, journal.JournalType, "all journals should be of specified type")
+		}
+	})
+
+	t.Run("按时间范围过滤", func(t *testing.T) {
+		startTime := time.Date(2025, 1, 14, 0, 0, 0, 0, time.UTC)
+		endTime := time.Date(2025, 1, 16, 23, 59, 59, 0, time.UTC)
+		
+		param := ListJournalsWithPaginationParam{
+			UserID:      TestUserID123,
+			Page:        1,
+			PageSize:    10,
+			PeriodStart: &startTime,
+			PeriodEnd:   &endTime,
+		}
+
+		journals, total, err := usecase.ListJournalsWithPagination(ctx, param)
+
+		// ✅ TDD: 期望成功获取时间范围内的结果
+		require.NoError(t, err, "ListJournalsWithPagination with time filter should succeed")
+		require.NotNil(t, journals, "should return time-filtered journal list")
+		assert.GreaterOrEqual(t, total, int64(0), "total should be non-negative")
+
+		// 验证所有返回的日志都在指定时间范围内
+		for _, journal := range journals {
+			assert.True(t, !journal.TimePeriod.Start.Before(startTime), "journal start time should be within range")
+			assert.True(t, !journal.TimePeriod.End.After(endTime), "journal end time should be within range")
+		}
+	})
+
+	t.Run("空结果分页", func(t *testing.T) {
+		param := ListJournalsWithPaginationParam{
+			UserID:   TestUserIDWithNoJournals,
+			Page:     1,
+			PageSize: 10,
+		}
+
+		journals, total, err := usecase.ListJournalsWithPagination(ctx, param)
+
+		// ✅ TDD: 期望成功获取空列表
+		require.NoError(t, err, "ListJournalsWithPagination should succeed even with no results")
+		require.NotNil(t, journals, "should return empty list, not nil")
+		assert.Empty(t, journals, "should return empty list for user with no journals")
+		assert.Equal(t, int64(0), total, "total should be 0 for user with no journals")
+	})
+
+	t.Run("参数验证失败 - 空用户ID", func(t *testing.T) {
+		param := ListJournalsWithPaginationParam{
+			UserID:   "", // 空用户ID
+			Page:     1,
+			PageSize: 10,
+		}
+
+		journals, total, err := usecase.ListJournalsWithPagination(ctx, param)
+
+		// ✅ TDD: 明确期望的业务错误
+		assert.Nil(t, journals, "should return nil for empty user ID")
+		assert.Equal(t, int64(0), total, "total should be 0 for invalid input")
+		assert.Equal(t, ErrUserIDEmpty, err, "should return ErrUserIDEmpty for empty user ID")
+	})
+
+	t.Run("参数自动调整 - 无效分页参数", func(t *testing.T) {
+		param := ListJournalsWithPaginationParam{
+			UserID:   TestUserID123,
+			Page:     -1,    // 无效页码
+			PageSize: 0,     // 无效页大小
+		}
+
+		journals, total, err := usecase.ListJournalsWithPagination(ctx, param)
+
+		// ✅ TDD: 期望自动调整参数后成功
+		require.NoError(t, err, "ListJournalsWithPagination should succeed with auto-adjusted params")
+		require.NotNil(t, journals, "should return journal list with default pagination")
+		assert.GreaterOrEqual(t, total, int64(0), "total should be non-negative")
+		// 验证使用了默认的分页参数（页码1，页大小20）
+		assert.LessOrEqual(t, len(journals), 20, "should use default page size of 20")
+	})
 }
 
 // 边界测试
