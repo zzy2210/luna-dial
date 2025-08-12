@@ -6,3 +6,5 @@ edition = "2024"
 [dependencies]
 ratatui = "0.29.0"
 crossterm = "0.28.1"
+chrono = { version = "0.4.41", features = ["serde"] }
+serde = { version = "1.0.219", features = ["derive"] }
