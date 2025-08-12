@@ -48,3 +48,34 @@ pub struct Task {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
+
+impl TaskStatus {
+    pub fn icon(&self) -> &'static str {
+        match self {
+            TaskStatus::NotStarted => "⭕",
+            TaskStatus::InProgress => "⏳",
+            TaskStatus::Completed => "✓",
+            TaskStatus::Cancelled => "⛔",
+        }
+    }
+
+    pub fn next(&self) -> TaskStatus {
+        match self {
+            TaskStatus::NotStarted => TaskStatus::InProgress,
+            TaskStatus::InProgress => TaskStatus::Completed,
+            TaskStatus::Completed => TaskStatus::Cancelled,
+            TaskStatus::Cancelled => TaskStatus::NotStarted,
+        }
+    }
+}
+
+impl TaskPriority {
+    pub fn display(&self) -> &'static str {
+        match self {
+            TaskPriority::Low => "[低]",
+            TaskPriority::Medium => "[中]",
+            TaskPriority::High => "[高]",
+            TaskPriority::Urgent => "[急]",
+        }
+    }
+}
