@@ -47,6 +47,13 @@ pub struct Task {
     pub user_id: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+
+    // 后端的树结构字段
+    pub has_children: bool,
+    pub children_count: u32,
+    pub tree_depth: u32,
+    pub root_task_id: Option<String>,
+    pub children: Vec<Task>,
 }
 
 impl TaskStatus {
