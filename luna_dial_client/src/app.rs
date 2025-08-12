@@ -44,12 +44,13 @@ pub struct App {
 
     pub tasks: Vec<Task>,                // 所有任务列表
     pub selected_task_index: usize,      // 当前选中的任务索引
+    pub expanded_tasks: HashSet<String>, // 记录展开的任务ID
 }
 
 impl App {
     pub fn new() -> Self {
         let now = Utc::now();
-        
+
         // 构建嵌套的任务树结构，模拟后端返回的数据
         let test_tasks = vec![
             // 根任务1：2025年度规划
@@ -70,7 +71,7 @@ impl App {
                 user_id: "user1".to_string(),
                 created_at: now - chrono::Duration::days(30),
                 updated_at: now - chrono::Duration::days(1),
-                
+
                 // 树结构字段
                 has_children: true,
                 children_count: 2,
@@ -95,7 +96,7 @@ impl App {
                         user_id: "user1".to_string(),
                         created_at: now - chrono::Duration::days(25),
                         updated_at: now - chrono::Duration::days(2),
-                        
+
                         // 树结构字段
                         has_children: true,
                         children_count: 2,
@@ -120,7 +121,7 @@ impl App {
                                 user_id: "user1".to_string(),
                                 created_at: now - chrono::Duration::days(20),
                                 updated_at: now,
-                                
+
                                 // 树结构字段
                                 has_children: true,
                                 children_count: 1,
@@ -145,7 +146,7 @@ impl App {
                                         user_id: "user1".to_string(),
                                         created_at: now - chrono::Duration::days(1),
                                         updated_at: now,
-                                        
+
                                         // 树结构字段
                                         has_children: false,
                                         children_count: 0,
@@ -173,7 +174,7 @@ impl App {
                                 user_id: "user1".to_string(),
                                 created_at: now - chrono::Duration::days(15),
                                 updated_at: now - chrono::Duration::days(5),
-                                
+
                                 // 树结构字段
                                 has_children: false,
                                 children_count: 0,
@@ -201,7 +202,7 @@ impl App {
                         user_id: "user1".to_string(),
                         created_at: now - chrono::Duration::days(10),
                         updated_at: now - chrono::Duration::days(3),
-                        
+
                         // 树结构字段
                         has_children: false,
                         children_count: 0,
@@ -229,7 +230,7 @@ impl App {
                 user_id: "user1".to_string(),
                 created_at: now - chrono::Duration::days(5),
                 updated_at: now - chrono::Duration::days(1),
-                
+
                 // 树结构字段
                 has_children: false,
                 children_count: 0,
@@ -246,6 +247,7 @@ impl App {
             running: true,
             tasks: test_tasks,
             selected_task_index: 0,
+            expanded_tasks: HashSet::new(), // 初始所有任务都是折叠的
         }
     }
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
@@ -333,7 +335,41 @@ impl App {
 
         let main_block = Block::bordered().title(title);
         if matches!(self.view_mode, ViewMode::GlobalTree) {
-           
+            // TODO 更完善
+            let visible_tasks = self.get_visible_tasks();
+            let task_items: Vec<ListItem> = visible_tasks
+                .iter()
+                .enumerate()
+                .map(|(i, (task, depth))| {
+                    let indicator = if i == self.selected_task_index {
+                        "► "
+                    } else {
+                        "  "
+                    };
+                    let expand_icon = if task.has_children {
+                        if self.expanded_tasks.contains(&task.id) {
+                            "▼ "
+                        } else {
+                            "▶ "
+                        }
+                    } else {
+                        "  "
+                    };
+                    let indent = " ".repeat(depth * 2);
+                    let content = format!(
+                        "{}{}{}{} {}",
+                        indicator,
+                        indent,
+                        expand_icon,
+                        task.status.icon(),
+                        task.title
+                    );
+                    ListItem::new(content)
+                })
+                .collect();
+
+            let task_list = List::new(task_items).block(main_block);
+            frame.render_widget(task_list, chunks[1]);
         } else {
             let text = Text::from("当前视图未实现");
             let paragraph = Paragraph::new(text).block(main_block);
@@ -379,7 +415,8 @@ impl App {
                 }
             }
             KeyCode::Down => {
-                if self.selected_task_index < self.tasks.len() - 1 {
+                let visible_tasks = self.get_visible_tasks();
+                if self.selected_task_index < visible_tasks.len() - 1 {
                     self.selected_task_index += 1;
                 }
             }
@@ -389,6 +426,34 @@ impl App {
                 }
             }
             _ => {}
+        }
+    }
+
+    // 获取所有可见任务  任务-层级
+    fn get_visible_tasks(&self) -> Vec<(&Task, usize)> {
+        let mut result = Vec::new();
+        for task in &self.tasks {
+            // 根目录统一给到 add
+            self.add_task_if_visible(task, 0, &mut result);
+        }
+        result
+    }
+
+    // 为任务-层级序列添加任务
+    fn add_task_if_visible<'a>(
+        &self,
+        task: &'a Task,
+        depth: usize,
+        result: &mut Vec<(&'a Task, usize)>,
+    ) {
+        // 直接添加传入数据
+        result.push((task, depth));
+        // 如果传入的task 是展开的
+        if self.expanded_tasks.contains(&task.id) {
+            for child in &task.children {
+                // 递归添加子任务
+                self.add_task_if_visible(child, depth + 1, result);
+            }
         }
     }
 }
