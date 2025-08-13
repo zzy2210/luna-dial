@@ -421,8 +421,26 @@ impl App {
                 }
             }
             KeyCode::Char(' ') => {
-                if let Some(task) = self.tasks.get_mut(self.selected_task_index) {
-                    task.status = task.status.next();
+                // 拿id
+                if let Some(current_task) = self.get_current_selected_task() {
+                    let task_id = current_task.id.clone();
+                    // 切换状态
+                    if let Some(task) = self.find_task_mut(&task_id) {
+                        task.status = task.status.next();
+                    }
+                }
+            }
+            // 收起
+            KeyCode::Left => {
+                if let Some(current_task) = self.get_current_selected_task() {
+                    let task_id = current_task.id.clone();
+                    self.expanded_tasks.remove(&task_id);
+                }
+            }
+            // 展开
+            KeyCode::Right => {
+                if let Some(current_task) = self.get_current_selected_task() {
+                    self.expanded_tasks.insert(current_task.id.clone());
                 }
             }
             _ => {}
@@ -455,5 +473,35 @@ impl App {
                 self.add_task_if_visible(child, depth + 1, result);
             }
         }
+    }
+
+    // 获取当前选择的任务
+    fn get_current_selected_task(&self) -> Option<&Task> {
+        let visible_tasks = self.get_visible_tasks();
+        visible_tasks
+            .get(self.selected_task_index)
+            .map(|(task, _)| *task)
+    }
+
+    // 递归查找任务
+    fn find_task_mut(&mut self, task_id: &str) -> Option<&mut Task> {
+        for task in &mut self.tasks {
+            if let Some(found) = Self::find_in_tree(task, task_id) {
+                return Some(found);
+            }
+        }
+        None
+    }
+
+    fn find_in_tree<'a>(task: &'a mut Task, task_id: &str) -> Option<&'a mut Task> {
+        if task.id == task_id {
+            return Some(task);
+        }
+        for child in &mut task.children {
+            if let Some(found) = Self::find_in_tree(child, task_id) {
+                return Some(found);
+            }
+        }
+        None
     }
 }
