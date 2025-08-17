@@ -19,10 +19,15 @@ pub enum TaskPriority {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PeriodType {
+    #[serde(rename = "daily")]
     Daily,
+    #[serde(rename = "weekly")]
     Weekly,
+    #[serde(rename = "monthly")]
     Monthly,
+    #[serde(rename = "quarterly")]
     Quarterly,
+    #[serde(rename = "yearly")]
     Yearly,
 }
 
@@ -36,7 +41,9 @@ pub struct Period {
 pub struct Task {
     pub id: String,
     pub title: String,
+    #[serde(rename = "type")]
     pub task_type: PeriodType,
+    #[serde(rename = "period")]
     pub time_period: Period,
     pub status: TaskStatus,
     pub tags: Vec<String>,
@@ -54,6 +61,57 @@ pub struct Task {
     pub tree_depth: u32,
     pub root_task_id: Option<String>,
     pub children: Vec<Task>,
+}
+
+// API响应的通用结构
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiResponse<T> {
+    pub code: u32,
+    pub message: String,
+    pub success: bool,
+    pub timestamp: u64,
+    pub data: T,
+}
+
+// 计划请求体
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlanRequest {
+    pub period_type: String, // "day", "week", "month", "quarter", "year"
+    pub start_date: DateTime<Utc>,
+    pub end_date: DateTime<Utc>,
+}
+
+// 计划响应数据
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlanData {
+    pub tasks: Vec<Task>,
+    pub tasks_total: u32,
+    pub journals: Vec<Journal>,
+    pub journals_total: u32,
+    pub plan_type: String,
+    pub plan_period: Period,
+    pub score_total: u32,
+    pub group_stats: Vec<GroupStat>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GroupStat {
+    pub group_key: String,
+    pub task_count: u32,
+    pub score_total: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Journal {
+    pub id: String,
+    pub title: String,
+    pub content: String,
+    pub journal_type: String,
+    pub time_period: Period,
+    pub icon: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub user_id: String,
 }
 
 impl TaskStatus {

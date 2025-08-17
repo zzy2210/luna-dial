@@ -1,7 +1,7 @@
-use std::{collections::HashSet, io};
+use std::{collections::HashSet, io, time::Duration, vec};
 
-use chrono::Utc;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use chrono::{Local, Utc};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, poll};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Direction, Layout},
@@ -9,7 +9,9 @@ use ratatui::{
     text::{Line, Span, Text},
     widgets::{Block, List, ListItem, Paragraph},
 };
+use tokio::runtime::Handle;
 
+use crate::api::ApiClient;
 use crate::models::{Period, PeriodType, Task, TaskPriority, TaskStatus};
 use crate::session::Session;
 
@@ -42,6 +44,9 @@ pub struct App {
 
     pub running: bool,
 
+    pub api_client: ApiClient, // API 客户端
+    pub loading: bool,         // 显示加载状态
+
     pub tasks: Vec<Task>,                // 所有任务列表
     pub selected_task_index: usize,      // 当前选中的任务索引
     pub expanded_tasks: HashSet<String>, // 记录展开的任务ID
@@ -49,197 +54,9 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        let now = Utc::now();
-
-        // 构建嵌套的任务树结构，模拟后端返回的数据
-        let test_tasks = vec![
-            // 根任务1：2025年度规划
-            Task {
-                id: "1".to_string(),
-                title: "2025年度规划".to_string(),
-                task_type: PeriodType::Yearly,
-                time_period: Period {
-                    start: now,
-                    end: now + chrono::Duration::days(365),
-                },
-                status: TaskStatus::InProgress,
-                tags: vec!["重要".to_string(), "年度".to_string()],
-                icon: "🎯".to_string(),
-                score: 0,
-                priority: TaskPriority::High,
-                parent_id: None,
-                user_id: "user1".to_string(),
-                created_at: now - chrono::Duration::days(30),
-                updated_at: now - chrono::Duration::days(1),
-
-                // 树结构字段
-                has_children: true,
-                children_count: 2,
-                tree_depth: 0,
-                root_task_id: None,
-                children: vec![
-                    // 子任务1.1：Q1季度目标
-                    Task {
-                        id: "2".to_string(),
-                        title: "Q1季度目标".to_string(),
-                        task_type: PeriodType::Quarterly,
-                        time_period: Period {
-                            start: now,
-                            end: now + chrono::Duration::days(90),
-                        },
-                        status: TaskStatus::InProgress,
-                        tags: vec!["重要".to_string(), "季度".to_string()],
-                        icon: "�".to_string(),
-                        score: 0,
-                        priority: TaskPriority::High,
-                        parent_id: Some("1".to_string()),
-                        user_id: "user1".to_string(),
-                        created_at: now - chrono::Duration::days(25),
-                        updated_at: now - chrono::Duration::days(2),
-
-                        // 树结构字段
-                        has_children: true,
-                        children_count: 2,
-                        tree_depth: 1,
-                        root_task_id: Some("1".to_string()),
-                        children: vec![
-                            // 子任务1.1.1：1月学习计划
-                            Task {
-                                id: "3".to_string(),
-                                title: "1月学习Rust".to_string(),
-                                task_type: PeriodType::Monthly,
-                                time_period: Period {
-                                    start: now,
-                                    end: now + chrono::Duration::days(30),
-                                },
-                                status: TaskStatus::InProgress,
-                                tags: vec!["学习".to_string(), "技术".to_string()],
-                                icon: "🦀".to_string(),
-                                score: 0,
-                                priority: TaskPriority::Urgent,
-                                parent_id: Some("2".to_string()),
-                                user_id: "user1".to_string(),
-                                created_at: now - chrono::Duration::days(20),
-                                updated_at: now,
-
-                                // 树结构字段
-                                has_children: true,
-                                children_count: 1,
-                                tree_depth: 2,
-                                root_task_id: Some("1".to_string()),
-                                children: vec![
-                                    // 子任务1.1.1.1：每日TUI练习
-                                    Task {
-                                        id: "4".to_string(),
-                                        title: "完成TUI客户端开发".to_string(),
-                                        task_type: PeriodType::Daily,
-                                        time_period: Period {
-                                            start: now,
-                                            end: now + chrono::Duration::hours(8),
-                                        },
-                                        status: TaskStatus::InProgress,
-                                        tags: vec!["学习".to_string(), "项目".to_string()],
-                                        icon: "�".to_string(),
-                                        score: 8,
-                                        priority: TaskPriority::High,
-                                        parent_id: Some("3".to_string()),
-                                        user_id: "user1".to_string(),
-                                        created_at: now - chrono::Duration::days(1),
-                                        updated_at: now,
-
-                                        // 树结构字段
-                                        has_children: false,
-                                        children_count: 0,
-                                        tree_depth: 3,
-                                        root_task_id: Some("1".to_string()),
-                                        children: vec![],
-                                    },
-                                ],
-                            },
-                            // 子任务1.1.2：2月项目实战
-                            Task {
-                                id: "5".to_string(),
-                                title: "2月项目实战".to_string(),
-                                task_type: PeriodType::Monthly,
-                                time_period: Period {
-                                    start: now + chrono::Duration::days(30),
-                                    end: now + chrono::Duration::days(60),
-                                },
-                                status: TaskStatus::NotStarted,
-                                tags: vec!["项目".to_string(), "实战".to_string()],
-                                icon: "🚀".to_string(),
-                                score: 0,
-                                priority: TaskPriority::Medium,
-                                parent_id: Some("2".to_string()),
-                                user_id: "user1".to_string(),
-                                created_at: now - chrono::Duration::days(15),
-                                updated_at: now - chrono::Duration::days(5),
-
-                                // 树结构字段
-                                has_children: false,
-                                children_count: 0,
-                                tree_depth: 2,
-                                root_task_id: Some("1".to_string()),
-                                children: vec![],
-                            },
-                        ],
-                    },
-                    // 子任务1.2：Q2季度目标
-                    Task {
-                        id: "6".to_string(),
-                        title: "Q2季度目标".to_string(),
-                        task_type: PeriodType::Quarterly,
-                        time_period: Period {
-                            start: now + chrono::Duration::days(90),
-                            end: now + chrono::Duration::days(180),
-                        },
-                        status: TaskStatus::NotStarted,
-                        tags: vec!["重要".to_string(), "季度".to_string()],
-                        icon: "�".to_string(),
-                        score: 0,
-                        priority: TaskPriority::Medium,
-                        parent_id: Some("1".to_string()),
-                        user_id: "user1".to_string(),
-                        created_at: now - chrono::Duration::days(10),
-                        updated_at: now - chrono::Duration::days(3),
-
-                        // 树结构字段
-                        has_children: false,
-                        children_count: 0,
-                        tree_depth: 1,
-                        root_task_id: Some("1".to_string()),
-                        children: vec![],
-                    },
-                ],
-            },
-            // 根任务2：健康计划（独立的根任务）
-            Task {
-                id: "7".to_string(),
-                title: "健康管理计划".to_string(),
-                task_type: PeriodType::Yearly,
-                time_period: Period {
-                    start: now,
-                    end: now + chrono::Duration::days(365),
-                },
-                status: TaskStatus::NotStarted,
-                tags: vec!["健康".to_string(), "生活".to_string()],
-                icon: "💪".to_string(),
-                score: 0,
-                priority: TaskPriority::Medium,
-                parent_id: None,
-                user_id: "user1".to_string(),
-                created_at: now - chrono::Duration::days(5),
-                updated_at: now - chrono::Duration::days(1),
-
-                // 树结构字段
-                has_children: false,
-                children_count: 0,
-                tree_depth: 0,
-                root_task_id: None,
-                children: vec![],
-            },
-        ];
-
+        //TODO  空数据 后续或许可以删除？
+        let test_tasks = vec![];
+        let api_client = ApiClient::new("http://localhost:8081".to_string());
         App {
             view_mode: ViewMode::GlobalTree,
             input_mode: InputMode::Normal,
@@ -247,13 +64,15 @@ impl App {
             running: true,
             tasks: test_tasks,
             selected_task_index: 0,
+            api_client: api_client,
+            loading: false,
             expanded_tasks: HashSet::new(), // 初始所有任务都是折叠的
         }
     }
-    pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+    pub async fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         while self.running {
             terminal.draw(|frame| self.draw(frame))?;
-            self.handle_events()?;
+            self.handle_events().await?;
         }
         Ok(())
     }
@@ -334,46 +153,101 @@ impl App {
         frame.render_widget(nav_paragraph, chunks[0]);
 
         let main_block = Block::bordered().title(title);
-        if matches!(self.view_mode, ViewMode::GlobalTree) {
-            // TODO 更完善
-            let visible_tasks = self.get_visible_tasks();
-            let task_items: Vec<ListItem> = visible_tasks
-                .iter()
-                .enumerate()
-                .map(|(i, (task, depth))| {
-                    let indicator = if i == self.selected_task_index {
-                        "► "
-                    } else {
-                        "  "
-                    };
-                    let expand_icon = if task.has_children {
-                        if self.expanded_tasks.contains(&task.id) {
-                            "▼ "
+        match self.view_mode {
+            ViewMode::GlobalTree => {
+                // TODO 更完善
+                let visible_tasks = self.get_visible_tasks();
+                let task_items: Vec<ListItem> = visible_tasks
+                    .iter()
+                    .enumerate()
+                    .map(|(i, (task, depth))| {
+                        let indicator = if i == self.selected_task_index {
+                            "► "
                         } else {
-                            "▶ "
-                        }
-                    } else {
-                        "  "
-                    };
-                    let indent = " ".repeat(depth * 2);
-                    let content = format!(
-                        "{}{}{}{} {}",
-                        indicator,
-                        indent,
-                        expand_icon,
-                        task.status.icon(),
-                        task.title
-                    );
-                    ListItem::new(content)
-                })
-                .collect();
+                            "  "
+                        };
+                        let expand_icon = if task.has_children {
+                            if self.expanded_tasks.contains(&task.id) {
+                                "▼ "
+                            } else {
+                                "▶ "
+                            }
+                        } else {
+                            "  "
+                        };
+                        let indent = " ".repeat(depth * 2);
+                        let content = format!(
+                            "{}{}{}{} {}",
+                            indicator,
+                            indent,
+                            expand_icon,
+                            task.status.icon(),
+                            task.title
+                        );
+                        ListItem::new(content)
+                    })
+                    .collect();
 
-            let task_list = List::new(task_items).block(main_block);
-            frame.render_widget(task_list, chunks[1]);
-        } else {
-            let text = Text::from("当前视图未实现");
-            let paragraph = Paragraph::new(text).block(main_block);
-            frame.render_widget(paragraph, chunks[1]);
+                let task_list = List::new(task_items).block(main_block);
+                frame.render_widget(task_list, chunks[1]);
+            }
+            ViewMode::Today => {
+                // 确保加载今日任务
+
+                let horizontal_chunks = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+                    .split(chunks[1]);
+
+                let today_tasks = self.get_visible_tasks();
+                let task_items: Vec<ListItem> = today_tasks
+                    .iter()
+                    .enumerate()
+                    .map(|(i, (task, depth))| {
+                        let indicator = if i == self.selected_task_index {
+                            "► "
+                        } else {
+                            "  "
+                        };
+                        let expand_icon = if task.has_children {
+                            if self.expanded_tasks.contains(&task.id) {
+                                "▼ "
+                            } else {
+                                "▶ "
+                            }
+                        } else {
+                            "  "
+                        };
+                        let indent = " ".repeat(depth * 2);
+                        let content = format!(
+                            "{}{}{}{} {}",
+                            indicator,
+                            indent,
+                            expand_icon,
+                            task.status.icon(),
+                            task.title
+                        );
+                        ListItem::new(content)
+                    })
+                    .collect();
+                let task_list = List::new(task_items).block(Block::bordered().title("📋 今日任务"));
+                frame.render_widget(task_list, horizontal_chunks[0]);
+
+                // 右侧：相关文档列表（暂时显示占位符）
+                let doc_items = vec![
+                    ListItem::new("📝 设计文档v1.0"),
+                    ListItem::new("📊 API接口文档"),
+                    ListItem::new("💭 需求分析"),
+                ];
+
+                let doc_list = List::new(doc_items).block(Block::bordered().title("📚 相关文档"));
+                frame.render_widget(doc_list, horizontal_chunks[1]);
+            }
+            _ => {
+                let text = Text::from("当前视图未实现");
+                let paragraph = Paragraph::new(text).block(main_block);
+                frame.render_widget(paragraph, chunks[1]);
+            }
         }
 
         let help_text = "Tab: 切换视图 | q: 退出";
@@ -382,17 +256,20 @@ impl App {
         frame.render_widget(help_paragraph, chunks[2]);
     }
 
-    fn handle_events(&mut self) -> io::Result<()> {
-        match event::read()? {
-            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                self.handle_key_event(key_event)
+    async fn handle_events(&mut self) -> io::Result<()> {
+        if event::poll(Duration::from_millis(250))? {
+            if let Event::Key(key_event) = event::read()? {
+                if key_event.kind == KeyEventKind::Press {
+                    // 处理按键事件
+                    self.handle_key_event(key_event).await;
+                }
             }
-            _ => {}
         }
+
         Ok(())
     }
 
-    fn handle_key_event(&mut self, key_event: KeyEvent) {
+    async fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => {
                 self.running = false;
@@ -408,6 +285,13 @@ impl App {
                     ViewMode::CustomTime => ViewMode::GlobalTree,
                     ViewMode::GlobalTree => ViewMode::Today,
                 };
+
+                if matches!(self.view_mode, ViewMode::Today) {
+                    // 切换到今日视图时，加载今日任务
+                    if let Err(e) = self.load_today_tasks().await {
+                        eprintln!("加载今日任务失败: {}", e);
+                    }
+                }
             }
             KeyCode::Up => {
                 if self.selected_task_index > 0 {
@@ -503,5 +387,21 @@ impl App {
             }
         }
         None
+    }
+
+    // 请求获取今日任务
+    pub async fn load_today_tasks(&mut self) -> Result<(), crate::api::ApiError> {
+        self.loading = true;
+        match self.api_client.get_today_plan().await {
+            Ok(tasks) => {
+                self.tasks = tasks;
+                self.loading = false;
+                Ok(()) // 成功时返回 Ok(())
+            }
+            Err(e) => {
+                self.loading = false;
+                Err(e) // 失败时返回错误，让调用者处理
+            }
+        }
     }
 }

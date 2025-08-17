@@ -1,5 +1,6 @@
 use std::io;
 
+mod api;
 mod app;
 mod models;
 mod session;
@@ -16,10 +17,11 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 
-fn main() -> io::Result<()> {
+#[tokio::main]
+async fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
     let mut app = App::new();
-    let result = app.run(&mut terminal);
+    let result = app.run(&mut terminal).await;
     ratatui::restore();
     result
 }
