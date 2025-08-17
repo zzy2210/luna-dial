@@ -14,7 +14,10 @@ pub fn init_logger() -> Result<(), Box<dyn std::error::Error>> {
     let log_file_path = format!("{}/luna_dial_client_{}.log", logs_dir, current_date);
 
     // 创建文件追加器
-    let file_appender = tracing_appender::rolling::never(logs_dir, format!("luna_dial_client_{}.log", current_date));
+    let file_appender = tracing_appender::rolling::never(
+        logs_dir,
+        format!("luna_dial_client_{}.log", current_date),
+    );
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
     // 设置 tracing subscriber
@@ -22,12 +25,12 @@ pub fn init_logger() -> Result<(), Box<dyn std::error::Error>> {
         .with(
             tracing_subscriber::fmt::layer()
                 .with_writer(non_blocking)
-                .with_ansi(false)  // 文件中不使用颜色
+                .with_ansi(false) // 文件中不使用颜色
                 .with_target(true)
                 .with_level(true)
                 .with_thread_ids(false)
                 .with_file(false)
-                .with_line_number(false)
+                .with_line_number(false),
         )
         .init();
 
