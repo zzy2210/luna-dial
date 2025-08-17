@@ -5,11 +5,12 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, poll};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Direction, Layout},
+    prelude::Rect,
     style::{Color, Style},
     text::{Line, Span, Text},
     widgets::{Block, List, ListItem, Paragraph},
+    widgets::{Widget, Wrap},
 };
-use tokio::runtime::Handle;
 
 use crate::api::ApiClient;
 use crate::models::{Period, PeriodType, Task, TaskPriority, TaskStatus};
@@ -50,6 +51,10 @@ pub struct App {
     pub tasks: Vec<Task>,                // 所有任务列表
     pub selected_task_index: usize,      // 当前选中的任务索引
     pub expanded_tasks: HashSet<String>, // 记录展开的任务ID
+
+    // 错误处理 感觉不需要pub
+    error_msg: Option<String>, // 错误信息
+    show_error: bool,          // 是否显示错误提示
 }
 
 impl App {
@@ -67,6 +72,8 @@ impl App {
             api_client: api_client,
             loading: false,
             expanded_tasks: HashSet::new(), // 初始所有任务都是折叠的
+            show_error: false,
+            error_msg: None, // 初始没有错误信息
         }
     }
     pub async fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
@@ -254,6 +261,40 @@ impl App {
         let help_paragraph = Paragraph::new(help_text);
 
         frame.render_widget(help_paragraph, chunks[2]);
+        if self.show_error {
+            if let Some(error_msg) = &self.error_msg {
+                // 创建一个居中的错误弹窗
+                let error_area = self.centered_rect(60, 20, frame.area());
+                let error_block = Block::bordered()
+                    .title("错误")
+                    .style(Style::default().fg(Color::Red));
+                let error_paragraph = Paragraph::new(error_msg.as_str())
+                    .block(error_block)
+                    .wrap(Wrap { trim: true });
+                frame.render_widget(error_paragraph, error_area);
+            }
+        }
+    }
+
+    // 辅助函数：创建居中的矩形区域
+    fn centered_rect(&self, percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+        let popup_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage((100 - percent_y) / 2),
+                Constraint::Percentage(percent_y),
+                Constraint::Percentage((100 - percent_y) / 2),
+            ])
+            .split(r);
+
+        Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage((100 - percent_x) / 2),
+                Constraint::Percentage(percent_x),
+                Constraint::Percentage((100 - percent_x) / 2),
+            ])
+            .split(popup_layout[1])[1]
     }
 
     async fn handle_events(&mut self) -> io::Result<()> {
@@ -289,7 +330,18 @@ impl App {
                 if matches!(self.view_mode, ViewMode::Today) {
                     // 切换到今日视图时，加载今日任务
                     if let Err(e) = self.load_today_tasks().await {
-                        eprintln!("加载今日任务失败: {}", e);
+                        // eprintln!("加载今日任务失败: {}", e);
+                        // TODO
+                        /*
+                        1. 记录log error
+                        2. 打印错误
+                         */
+
+                        self.error_msg = Some(format!("加载今日任务失败: {}", e));
+                        self.show_error = true;
+                    } else {
+                        self.show_error = false; // 成功加载任务后隐藏错误
+                        self.error_msg = None; // 清除错误信息
                     }
                 }
             }
@@ -327,6 +379,15 @@ impl App {
                     self.expanded_tasks.insert(current_task.id.clone());
                 }
             }
+
+            //关闭错误提示
+            KeyCode::Esc => {
+                if self.show_error {
+                    self.show_error = false;
+                    self.error_msg = None; // 清除错误信息
+                }
+            }
+
             _ => {}
         }
     }
