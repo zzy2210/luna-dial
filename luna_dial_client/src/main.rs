@@ -2,6 +2,7 @@ use std::io;
 
 mod api;
 mod app;
+mod logger;
 mod models;
 mod session;
 
@@ -19,6 +20,7 @@ use ratatui::{
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
+    logger::init_logger().expect("日志系统初始化失败");
     let mut terminal = ratatui::init();
     let mut app = App::new();
     let result = app.run(&mut terminal).await;

@@ -330,12 +330,7 @@ impl App {
                 if matches!(self.view_mode, ViewMode::Today) {
                     // 切换到今日视图时，加载今日任务
                     if let Err(e) = self.load_today_tasks().await {
-                        // eprintln!("加载今日任务失败: {}", e);
-                        // TODO
-                        /*
-                        1. 记录log error
-                        2. 打印错误
-                         */
+                        tracing::error!("加载今日任务失败: {}", e);
 
                         self.error_msg = Some(format!("加载今日任务失败: {}", e));
                         self.show_error = true;
