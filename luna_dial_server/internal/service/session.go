@@ -37,34 +37,38 @@ func (s *Service) SessionMiddleware() echo.MiddlewareFunc {
 				}
 			}
 
-			// 如果都没有找到session ID，返回错误
-			if sessionID == "" {
-				return echo.NewHTTPError(401, map[string]string{
-					"error":   "unauthorized",
-					"message": "Authorization header or session cookie is required",
-				})
-			}
+            // 如果都没有找到session ID，返回统一错误响应
+            if sessionID == "" {
+                return c.JSON(401, &Response{
+                    Code:      401,
+                    Message:   "Authorization header or session cookie is required",
+                    Success:   false,
+                    Timestamp: time.Now().Unix(),
+                })
+            }
 
 			// 验证并刷新session
-			session, err := s.sessionManager.ValidateSession(c.Request().Context(), sessionID)
-			if err != nil {
-				var message string
-				switch err {
-				case data.ErrSessionNotFound:
-					message = "Session not found"
-				case data.ErrSessionExpired:
-					message = "Session has expired"
-				case data.ErrSessionInvalid:
-					message = "Session is invalid"
-				default:
-					message = "Session validation failed"
-				}
+            session, err := s.sessionManager.ValidateSession(c.Request().Context(), sessionID)
+            if err != nil {
+                var message string
+                switch err {
+                case data.ErrSessionNotFound:
+                    message = "Session not found"
+                case data.ErrSessionExpired:
+                    message = "Session has expired"
+                case data.ErrSessionInvalid:
+                    message = "Session is invalid"
+                default:
+                    message = "Session validation failed"
+                }
 
-				return echo.NewHTTPError(401, map[string]string{
-					"error":   "unauthorized",
-					"message": message,
-				})
-			}
+                return c.JSON(401, &Response{
+                    Code:      401,
+                    Message:   message,
+                    Success:   false,
+                    Timestamp: time.Now().Unix(),
+                })
+            }
 
 			// 刷新session过期时间
 			if err := s.sessionManager.RefreshSession(c.Request().Context(), sessionID); err != nil {

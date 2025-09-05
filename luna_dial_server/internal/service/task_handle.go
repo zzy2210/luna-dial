@@ -15,10 +15,13 @@ var (
 
 // 查看指定时间段内指定类型的任务
 func (s *Service) handleListTasks(c echo.Context) error {
-	var req ListTaskRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    var req ListTaskRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
 	// 获取当前用户ID
 	userId, _, err := GetUserFromContext(c)
@@ -54,10 +57,13 @@ func (s *Service) handleListTasks(c echo.Context) error {
 
 // 创建任务
 func (s *Service) handleCreateTask(c echo.Context) error {
-	var req CreateTaskRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    var req CreateTaskRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
 	userID, _, err := GetUserFromContext(c)
 	if err != nil {
@@ -98,68 +104,86 @@ func (s *Service) handleCreateTask(c echo.Context) error {
 
 // 创建子任务
 func (s *Service) handleCreateSubTask(c echo.Context) error {
-	var req CreateSubTaskRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    // 路径参数作为父任务ID的单一可信来源
+    parentID := c.Param("task_id")
+    if parentID == "" {
+        return c.JSON(400, NewErrorResponse(400, "Task ID is required"))
+    }
 
-	userID, _, err := GetUserFromContext(c)
-	if err != nil {
-		return c.JSON(401, NewErrorResponse(401, "User not found"))
-	}
+    var req CreateSubTaskRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
-	if req.Icon != "" && !IsIcon(req.Icon) {
-		return c.JSON(400, NewErrorResponse(400, "Invalid icon format"))
-	}
+    userID, _, err := GetUserFromContext(c)
+    if err != nil {
+        return c.JSON(401, NewErrorResponse(401, "User not found"))
+    }
 
-	periodType, err := PeriodTypeFromString(req.PeriodType)
-	if err != nil {
-		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid period type: %s", req.PeriodType)))
-	}
+    if req.Icon != "" && !IsIcon(req.Icon) {
+        return c.JSON(400, NewErrorResponse(400, "Invalid icon format"))
+    }
 
-	priority, err := TaskPriorityFromString(req.Priority)
-	if err != nil {
-		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid priority: %s", req.Priority)))
-	}
+    periodType, err := PeriodTypeFromString(req.PeriodType)
+    if err != nil {
+        return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid period type: %s", req.PeriodType)))
+    }
 
-	subTask, err := s.taskUsecase.CreateSubTask(c.Request().Context(), biz.CreateSubTaskParam{
-		ParentID: req.TaskID,
-		UserID:   userID,
-		Type:     periodType,
-		Period: biz.Period{
-			Start: req.StartDate,
-			End:   req.EndDate,
-		},
-		Icon:     req.Icon,
-		Priority: priority,
-	})
-	if err != nil {
-		return c.JSON(500, NewErrorResponse(500, "Failed to create subtask"))
-	}
-	return c.JSON(200, NewSuccessResponseWithMessage("create subtask endpoint", subTask))
+    priority, err := TaskPriorityFromString(req.Priority)
+    if err != nil {
+        return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid priority: %s", req.Priority)))
+    }
+
+    subTask, err := s.taskUsecase.CreateSubTask(c.Request().Context(), biz.CreateSubTaskParam{
+        ParentID: parentID,
+        UserID:   userID,
+        Type:     periodType,
+        Period: biz.Period{
+            Start: req.StartDate,
+            End:   req.EndDate,
+        },
+        Icon:     req.Icon,
+        Priority: priority,
+    })
+    if err != nil {
+        return c.JSON(500, NewErrorResponse(500, "Failed to create subtask"))
+    }
+    return c.JSON(200, NewSuccessResponseWithMessage("create subtask endpoint", subTask))
 }
 
 // 更新任务
 func (s *Service) handleUpdateTask(c echo.Context) error {
-	var req UpdateTaskRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    // 路径参数为唯一任务ID来源
+    taskID := c.Param("task_id")
+    if taskID == "" {
+        return c.JSON(400, NewErrorResponse(400, "Task ID is required"))
+    }
 
-	userID, _, err := GetUserFromContext(c)
-	if err != nil {
-		return c.JSON(401, NewErrorResponse(401, "User not found"))
-	}
+    var req UpdateTaskRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
-	if req.Icon != nil && *req.Icon != "" && !IsIcon(*req.Icon) {
-		return c.JSON(400, NewErrorResponse(400, "Invalid icon format"))
-	}
+    userID, _, err := GetUserFromContext(c)
+    if err != nil {
+        return c.JSON(401, NewErrorResponse(401, "User not found"))
+    }
 
-	// 构建更新参数
-	updateParam := biz.UpdateTaskParam{
-		TaskID: req.TaskID,
-		UserID: userID,
-	}
+    if req.Icon != nil && *req.Icon != "" && !IsIcon(*req.Icon) {
+        return c.JSON(400, NewErrorResponse(400, "Invalid icon format"))
+    }
+
+    // 构建更新参数
+    updateParam := biz.UpdateTaskParam{
+        TaskID: taskID,
+        UserID: userID,
+    }
 
 	// 只设置传递了的字段
 	if req.Title != nil {
@@ -201,72 +225,89 @@ func (s *Service) handleUpdateTask(c echo.Context) error {
 
 // 标记任务完成
 func (s *Service) handleCompleteTask(c echo.Context) error {
-	var req CompleteTaskRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    // 路径参数为唯一任务ID来源
+    taskID := c.Param("task_id")
+    if taskID == "" {
+        return c.JSON(400, NewErrorResponse(400, "Task ID is required"))
+    }
 
-	userID, _, err := GetUserFromContext(c)
-	if err != nil {
-		return c.JSON(401, NewErrorResponse(401, "User not found"))
-	}
+    // body 可以为空
+    _ = c.Request()
 
-	status := biz.TaskStatusCompleted
-	s.taskUsecase.UpdateTask(c.Request().Context(), biz.UpdateTaskParam{
-		TaskID: req.TaskID,
-		UserID: userID,
-		Status: &status,
-	})
-	return c.JSON(200, NewSuccessResponseWithMessage("complete task endpoint", nil))
+    userID, _, err := GetUserFromContext(c)
+    if err != nil {
+        return c.JSON(401, NewErrorResponse(401, "User not found"))
+    }
+
+    status := biz.TaskStatusCompleted
+    _, err = s.taskUsecase.UpdateTask(c.Request().Context(), biz.UpdateTaskParam{
+        TaskID: taskID,
+        UserID: userID,
+        Status: &status,
+    })
+    if err != nil {
+        return c.JSON(500, NewErrorResponse(500, "Failed to complete task"))
+    }
+    return c.JSON(200, NewSuccessResponseWithMessage("complete task endpoint", nil))
 }
 
 // 更新任务分数
 func (s *Service) handleUpdateTaskScore(c echo.Context) error {
-	var req UpdateTaskScoreRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    // 路径参数为唯一任务ID来源
+    taskID := c.Param("task_id")
+    if taskID == "" {
+        return c.JSON(400, NewErrorResponse(400, "Task ID is required"))
+    }
 
-	userID, _, err := GetUserFromContext(c)
-	if err != nil {
-		return c.JSON(401, NewErrorResponse(401, "User not found"))
-	}
+    var req UpdateTaskScoreRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
-	if req.Score < 0 {
-		return c.JSON(400, NewErrorResponse(400, "Score must be non-negative"))
-	}
+    userID, _, err := GetUserFromContext(c)
+    if err != nil {
+        return c.JSON(401, NewErrorResponse(401, "User not found"))
+    }
 
-	_, err = s.taskUsecase.SetTaskScore(c.Request().Context(), biz.SetTaskScoreParam{
-		TaskID: req.TaskID,
-		UserID: userID,
-		Score:  req.Score,
-	})
-	if err != nil {
-		return c.JSON(500, NewErrorResponse(500, "Failed to update task score"))
-	}
-	return c.JSON(200, NewSuccessResponseWithMessage("update task score endpoint", nil))
+    if req.Score < 0 {
+        return c.JSON(400, NewErrorResponse(400, "Score must be non-negative"))
+    }
+
+    _, err = s.taskUsecase.SetTaskScore(c.Request().Context(), biz.SetTaskScoreParam{
+        TaskID: taskID,
+        UserID: userID,
+        Score:  req.Score,
+    })
+    if err != nil {
+        return c.JSON(500, NewErrorResponse(500, "Failed to update task score"))
+    }
+    return c.JSON(200, NewSuccessResponseWithMessage("update task score endpoint", nil))
 }
 
 // 删除任务
 func (s *Service) handleDeleteTask(c echo.Context) error {
-	var req DeleteTaskRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    // 路径参数为唯一任务ID来源
+    taskID := c.Param("task_id")
+    if taskID == "" {
+        return c.JSON(400, NewErrorResponse(400, "Task ID is required"))
+    }
 
-	userID, _, err := GetUserFromContext(c)
-	if err != nil {
-		return c.JSON(401, NewErrorResponse(401, "User not found"))
-	}
+    userID, _, err := GetUserFromContext(c)
+    if err != nil {
+        return c.JSON(401, NewErrorResponse(401, "User not found"))
+    }
 
-	err = s.taskUsecase.DeleteTask(c.Request().Context(), biz.DeleteTaskParam{
-		TaskID: req.TaskID,
-		UserID: userID,
-	})
-	if err != nil {
-		return c.JSON(500, NewErrorResponse(500, "Failed to delete task"))
-	}
-	return c.JSON(200, NewSuccessResponseWithMessage("delete task endpoint", nil))
+    err = s.taskUsecase.DeleteTask(c.Request().Context(), biz.DeleteTaskParam{
+        TaskID: taskID,
+        UserID: userID,
+    })
+    if err != nil {
+        return c.JSON(500, NewErrorResponse(500, "Failed to delete task"))
+    }
+    return c.JSON(200, NewSuccessResponseWithMessage("delete task endpoint", nil))
 }
 
 // 检查 string 是否是 icon （emoji）
@@ -323,10 +364,13 @@ func BoolPtr(b bool) *bool {
 
 // 分页获取根任务列表
 func (s *Service) handleListRootTasks(c echo.Context) error {
-	var req ListRootTasksRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    var req ListRootTasksRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
 	// 获取当前用户ID
 	userID, _, err := GetUserFromContext(c)
@@ -401,16 +445,16 @@ func (s *Service) handleListGlobalTaskTree(c echo.Context) error {
 		statusFilters = append(statusFilters, status)
 	}
 
-	// 调用业务层
-	taskTrees, total, err := s.taskUsecase.ListGlobalTaskTree(c.Request().Context(), biz.ListGlobalTaskTreeParam{
-		UserID:        userID,
-		Page:          req.Page,
-		PageSize:      req.PageSize,
-		IncludeStatus: statusFilters,
-	})
-	if err != nil {
-		return c.JSON(500, NewErrorResponse(500, "Failed to get global task tree"))
-	}
+    // 调用业务层
+    taskTrees, total, err := s.taskUsecase.ListGlobalTaskTree(c.Request().Context(), biz.ListGlobalTaskTreeParam{
+        UserID:        userID,
+        Page:          req.Page,
+        PageSize:      req.PageSize,
+        IncludeStatus: statusFilters,
+    })
+    if err != nil {
+        return c.JSON(500, NewErrorResponse(500, "Failed to get global task tree"))
+    }
 
 	// 返回分页响应
 	return c.JSON(200, NewPaginatedResponse(taskTrees, req.Page, req.PageSize, total))
@@ -502,10 +546,13 @@ func (s *Service) handleMoveTask(c echo.Context) error {
 
 // 使用优化的任务创建方法
 func (s *Service) handleCreateTaskWithOptimization(c echo.Context) error {
-	var req CreateTaskRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    var req CreateTaskRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
 	userID, _, err := GetUserFromContext(c)
 	if err != nil {

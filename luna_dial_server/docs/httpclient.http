@@ -37,8 +37,8 @@ Authorization: Bearer {{sessionId}}
 DELETE {{baseUrl}}/api/v1/auth/logout-all
 Authorization: Bearer {{sessionId}}
 
-### 获取日志列表
-GET {{baseUrl}}/api/v1/journals?period=2023-08&page=1&limit=10
+### 获取日志列表（分页，带过滤）
+GET {{baseUrl}}/api/v1/journals/paginated?page=1&page_size=20&journal_type=day&start_date=2023-08-01T00:00:00Z&end_date=2023-08-31T00:00:00Z
 Authorization: Bearer {{sessionId}}
 
 ### 创建日志
@@ -49,7 +49,10 @@ Authorization: Bearer {{sessionId}}
 {
     "title": "每日工作日志",
     "content": "今天完成了 Luna Dial 项目的 API 文档编写...",
-    "tags": ["工作", "开发", "文档"]
+    "journal_type": "day",
+    "start_date": "2023-08-05T00:00:00Z",
+    "end_date": "2023-08-06T00:00:00Z",
+    "icon": "📖"
 }
 
 ### 更新日志
@@ -60,16 +63,23 @@ Authorization: Bearer {{sessionId}}
 {
     "title": "更新的每日工作日志",
     "content": "今天完成了 Luna Dial 项目的 API 文档编写和测试...",
-    "tags": ["工作", "开发", "文档", "测试"]
+    "icon": "🛠️"
 }
 
 ### 删除日志
 DELETE {{baseUrl}}/api/v1/journals/journal_id_here
 Authorization: Bearer {{sessionId}}
 
-### 获取任务列表 - 所有任务
+### 获取任务列表（按时间周期）
 GET {{baseUrl}}/api/v1/tasks
+Content-Type: application/json
 Authorization: Bearer {{sessionId}}
+
+{
+    "period_type": "week",
+    "start_date": "2023-07-31T00:00:00Z",
+    "end_date": "2023-08-07T00:00:00Z"
+}
 
 ### 获取任务列表 - 按状态筛选
 GET {{baseUrl}}/api/v1/tasks?status=pending&page=1&limit=10
@@ -83,9 +93,12 @@ Authorization: Bearer {{sessionId}}
 {
     "title": "完成项目文档",
     "description": "编写完整的 API 文档和用户手册",
+    "period_type": "month",
+    "start_date": "2023-08-01T00:00:00Z",
+    "end_date": "2023-09-01T00:00:00Z",
     "priority": "high",
-    "due_date": "2023-08-10T18:00:00Z",
-    "tags": ["文档", "API", "重要"]
+    "tags": ["文档", "API", "重要"],
+    "icon": "📝"
 }
 
 ### 创建子任务
@@ -96,9 +109,12 @@ Authorization: Bearer {{sessionId}}
 {
     "title": "审查 API 文档",
     "description": "检查 API 文档的准确性和完整性",
+    "period_type": "day",
+    "start_date": "2023-08-09T00:00:00Z",
+    "end_date": "2023-08-10T00:00:00Z",
     "priority": "medium",
-    "due_date": "2023-08-09T12:00:00Z",
-    "tags": ["审查", "文档"]
+    "tags": ["审查", "文档"],
+    "icon": "📋"
 }
 
 ### 更新任务
@@ -110,8 +126,11 @@ Authorization: Bearer {{sessionId}}
     "title": "完成项目文档（更新）",
     "description": "编写完整的 API 文档、用户手册和部署指南",
     "priority": "high",
-    "due_date": "2023-08-11T18:00:00Z",
-    "status": "pending"
+    "start_date": "2023-08-05T00:00:00Z",
+    "end_date": "2023-08-12T00:00:00Z",
+    "status": "in_progress",
+    "icon": "🚀",
+    "tags": ["文档", "API", "重要"]
 }
 
 ### 完成任务
@@ -124,20 +143,26 @@ Content-Type: application/json
 Authorization: Bearer {{sessionId}}
 
 {
-    "score": 90,
-    "comment": "文档质量很高，内容详细完整"
+    "score": 90
 }
 
 ### 删除任务
 DELETE {{baseUrl}}/api/v1/tasks/task_id_here
 Authorization: Bearer {{sessionId}}
 
-### 获取计划列表
+### 获取计划信息（含任务、日志、统计）
 GET {{baseUrl}}/api/v1/plans
+Content-Type: application/json
 Authorization: Bearer {{sessionId}}
 
+{
+    "period_type": "week",
+    "start_date": "2023-07-31T00:00:00Z",
+    "end_date": "2023-08-07T00:00:00Z"
+}
+
 ### 获取计划列表 - 按类型筛选
-GET {{baseUrl}}/api/v1/plans?type=daily&page=1&limit=10
+GET {{baseUrl}}/api/v1/plans?type=day&page=1&limit=10
 Authorization: Bearer {{sessionId}}
 
 ### 测试错误处理 - 无效的登录

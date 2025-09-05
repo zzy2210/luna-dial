@@ -229,11 +229,22 @@ func (uc *TaskUsecase) CreateTask(ctx context.Context, param CreateTaskParam) (*
 		UpdatedAt:  time.Now(),
 	}
 
-	err := uc.repo.CreateTask(ctx, task)
-	if err != nil {
-		return nil, err // 返回仓库层的错误
-	}
-	return task, nil
+    err := uc.repo.CreateTask(ctx, task)
+    if err != nil {
+        return nil, err // 返回仓库层的错误
+    }
+
+    // 创建后维护树优化字段（包括父任务计数）
+    if err := uc.repo.UpdateTreeOptimizationFields(ctx, task.ID, task.UserID); err != nil {
+        log.Warnf("Failed to update tree optimization for task %s: %v", task.ID, err)
+    }
+    if task.ParentID != "" {
+        if err := uc.repo.UpdateTreeOptimizationFields(ctx, task.ParentID, task.UserID); err != nil {
+            log.Warnf("Failed to update tree optimization for parent %s: %v", task.ParentID, err)
+        }
+    }
+
+    return task, nil
 }
 
 // 更新任务
@@ -706,31 +717,8 @@ func (uc *TaskUsecase) GetTaskParentChain(ctx context.Context, param GetTaskPare
 
 // 优化CreateTask方法：自动维护树字段
 func (uc *TaskUsecase) CreateTaskWithTreeOptimization(ctx context.Context, param CreateTaskParam) (*Task, error) {
-	// 复用原有的CreateTask逻辑
-	task, err := uc.CreateTask(ctx, param)
-	if err != nil {
-		return nil, err
-	}
-
-	// 创建完成后，更新树优化字段
-	err = uc.repo.UpdateTreeOptimizationFields(ctx, task.ID, task.UserID)
-	if err != nil {
-		// 记录错误但不影响创建结果
-
-		log.Warnf("Failed to update tree optimization fields for task %s: %v", task.ID, err)
-	}
-
-	// 如果有父任务，也需要更新父任务的子任务计数
-	if task.ParentID != "" {
-		err = uc.repo.UpdateTreeOptimizationFields(ctx, task.ParentID, task.UserID)
-		if err != nil {
-			// 记录错误但不影响创建结果
-			// TODO: 添加日志记录
-			log.Warnf("Failed to update tree optimization fields for parent task %s: %v", task.ParentID, err)
-		}
-	}
-
-	return task, nil
+    // 统一走 CreateTask，内部已维护优化字段
+    return uc.CreateTask(ctx, param)
 }
 
 func generateID() string {

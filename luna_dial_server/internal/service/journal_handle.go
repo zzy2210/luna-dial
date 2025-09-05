@@ -9,10 +9,13 @@ import (
 
 // 根据时间段与时间类型获取 无分页
 func (s *Service) handleListJournalsByPeriod(c echo.Context) error {
-	var req ListJournalByPeriodRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    var req ListJournalByPeriodRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
 	userID, _, err := GetUserFromContext(c)
 	if err != nil {
@@ -37,10 +40,13 @@ func (s *Service) handleListJournalsByPeriod(c echo.Context) error {
 }
 
 func (s *Service) handleCreateJournal(c echo.Context) error {
-	var req CreateJournalRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    var req CreateJournalRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 	userID, _, err := GetUserFromContext(c)
 	if err != nil {
 		return c.JSON(401, NewErrorResponse(401, "User not found"))
@@ -72,44 +78,49 @@ func (s *Service) handleCreateJournal(c echo.Context) error {
 
 // 更新
 func (s *Service) handleUpdateJournal(c echo.Context) error {
-	var req UpdateJournalRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    // 路径参数作为唯一 ID 来源
+    journalID := c.Param("journal_id")
+    if journalID == "" {
+        return c.JSON(400, NewErrorResponse(400, "Journal ID is required"))
+    }
 
-	userID, _, err := GetUserFromContext(c)
-	if err != nil {
-		return c.JSON(401, NewErrorResponse(401, "User not found"))
-	}
+    var req UpdateJournalRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
-	if req.JournalID == "" {
-		return c.JSON(400, NewErrorResponse(400, "Journal ID is required"))
-	}
+    userID, _, err := GetUserFromContext(c)
+    if err != nil {
+        return c.JSON(401, NewErrorResponse(401, "User not found"))
+    }
 
-	if req.Title == nil && req.Content == nil && req.JournalType == nil && req.Icon == nil {
-		return c.JSON(400, NewErrorResponse(400, "At least one field must be provided for update"))
-	}
-	var journalType *biz.PeriodType
-	if req.JournalType != nil && *req.JournalType != "" {
-		if jt, err := PeriodTypeFromString(*req.JournalType); err != nil {
-			return c.JSON(400, NewErrorResponse(400, "Invalid journal type"))
-		} else {
-			journalType = &jt
-		}
-	}
+    if req.Title == nil && req.Content == nil && req.JournalType == nil && req.Icon == nil {
+        return c.JSON(400, NewErrorResponse(400, "At least one field must be provided for update"))
+    }
+    var journalType *biz.PeriodType
+    if req.JournalType != nil && *req.JournalType != "" {
+        if jt, err := PeriodTypeFromString(*req.JournalType); err != nil {
+            return c.JSON(400, NewErrorResponse(400, "Invalid journal type"))
+        } else {
+            journalType = &jt
+        }
+    }
 
-	journal, err := s.journalUsecase.UpdateJournal(c.Request().Context(), biz.UpdateJournalParam{
-		JournalID:   req.JournalID,
-		UserID:      userID,
-		Title:       req.Title,
-		Content:     req.Content,
-		JournalType: journalType,
-		Icon:        req.Icon,
-	})
-	if err != nil {
-		return c.JSON(500, NewErrorResponse(500, "Failed to update journal"))
-	}
-	return c.JSON(200, NewSuccessResponse(journal))
+    journal, err := s.journalUsecase.UpdateJournal(c.Request().Context(), biz.UpdateJournalParam{
+        JournalID:   journalID,
+        UserID:      userID,
+        Title:       req.Title,
+        Content:     req.Content,
+        JournalType: journalType,
+        Icon:        req.Icon,
+    })
+    if err != nil {
+        return c.JSON(500, NewErrorResponse(500, "Failed to update journal"))
+    }
+    return c.JSON(200, NewSuccessResponse(journal))
 }
 
 // 删除
@@ -135,10 +146,13 @@ func (s *Service) handleDeleteJournal(c echo.Context) error {
 
 // 分页查询日志列表（支持过滤）
 func (s *Service) handleListJournalsWithPagination(c echo.Context) error {
-	var req ListJournalsWithPaginationRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    var req ListJournalsWithPaginationRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
 	// 获取当前用户ID
 	userID, _, err := GetUserFromContext(c)
