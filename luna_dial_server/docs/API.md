@@ -1308,7 +1308,7 @@ curl -X GET http://localhost:8081/api/v1/tasks \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your_session_id" \
   -d '{
-    "period_type": "weekly",
+    "period_type": "week",
     "start_date": "2023-07-31T00:00:00Z",
     "end_date": "2023-08-07T00:00:00Z"
   }'
