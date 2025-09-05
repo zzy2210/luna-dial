@@ -17,11 +17,14 @@ import (
 )
 
 func NewServer(ctx context.Context, dataInstance *data.Data) *echo.Echo {
-	e := echo.New()
+    e := echo.New()
 
-	// Middleware
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
+    // Middleware
+    e.Use(middleware.Logger())
+    e.Use(middleware.Recover())
+
+    // Validator
+    e.Validator = service.NewSimpleValidator()
 
 	// Initialize service
 	svc := service.NewService(ctx, e, dataInstance)
