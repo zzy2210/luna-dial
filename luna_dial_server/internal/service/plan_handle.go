@@ -11,6 +11,9 @@ func (s *Service) handleListPlans(c echo.Context) error {
     if err := c.Bind(&req); err != nil {
         return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
     }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
     userID, _, err := GetUserFromContext(c)
     if err != nil {
         return c.JSON(401, NewErrorResponse(401, "User not found"))

@@ -15,10 +15,13 @@ var (
 
 // 查看指定时间段内指定类型的任务
 func (s *Service) handleListTasks(c echo.Context) error {
-	var req ListTaskRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    var req ListTaskRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
 	// 获取当前用户ID
 	userId, _, err := GetUserFromContext(c)
@@ -54,10 +57,13 @@ func (s *Service) handleListTasks(c echo.Context) error {
 
 // 创建任务
 func (s *Service) handleCreateTask(c echo.Context) error {
-	var req CreateTaskRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    var req CreateTaskRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
 	userID, _, err := GetUserFromContext(c)
 	if err != nil {
@@ -108,6 +114,9 @@ func (s *Service) handleCreateSubTask(c echo.Context) error {
     if err := c.Bind(&req); err != nil {
         return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
     }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
     userID, _, err := GetUserFromContext(c)
     if err != nil {
@@ -156,6 +165,9 @@ func (s *Service) handleUpdateTask(c echo.Context) error {
     var req UpdateTaskRequest
     if err := c.Bind(&req); err != nil {
         return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
     }
 
     userID, _, err := GetUserFromContext(c)
@@ -250,6 +262,9 @@ func (s *Service) handleUpdateTaskScore(c echo.Context) error {
     var req UpdateTaskScoreRequest
     if err := c.Bind(&req); err != nil {
         return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
     }
 
     userID, _, err := GetUserFromContext(c)
@@ -349,10 +364,13 @@ func BoolPtr(b bool) *bool {
 
 // 分页获取根任务列表
 func (s *Service) handleListRootTasks(c echo.Context) error {
-	var req ListRootTasksRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    var req ListRootTasksRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
 	// 获取当前用户ID
 	userID, _, err := GetUserFromContext(c)
@@ -427,16 +445,16 @@ func (s *Service) handleListGlobalTaskTree(c echo.Context) error {
 		statusFilters = append(statusFilters, status)
 	}
 
-	// 调用业务层
-	taskTrees, total, err := s.taskUsecase.ListGlobalTaskTree(c.Request().Context(), biz.ListGlobalTaskTreeParam{
-		UserID:        userID,
-		Page:          req.Page,
-		PageSize:      req.PageSize,
-		IncludeStatus: statusFilters,
-	})
-	if err != nil {
-		return c.JSON(500, NewErrorResponse(500, "Failed to get global task tree"))
-	}
+    // 调用业务层
+    taskTrees, total, err := s.taskUsecase.ListGlobalTaskTree(c.Request().Context(), biz.ListGlobalTaskTreeParam{
+        UserID:        userID,
+        Page:          req.Page,
+        PageSize:      req.PageSize,
+        IncludeStatus: statusFilters,
+    })
+    if err != nil {
+        return c.JSON(500, NewErrorResponse(500, "Failed to get global task tree"))
+    }
 
 	// 返回分页响应
 	return c.JSON(200, NewPaginatedResponse(taskTrees, req.Page, req.PageSize, total))
@@ -528,10 +546,13 @@ func (s *Service) handleMoveTask(c echo.Context) error {
 
 // 使用优化的任务创建方法
 func (s *Service) handleCreateTaskWithOptimization(c echo.Context) error {
-	var req CreateTaskRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    var req CreateTaskRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
 	userID, _, err := GetUserFromContext(c)
 	if err != nil {

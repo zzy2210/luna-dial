@@ -29,28 +29,30 @@ type CreateTaskRequest struct {
 }
 
 type CreateSubTaskRequest struct {
-	Title       string    `json:"title" validate:"required"`
-	Description string    `json:"description"`
-	StartDate   time.Time `json:"start_date" validate:"required"`
-	EndDate     time.Time `json:"end_date" validate:"required"`
-	PeriodType  string    `json:"period_type" validate:"required,oneof=day week month quarter year"`
-	Priority    string    `json:"priority" validate:"required,oneof=low medium high urgent"`
-	Icon        string    `json:"icon"`
-	Tags        []string  `json:"tags"`
-	TaskID      string    `json:"task_id" validate:"required"`
+    Title       string    `json:"title" validate:"required"`
+    Description string    `json:"description"`
+    StartDate   time.Time `json:"start_date" validate:"required"`
+    EndDate     time.Time `json:"end_date" validate:"required"`
+    PeriodType  string    `json:"period_type" validate:"required,oneof=day week month quarter year"`
+    Priority    string    `json:"priority" validate:"required,oneof=low medium high urgent"`
+    Icon        string    `json:"icon"`
+    Tags        []string  `json:"tags"`
+    // 兼容旧客户端：允许携带 task_id，但不再校验；服务端使用路径参数作为父任务ID
+    TaskID      string    `json:"task_id,omitempty"`
 }
 
 // 更新任务
 type UpdateTaskRequest struct {
-	Title       *string    `json:"title,omitempty"`
-	Description *string    `json:"description,omitempty"`
-	StartDate   *time.Time `json:"start_date,omitempty"`
-	EndDate     *time.Time `json:"end_date,omitempty"`
-	Priority    *string    `json:"priority,omitempty" validate:"omitempty,oneof=low medium high urgent"`
-	Status      *string    `json:"status,omitempty" validate:"omitempty,oneof=not_started in_progress completed cancelled"`
-	Icon        *string    `json:"icon,omitempty"`
-	Tags        *[]string  `json:"tags,omitempty"`
-	TaskID      string     `json:"task_id" validate:"required"`
+    Title       *string    `json:"title,omitempty"`
+    Description *string    `json:"description,omitempty"`
+    StartDate   *time.Time `json:"start_date,omitempty"`
+    EndDate     *time.Time `json:"end_date,omitempty"`
+    Priority    *string    `json:"priority,omitempty" validate:"omitempty,oneof=low medium high urgent"`
+    Status      *string    `json:"status,omitempty" validate:"omitempty,oneof=not_started in_progress completed cancelled"`
+    Icon        *string    `json:"icon,omitempty"`
+    Tags        *[]string  `json:"tags,omitempty"`
+    // 任务ID改由路径参数传入，保留字段以向后兼容
+    TaskID      string     `json:"task_id,omitempty"`
 }
 
 // 标记任务完成
@@ -60,8 +62,7 @@ type CompleteTaskRequest struct {
 
 // 更新任务分数
 type UpdateTaskScoreRequest struct {
-	TaskID string `json:"task_id" validate:"required"`
-	Score  int    `json:"score" validate:"required"`
+    Score  int    `json:"score" validate:"required"`
 }
 
 // 删除任务
@@ -88,13 +89,14 @@ type CreateJournalRequest struct {
 
 // 更新日志请求
 type UpdateJournalRequest struct {
-	JournalID   string  `json:"journal_id" validate:"required"`
-	Title       *string `json:"title,omitempty"`
-	Content     *string `json:"content,omitempty"`
-	JournalType *string `json:"journal_type,omitempty" validate:"omitempty,oneof=day week month quarter year"`
-	// StartDate   *time.Time `json:"start_date,omitempty"`
-	// EndDate     *time.Time `json:"end_date,omitempty"`
-	Icon *string `json:"icon,omitempty"`
+    // 日志ID改由路径参数传入
+    JournalID   string  `json:"journal_id,omitempty"`
+    Title       *string `json:"title,omitempty"`
+    Content     *string `json:"content,omitempty"`
+    JournalType *string `json:"journal_type,omitempty" validate:"omitempty,oneof=day week month quarter year"`
+    // StartDate   *time.Time `json:"start_date,omitempty"`
+    // EndDate     *time.Time `json:"end_date,omitempty"`
+    Icon *string `json:"icon,omitempty"`
 }
 
 // 查看list

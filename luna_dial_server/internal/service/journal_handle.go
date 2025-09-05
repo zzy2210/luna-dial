@@ -9,10 +9,13 @@ import (
 
 // 根据时间段与时间类型获取 无分页
 func (s *Service) handleListJournalsByPeriod(c echo.Context) error {
-	var req ListJournalByPeriodRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    var req ListJournalByPeriodRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
 	userID, _, err := GetUserFromContext(c)
 	if err != nil {
@@ -37,10 +40,13 @@ func (s *Service) handleListJournalsByPeriod(c echo.Context) error {
 }
 
 func (s *Service) handleCreateJournal(c echo.Context) error {
-	var req CreateJournalRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    var req CreateJournalRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 	userID, _, err := GetUserFromContext(c)
 	if err != nil {
 		return c.JSON(401, NewErrorResponse(401, "User not found"))
@@ -81,6 +87,9 @@ func (s *Service) handleUpdateJournal(c echo.Context) error {
     var req UpdateJournalRequest
     if err := c.Bind(&req); err != nil {
         return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
     }
 
     userID, _, err := GetUserFromContext(c)
@@ -137,10 +146,13 @@ func (s *Service) handleDeleteJournal(c echo.Context) error {
 
 // 分页查询日志列表（支持过滤）
 func (s *Service) handleListJournalsWithPagination(c echo.Context) error {
-	var req ListJournalsWithPaginationRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
-	}
+    var req ListJournalsWithPaginationRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    }
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    }
 
 	// 获取当前用户ID
 	userID, _, err := GetUserFromContext(c)
