@@ -489,13 +489,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/plans?type=daily&page=1&limit=10",
+              "raw": "{{baseUrl}}/api/v1/plans?type=day&page=1&limit=10",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "plans"],
               "query": [
                 {
                   "key": "type",
-                  "value": "daily"
+                  "value": "day"
                 },
                 {
                   "key": "page",
