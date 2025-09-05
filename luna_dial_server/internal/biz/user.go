@@ -136,25 +136,28 @@ func (uc *UserUsecase) UpdateUser(ctx context.Context, param UpdateUserParam) (*
 	if err != nil {
 		return nil, err
 	}
-	if param.Email != nil && *param.Email != "" {
-		if !validEmail(*param.Email) {
-			return nil, ErrEmailInvalid // 邮箱格式不合法
-		}
-		user.Email = *param.Email
-	}
-	if param.Name != nil && *param.Name != "" {
-		user.Name = *param.Name
-	}
-	if param.Password != nil && *param.Password != "" {
-		if !isStrongPassword(*param.Password) {
-			return nil, ErrPasswordTooWeak // 密码强度不足
-		}
-		// 使用国密进行密码hash
-		user.Password = hashPasswordToHex(*param.Password)
-	}
-	if !(isValidName(*param.Name)) {
-		return nil, ErrUserNameInvalid // 用户名格式不合法
-	}
+    if param.Email != nil && *param.Email != "" {
+        if !validEmail(*param.Email) {
+            return nil, ErrEmailInvalid // 邮箱格式不合法
+        }
+        user.Email = *param.Email
+    }
+    if param.Name != nil && *param.Name != "" {
+        user.Name = *param.Name
+    }
+    if param.Password != nil && *param.Password != "" {
+        if !isStrongPassword(*param.Password) {
+            return nil, ErrPasswordTooWeak // 密码强度不足
+        }
+        // 使用国密进行密码hash
+        user.Password = hashPasswordToHex(*param.Password)
+    }
+    // 仅在提供了 name 时进行校验
+    if param.Name != nil && *param.Name != "" {
+        if !(isValidName(*param.Name)) {
+            return nil, ErrUserNameInvalid // 用户名格式不合法
+        }
+    }
 
 	user.UpdatedAt = time.Now()
 

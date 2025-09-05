@@ -1,12 +1,13 @@
 package data
 
 import (
-	"context"
-	"errors"
-	"luna_dial/internal/biz"
-	"time"
+    "context"
+    "errors"
+    "luna_dial/internal/biz"
+    "luna_dial/internal/model"
+    "time"
 
-	"gorm.io/gorm"
+    "gorm.io/gorm"
 )
 
 // TaskRepo 任务仓库实现
@@ -28,16 +29,20 @@ func (r *taskRepo) CreateTask(ctx context.Context, bizTask *biz.Task) error {
 }
 
 func (r *taskRepo) GetTask(ctx context.Context, taskID, userID string) (*biz.Task, error) {
-	var dataTask Task
-	err := r.db.WithContext(ctx).
-		Where("id = ? AND user_id = ?", taskID, userID).
-		First(&dataTask).Error
+    var dataTask Task
+    err := r.db.WithContext(ctx).
+        Where("id = ? AND user_id = ?", taskID, userID).
+        First(&dataTask).Error
 
-	if err != nil {
-		return nil, err
-	}
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            // 对于任务：返回 nil, nil，让上层根据 nil 判断为未找到
+            return nil, nil
+        }
+        return nil, err
+    }
 
-	return r.converter.DataToBiz(&dataTask), nil
+    return r.converter.DataToBiz(&dataTask), nil
 }
 
 func (r *taskRepo) UpdateTask(ctx context.Context, bizTask *biz.Task) error {
@@ -339,16 +344,19 @@ func (r *journalRepo) CreateJournal(ctx context.Context, bizJournal *biz.Journal
 }
 
 func (r *journalRepo) GetJournalWithAuth(ctx context.Context, journalID, userID string) (*biz.Journal, error) {
-	var dataJournal Journal
-	err := r.db.WithContext(ctx).
-		Where("id = ? AND user_id = ?", journalID, userID).
-		First(&dataJournal).Error
+    var dataJournal Journal
+    err := r.db.WithContext(ctx).
+        Where("id = ? AND user_id = ?", journalID, userID).
+        First(&dataJournal).Error
 
-	if err != nil {
-		return nil, err
-	}
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, model.ErrRecordNotFound
+        }
+        return nil, err
+    }
 
-	return r.converter.DataToBiz(&dataJournal), nil
+    return r.converter.DataToBiz(&dataJournal), nil
 }
 
 func (r *journalRepo) UpdateJournal(ctx context.Context, bizJournal *biz.Journal) error {
@@ -451,42 +459,51 @@ func (r *userRepo) CreateUser(ctx context.Context, bizUser *biz.User) error {
 }
 
 func (r *userRepo) GetUserByID(ctx context.Context, userID string) (*biz.User, error) {
-	var dataUser User
-	err := r.db.WithContext(ctx).
-		Where("id = ?", userID).
-		First(&dataUser).Error
+    var dataUser User
+    err := r.db.WithContext(ctx).
+        Where("id = ?", userID).
+        First(&dataUser).Error
 
-	if err != nil {
-		return nil, err
-	}
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, biz.ErrUserNotFound
+        }
+        return nil, err
+    }
 
-	return r.converter.DataToBiz(&dataUser), nil
+    return r.converter.DataToBiz(&dataUser), nil
 }
 
 func (r *userRepo) GetUserByUserName(ctx context.Context, username string) (*biz.User, error) {
-	var dataUser User
-	err := r.db.WithContext(ctx).
-		Where("user_name = ?", username).
-		First(&dataUser).Error
+    var dataUser User
+    err := r.db.WithContext(ctx).
+        Where("user_name = ?", username).
+        First(&dataUser).Error
 
-	if err != nil {
-		return nil, err
-	}
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, biz.ErrUserNotFound
+        }
+        return nil, err
+    }
 
-	return r.converter.DataToBiz(&dataUser), nil
+    return r.converter.DataToBiz(&dataUser), nil
 }
 
 func (r *userRepo) GetUserByEmail(ctx context.Context, email string) (*biz.User, error) {
-	var dataUser User
-	err := r.db.WithContext(ctx).
-		Where("email = ?", email).
-		First(&dataUser).Error
+    var dataUser User
+    err := r.db.WithContext(ctx).
+        Where("email = ?", email).
+        First(&dataUser).Error
 
-	if err != nil {
-		return nil, err
-	}
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, biz.ErrUserNotFound
+        }
+        return nil, err
+    }
 
-	return r.converter.DataToBiz(&dataUser), nil
+    return r.converter.DataToBiz(&dataUser), nil
 }
 
 func (r *userRepo) UpdateUser(ctx context.Context, bizUser *biz.User) error {
