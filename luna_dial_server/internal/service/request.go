@@ -12,9 +12,9 @@ type LoginRequest struct {
 }
 
 type ListTaskRequest struct {
-	PeriodType string    `json:"period_type" validate:"required,oneof=daily weekly monthly yearly"`
-	StartDate  time.Time `json:"start_date" validate:"required"`
-	EndDate    time.Time `json:"end_date" validate:"required"`
+    PeriodType string    `json:"period_type" validate:"required,oneof=day week month quarter year"`
+    StartDate  time.Time `json:"start_date" validate:"required"`
+    EndDate    time.Time `json:"end_date" validate:"required"`
 }
 
 type CreateTaskRequest struct {
