@@ -1,105 +1,59 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Moon,
-  LogOut,
-  User,
-  Plus,
-  ChevronDown,
-  ChevronRight,
-  Calendar,
-  Target,
-  FileText
-} from 'lucide-react';
 import useAuthStore from '../store/auth';
+import TaskTree from '../components/TaskTree';
 import taskService from '../services/task';
-import { Task, TaskStatus, PeriodType } from '../types';
+import journalService from '../services/journal';
+import { Task, TaskStatus, PeriodType, Journal } from '../types';
+import '../styles/dashboard.css';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [currentPeriod, setCurrentPeriod] = useState<PeriodType>('day');
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const [journals, setJournals] = useState<Journal[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // 模拟的今日任务数据
+  const [todayTasks] = useState([
+    { id: '1', title: '完成项目文档', icon: '📝', status: TaskStatus.Completed, score: 8 },
+    { id: '2', title: '代码审查', icon: '👨‍💻', status: TaskStatus.InProgress, score: 6 },
+    { id: '3', title: '系统优化', icon: '🔧', status: TaskStatus.NotStarted, score: 0 },
+  ]);
+
+  // 模拟的统计数据
+  const [stats] = useState({
+    todayScore: 14,
+    weekScore: 68,
+    monthScore: 245,
+    weekProgress: [60, 80, 45, 90, 70, 85, 50],
+    taskStats: {
+      notStarted: 3,
+      inProgress: 5,
+      completed: 12,
+      cancelled: 1
+    }
+  });
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
-  const toggleTaskExpand = (taskId: string) => {
-    setExpandedTasks(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(taskId)) {
-        newSet.delete(taskId);
-      } else {
-        newSet.add(taskId);
-      }
-      return newSet;
-    });
+  const handleTaskStatusChange = (taskId: string, status: TaskStatus) => {
+    console.log('Task status changed:', taskId, status);
+    // TODO: 调用API更新任务状态
   };
 
-  const getTaskStatusColor = (status: TaskStatus) => {
-    switch (status) {
-      case TaskStatus.NotStarted:
-        return 'bg-gray-100 text-gray-700';
-      case TaskStatus.InProgress:
-        return 'bg-blue-100 text-blue-700';
-      case TaskStatus.Completed:
-        return 'bg-green-100 text-green-700';
-      case TaskStatus.Cancelled:
-        return 'bg-red-100 text-red-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getTaskStatusLabel = (status: TaskStatus) => {
-    const labels = {
-      [TaskStatus.NotStarted]: '未开始',
-      [TaskStatus.InProgress]: '进行中',
-      [TaskStatus.Completed]: '已完成',
-      [TaskStatus.Cancelled]: '已取消',
-    };
-    return labels[status];
-  };
-
-  const renderTaskTree = (task: Task, level: number = 0) => {
-    const isExpanded = expandedTasks.has(task.id);
-
-    return (
-      <div key={task.id} className="mb-1">
-        <div
-          className={`flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer`}
-          style={{ marginLeft: `${level * 24}px` }}
-        >
-          {task.has_children && (
-            <button
-              onClick={() => toggleTaskExpand(task.id)}
-              className="mr-2 text-gray-500 hover:text-gray-700"
-            >
-              {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            </button>
-          )}
-          {!task.has_children && <span className="w-6 mr-2" />}
-
-          <span className="mr-3 text-xl">{task.icon || '📋'}</span>
-          <span className="flex-1 font-medium text-gray-900">{task.title}</span>
-
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTaskStatusColor(task.status)}`}>
-            {getTaskStatusLabel(task.status)}
-          </span>
-        </div>
-
-        {isExpanded && task.children && task.children.map(child => renderTaskTree(child, level + 1))}
-      </div>
-    );
+  const handleTaskClick = (task: Task) => {
+    console.log('Task clicked:', task);
+    // TODO: 显示任务详情
   };
 
   useEffect(() => {
     // 加载初始数据
-    const loadTasks = async () => {
+    const loadData = async () => {
       setIsLoading(true);
       try {
         const response = await taskService.getTaskTree();
@@ -111,143 +65,233 @@ const Dashboard: React.FC = () => {
       }
     };
 
-    loadTasks();
+    loadData();
   }, []);
 
+  const getCurrentDateString = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const weekDay = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][date.getDay()];
+    return `${year}年${month}月${day}日 ${weekDay}`;
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
       {/* 顶部导航栏 */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Logo和标题 */}
-            <div className="flex items-center">
-              <Moon className="w-8 h-8 text-indigo-600 mr-3" />
-              <h1 className="text-2xl font-bold text-gray-900">Luna Dial</h1>
-            </div>
+      <header className="navbar">
+        <div className="navbar-brand">
+          <span className="logo">🌙</span>
+          <h1>Luna Dial</h1>
+        </div>
 
-            {/* 周期切换器 */}
-            <div className="flex items-center space-x-2">
-              {(['day', 'week', 'month', 'quarter', 'year'] as PeriodType[]).map(period => (
-                <button
-                  key={period}
-                  onClick={() => setCurrentPeriod(period)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    currentPeriod === period
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {period === 'day' && '日'}
-                  {period === 'week' && '周'}
-                  {period === 'month' && '月'}
-                  {period === 'quarter' && '季'}
-                  {period === 'year' && '年'}
-                </button>
-              ))}
-            </div>
+        {/* 周期切换器 */}
+        <div className="period-switcher">
+          {(['day', 'week', 'month', 'quarter', 'year'] as PeriodType[]).map(period => (
+            <button
+              key={period}
+              onClick={() => setCurrentPeriod(period)}
+              className={`period-btn ${currentPeriod === period ? 'active' : ''}`}
+            >
+              {period === 'day' && '日'}
+              {period === 'week' && '周'}
+              {period === 'month' && '月'}
+              {period === 'quarter' && '季'}
+              {period === 'year' && '年'}
+            </button>
+          ))}
+        </div>
 
-            {/* 用户信息 */}
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-700 font-medium">{user?.name || user?.username}</span>
-              <button
-                onClick={() => navigate('/profile')}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <User className="w-5 h-5" />
-              </button>
-              <button
-                onClick={handleLogout}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
+        <div className="user-info">
+          <span className="user-name">{user?.name || user?.username}</span>
+          <button className="btn-profile" onClick={() => navigate('/profile')}>
+            设置
+          </button>
+          <button className="btn-logout" onClick={handleLogout}>
+            登出
+          </button>
         </div>
       </header>
 
       {/* 主内容区域 */}
-      <main className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 左侧：任务树 */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                    <Target className="w-5 h-5 mr-2 text-indigo-600" />
-                    任务树
-                  </h2>
-                  <button className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
-                    <Plus className="w-4 h-4 mr-2" />
-                    新建任务
-                  </button>
+      <main className="dashboard-container">
+        {/* 左侧：任务管理区 */}
+        <section className="task-panel">
+          <div className="panel-header">
+            <h2>任务树</h2>
+            <button className="btn-create-task">+ 新建任务</button>
+          </div>
+
+          <TaskTree
+            tasks={tasks}
+            onTaskStatusChange={handleTaskStatusChange}
+            onTaskClick={handleTaskClick}
+          />
+        </section>
+
+        {/* 中间：当前周期概览 */}
+        <section className="overview-panel">
+          {/* 今日任务卡片 */}
+          <div className="focus-card">
+            <h3>今日任务</h3>
+            <div className="current-date">{getCurrentDateString()}</div>
+
+            <div className="today-tasks">
+              {todayTasks.map(task => (
+                <div key={task.id} className="daily-task">
+                  <div className="task-info">
+                    <span className="task-icon">{task.icon}</span>
+                    <span className="task-text">{task.title}</span>
+                  </div>
+                  <div className="task-controls">
+                    <select className="task-status-select" defaultValue={task.status}>
+                      <option value={TaskStatus.NotStarted}>未开始</option>
+                      <option value={TaskStatus.InProgress}>进行中</option>
+                      <option value={TaskStatus.Completed}>已完成</option>
+                      <option value={TaskStatus.Cancelled}>已取消</option>
+                    </select>
+                    <div className={`score-control ${task.status === TaskStatus.NotStarted ? 'disabled' : ''}`}>
+                      <label>努力程度:</label>
+                      <input
+                        type="number"
+                        className="score-input"
+                        min="0"
+                        max="10"
+                        defaultValue={task.score}
+                        disabled={task.status === TaskStatus.NotStarted}
+                      />
+                      <span className="score-display">
+                        {task.status === TaskStatus.NotStarted ? '-' : task.score}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button className="btn-add-task">+ 添加今日任务</button>
+          </div>
+
+          {/* 当前周期日志 */}
+          <div className="journal-card">
+            <div className="journal-header">
+              <h3>今日日志</h3>
+              <button className="btn-new-journal">+ 新建日志</button>
+            </div>
+
+            <div className="journal-list">
+              <div className="journal-entry">
+                <div className="journal-content">
+                  <span className="journal-icon">🌅</span>
+                  <div className="journal-info">
+                    <h4>早晨计划</h4>
+                    <span className="journal-time">09:00</span>
+                  </div>
+                </div>
+                <div className="journal-actions">
+                  <button>查看</button>
+                  <button>编辑</button>
+                  <button>删除</button>
                 </div>
               </div>
 
-              <div className="p-6">
-                {isLoading ? (
-                  <div className="text-center py-8 text-gray-500">加载中...</div>
-                ) : tasks.length > 0 ? (
-                  <div className="space-y-1">
-                    {tasks.map(task => renderTaskTree(task))}
+              <div className="journal-entry">
+                <div className="journal-content">
+                  <span className="journal-icon">🌙</span>
+                  <div className="journal-info">
+                    <h4>晚间总结</h4>
+                    <span className="journal-time">22:30</span>
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    暂无任务，点击上方按钮创建第一个任务
-                  </div>
-                )}
+                </div>
+                <div className="journal-actions">
+                  <button>查看</button>
+                  <button>编辑</button>
+                  <button>删除</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 右侧：成长数据 */}
+        <section className="stats-panel">
+          {/* 努力程度统计 */}
+          <div className="score-card">
+            <h3>努力程度统计</h3>
+            <div className="score-display">
+              <div className="score-item">
+                <span className="score-label">今日努力总分</span>
+                <span className="score-value">{stats.todayScore}</span>
+              </div>
+              <div className="score-item">
+                <span className="score-label">本周累计</span>
+                <span className="score-value">{stats.weekScore}</span>
+              </div>
+              <div className="score-item">
+                <span className="score-label">本月累计</span>
+                <span className="score-value">{stats.monthScore}</span>
               </div>
             </div>
           </div>
 
-          {/* 右侧：日志和统计 */}
-          <div className="space-y-6">
-            {/* 今日统计 */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Calendar className="w-5 h-5 mr-2 text-indigo-600" />
-                今日统计
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">总任务</span>
-                  <span className="font-semibold text-gray-900">0</span>
+          {/* 努力趋势图表 */}
+          <div className="progress-card">
+            <h3>本周努力趋势</h3>
+            <div className="progress-chart">
+              {['一', '二', '三', '四', '五', '六', '日'].map((day, index) => (
+                <div key={day} className={`chart-bar ${index === 6 ? 'today' : ''}`}>
+                  <div className="bar-fill" style={{ height: `${stats.weekProgress[index]}%` }}></div>
+                  <span className="bar-label">{day}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">已完成</span>
-                  <span className="font-semibold text-green-600">0</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">进行中</span>
-                  <span className="font-semibold text-blue-600">0</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">努力评分</span>
-                  <span className="font-semibold text-gray-900">0</span>
-                </div>
-              </div>
+              ))}
             </div>
+          </div>
 
-            {/* 最近日志 */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <FileText className="w-5 h-5 mr-2 text-indigo-600" />
-                  最近日志
-                </h3>
-                <button className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
-                  查看全部
-                </button>
+          {/* 任务状态分布 */}
+          <div className="status-card">
+            <h3>任务状态</h3>
+            <div className="status-stats">
+              <div className="status-item">
+                <span className="status-dot status-notstarted"></span>
+                <span className="status-label">未开始</span>
+                <span className="status-count">{stats.taskStats.notStarted}</span>
               </div>
-              <div className="text-gray-500 text-center py-4">
-                暂无日志
+              <div className="status-item">
+                <span className="status-dot status-inprogress"></span>
+                <span className="status-label">进行中</span>
+                <span className="status-count">{stats.taskStats.inProgress}</span>
+              </div>
+              <div className="status-item">
+                <span className="status-dot status-completed"></span>
+                <span className="status-label">已完成</span>
+                <span className="status-count">{stats.taskStats.completed}</span>
+              </div>
+              <div className="status-item">
+                <span className="status-dot status-cancelled"></span>
+                <span className="status-label">已取消</span>
+                <span className="status-count">{stats.taskStats.cancelled}</span>
               </div>
             </div>
           </div>
-        </div>
+        </section>
       </main>
+
+      {/* 快速操作栏 */}
+      <footer className="quick-actions">
+        <button className="action-btn primary">
+          <span className="action-icon">➕</span>
+          <span>创建任务</span>
+        </button>
+        <button className="action-btn">
+          <span className="action-icon">📝</span>
+          <span>写日志</span>
+        </button>
+        <button className="action-btn">
+          <span className="action-icon">✅</span>
+          <span>每日打卡</span>
+        </button>
+      </footer>
     </div>
   );
 };
