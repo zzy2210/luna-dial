@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/auth';
 import TaskTree from '../components/TaskTree';
 import taskService from '../services/task';
-import journalService from '../services/journal';
-import { Task, TaskStatus, PeriodType, Journal } from '../types';
+import { Task, TaskStatus, PeriodType } from '../types';
 import '../styles/dashboard.css';
 
 const Dashboard: React.FC = () => {
@@ -12,8 +11,6 @@ const Dashboard: React.FC = () => {
   const { user, logout } = useAuthStore();
   const [currentPeriod, setCurrentPeriod] = useState<PeriodType>('day');
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [journals, setJournals] = useState<Journal[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
 
   // 模拟的今日任务数据
   const [todayTasks] = useState([
@@ -54,14 +51,11 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     // 加载初始数据
     const loadData = async () => {
-      setIsLoading(true);
       try {
         const response = await taskService.getTaskTree();
         setTasks(response.items);
       } catch (error) {
         console.error('Failed to load tasks:', error);
-      } finally {
-        setIsLoading(false);
       }
     };
 

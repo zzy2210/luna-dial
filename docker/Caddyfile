@@ -1,0 +1,25 @@
+:80 {
+	# API 反向代理
+	handle /api/* {
+		reverse_proxy luna-dial-backend:8081
+	}
+
+	# 健康检查端点
+	handle /health {
+		reverse_proxy luna-dial-backend:8081
+	}
+
+	# 前端静态文件服务
+	handle {
+		root * /srv
+		file_server
+		# SPA 支持：所有路由都回退到 index.html
+		try_files {path} /index.html
+	}
+
+	# 日志
+	log {
+		output stdout
+		format console
+	}
+}

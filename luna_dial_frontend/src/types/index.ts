@@ -38,29 +38,32 @@ export interface ApiResponse<T = any> {
 }
 
 // 任务状态枚举
-export enum TaskStatus {
-  NotStarted = 0,
-  InProgress = 1,
-  Completed = 2,
-  Cancelled = 3,
-}
+export const TaskStatus = {
+  NotStarted: 0,
+  InProgress: 1,
+  Completed: 2,
+  Cancelled: 3,
+} as const;
+export type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
 
 // 任务优先级枚举
-export enum TaskPriority {
-  Low = 0,
-  Medium = 1,
-  High = 2,
-  Urgent = 3,
-}
+export const TaskPriority = {
+  Low: 0,
+  Medium: 1,
+  High: 2,
+  Urgent: 3,
+} as const;
+export type TaskPriority = typeof TaskPriority[keyof typeof TaskPriority];
 
 // 任务类型枚举
-export enum TaskType {
-  Day = 0,
-  Week = 1,
-  Month = 2,
-  Quarter = 3,
-  Year = 4,
-}
+export const TaskType = {
+  Day: 0,
+  Week: 1,
+  Month: 2,
+  Quarter: 3,
+  Year: 4,
+} as const;
+export type TaskType = typeof TaskType[keyof typeof TaskType];
 
 // 任务类型
 export interface Task {
@@ -110,13 +113,14 @@ export interface UpdateTaskRequest {
 }
 
 // 日志类型枚举
-export enum JournalType {
-  Day = 0,
-  Week = 1,
-  Month = 2,
-  Quarter = 3,
-  Year = 4,
-}
+export const JournalType = {
+  Day: 0,
+  Week: 1,
+  Month: 2,
+  Quarter: 3,
+  Year: 4,
+} as const;
+export type JournalType = typeof JournalType[keyof typeof JournalType];
 
 // 日志类型
 export interface Journal {
