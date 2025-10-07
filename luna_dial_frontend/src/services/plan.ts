@@ -11,7 +11,7 @@ class PlanService {
   async getPlan(params: GetByPeriodRequest): Promise<PlanResponse> {
     const response = await apiClient.get<ApiResponse<PlanResponse>>(
       '/api/v1/plans',
-      { data: params }
+      { params }
     );
 
     if (response.data.success && response.data.data) {

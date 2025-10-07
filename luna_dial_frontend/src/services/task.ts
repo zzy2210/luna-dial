@@ -17,7 +17,7 @@ class TaskService {
   async getTasks(params: GetByPeriodRequest): Promise<Task[]> {
     const response = await apiClient.get<ApiResponse<Task[]>>(
       '/api/v1/tasks',
-      { data: params }
+      { params }
     );
 
     if (response.data.success && response.data.data) {

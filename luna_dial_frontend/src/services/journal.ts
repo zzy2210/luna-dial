@@ -15,7 +15,7 @@ class JournalService {
   async getJournals(params: GetByPeriodRequest): Promise<Journal[]> {
     const response = await apiClient.get<ApiResponse<Journal[]>>(
       '/api/v1/journals',
-      { data: params }
+      { params }
     );
 
     if (response.data.success && response.data.data) {
