@@ -3,18 +3,37 @@ package service
 import (
 	"fmt"
 	"luna_dial/internal/biz"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
 
 // 根据时间段与时间类型获取 无分页
 func (s *Service) handleListJournalsByPeriod(c echo.Context) error {
-    var req ListJournalByPeriodRequest
-    if err := c.Bind(&req); err != nil {
-        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    // 手动从查询参数获取值
+    periodType := c.QueryParam("period_type")
+    startDateStr := c.QueryParam("start_date")
+    endDateStr := c.QueryParam("end_date")
+
+    // 手动验证必填字段
+    if periodType == "" {
+        return c.JSON(400, NewErrorResponse(400, "field period_type is required"))
     }
-    if err := c.Validate(&req); err != nil {
-        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    if startDateStr == "" {
+        return c.JSON(400, NewErrorResponse(400, "field start_date is required"))
+    }
+    if endDateStr == "" {
+        return c.JSON(400, NewErrorResponse(400, "field end_date is required"))
+    }
+
+    // 解析时间
+    startDate, err := time.Parse("2006-01-02", startDateStr)
+    if err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid start_date format, expected YYYY-MM-DD"))
+    }
+    endDate, err := time.Parse("2006-01-02", endDateStr)
+    if err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid end_date format, expected YYYY-MM-DD"))
     }
 
 	userID, _, err := GetUserFromContext(c)
@@ -22,18 +41,19 @@ func (s *Service) handleListJournalsByPeriod(c echo.Context) error {
 		return c.JSON(401, NewErrorResponse(401, "User not found"))
 	}
 
-	periodType, err := PeriodTypeFromString(req.PeriodType)
+	periodTypeEnum, err := PeriodTypeFromString(periodType)
 	if err != nil {
 		return c.JSON(400, NewErrorResponse(400, "Invalid period type"))
 	}
 
 	journalList, err := s.journalUsecase.ListJournalByPeriod(c.Request().Context(), biz.ListJournalByPeriodParam{
 		UserID:  userID,
-		Period:  biz.Period{Start: req.StartDate, End: req.EndDate},
-		GroupBy: periodType,
+		Period:  biz.Period{Start: startDate, End: endDate},
+		GroupBy: periodTypeEnum,
 	})
 	if err != nil {
-		return c.JSON(500, NewErrorResponse(500, "Failed to get journals"))
+		c.Logger().Error("Failed to get journals:", err)
+		return c.JSON(500, NewErrorResponse(500, "Failed to get journals: " + err.Error()))
 	}
 
 	return c.JSON(200, NewSuccessResponse(journalList))

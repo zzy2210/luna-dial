@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"luna_dial/internal/biz"
 	"regexp"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -15,12 +16,30 @@ var (
 
 // 查看指定时间段内指定类型的任务
 func (s *Service) handleListTasks(c echo.Context) error {
-    var req ListTaskRequest
-    if err := c.Bind(&req); err != nil {
-        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    // 手动从查询参数获取值
+    periodType := c.QueryParam("period_type")
+    startDateStr := c.QueryParam("start_date")
+    endDateStr := c.QueryParam("end_date")
+
+    // 手动验证必填字段
+    if periodType == "" {
+        return c.JSON(400, NewErrorResponse(400, "field period_type is required"))
     }
-    if err := c.Validate(&req); err != nil {
-        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    if startDateStr == "" {
+        return c.JSON(400, NewErrorResponse(400, "field start_date is required"))
+    }
+    if endDateStr == "" {
+        return c.JSON(400, NewErrorResponse(400, "field end_date is required"))
+    }
+
+    // 解析时间
+    startDate, err := time.Parse("2006-01-02", startDateStr)
+    if err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid start_date format, expected YYYY-MM-DD"))
+    }
+    endDate, err := time.Parse("2006-01-02", endDateStr)
+    if err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid end_date format, expected YYYY-MM-DD"))
     }
 
 	// 获取当前用户ID
@@ -30,24 +49,25 @@ func (s *Service) handleListTasks(c echo.Context) error {
 	}
 
 	period := biz.Period{
-		Start: req.StartDate,
-		End:   req.EndDate,
+		Start: startDate,
+		End:   endDate,
 	}
 
 	// 解析PeriodType
-	periodType, err := PeriodTypeFromString(req.PeriodType)
+	periodTypeEnum, err := PeriodTypeFromString(periodType)
 	if err != nil {
-		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid period type: %s", req.PeriodType)))
+		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid period type: %s", periodType)))
 	}
 
 	// 调用业务层获取任务列表
 	tasks, err := s.taskUsecase.ListTaskByPeriod(c.Request().Context(), biz.ListTaskByPeriodParam{
 		UserID:  userId,
 		Period:  period,
-		GroupBy: periodType,
+		GroupBy: periodTypeEnum,
 	})
 	if err != nil {
-		return c.JSON(500, NewErrorResponse(500, "Failed to get tasks"))
+		c.Logger().Error("Failed to get tasks:", err)
+		return c.JSON(500, NewErrorResponse(500, "Failed to get tasks: " + err.Error()))
 	}
 
 	// 直接返回任务列表

@@ -12,9 +12,9 @@ type LoginRequest struct {
 }
 
 type ListTaskRequest struct {
-    PeriodType string    `json:"period_type" validate:"required,oneof=day week month quarter year"`
-    StartDate  time.Time `json:"start_date" validate:"required"`
-    EndDate    time.Time `json:"end_date" validate:"required"`
+    PeriodType string    `json:"period_type" query:"period_type" validate:"required,oneof=day week month quarter year"`
+    StartDate  time.Time `json:"start_date" query:"start_date" validate:"required"`
+    EndDate    time.Time `json:"end_date" query:"end_date" validate:"required"`
 }
 
 type CreateTaskRequest struct {
@@ -71,9 +71,9 @@ type DeleteTaskRequest struct {
 }
 
 type ListJournalByPeriodRequest struct {
-	PeriodType string    `json:"period_type" validate:"required,oneof=day week month quarter year"`
-	StartDate  time.Time `json:"start_date" validate:"required"`
-	EndDate    time.Time `json:"end_date" validate:"required"`
+	PeriodType string    `json:"period_type" query:"period_type" validate:"required,oneof=day week month quarter year"`
+	StartDate  time.Time `json:"start_date" query:"start_date" validate:"required"`
+	EndDate    time.Time `json:"end_date" query:"end_date" validate:"required"`
 }
 
 // 新建日志请求
@@ -101,9 +101,9 @@ type UpdateJournalRequest struct {
 
 // 查看list
 type ListPlansRequest struct {
-	PeriodType string    `json:"period_type" validate:"required,oneof=day week month quarter year"`
-	StartDate  time.Time `json:"start_date" validate:"required"`
-	EndDate    time.Time `json:"end_date" validate:"required"`
+	PeriodType string    `json:"period_type" query:"period_type" validate:"required,oneof=day week month quarter year"`
+	StartDate  time.Time `json:"start_date" query:"start_date" validate:"required"`
+	EndDate    time.Time `json:"end_date" query:"end_date" validate:"required"`
 }
 
 // 分页查询根任务请求
