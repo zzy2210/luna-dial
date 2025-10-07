@@ -12,7 +12,7 @@ RUN npm ci --only=production
 COPY luna_dial_frontend/ ./
 
 # 设置 API 地址为相对路径（通过 Caddy 代理）
-ENV VITE_API_BASE_URL=/api/v1
+ENV VITE_API_BASE_URL=
 
 # 构建前端
 RUN npm run build
