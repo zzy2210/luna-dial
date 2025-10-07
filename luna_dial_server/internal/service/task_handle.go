@@ -94,6 +94,16 @@ func (s *Service) handleCreateTask(c echo.Context) error {
 		return c.JSON(400, NewErrorResponse(400, "Invalid icon format"))
 	}
 
+	// 解析日期字符串
+	startDate, err := time.Parse("2006-01-02", req.StartDate)
+	if err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid start_date format, expected YYYY-MM-DD"))
+	}
+	endDate, err := time.Parse("2006-01-02", req.EndDate)
+	if err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid end_date format, expected YYYY-MM-DD"))
+	}
+
 	pType, err := PeriodTypeFromString(req.PeriodType)
 	if err != nil {
 		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid period type: %s", req.PeriodType)))
@@ -109,8 +119,8 @@ func (s *Service) handleCreateTask(c echo.Context) error {
 		UserID: userID,
 		Type:   pType,
 		Period: biz.Period{
-			Start: req.StartDate,
-			End:   req.EndDate,
+			Start: startDate,
+			End:   endDate,
 		},
 		Icon:     req.Icon,
 		Tags:     req.Tags,
@@ -147,6 +157,16 @@ func (s *Service) handleCreateSubTask(c echo.Context) error {
         return c.JSON(400, NewErrorResponse(400, "Invalid icon format"))
     }
 
+    // 解析日期字符串
+    startDate, err := time.Parse("2006-01-02", req.StartDate)
+    if err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid start_date format, expected YYYY-MM-DD"))
+    }
+    endDate, err := time.Parse("2006-01-02", req.EndDate)
+    if err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid end_date format, expected YYYY-MM-DD"))
+    }
+
     periodType, err := PeriodTypeFromString(req.PeriodType)
     if err != nil {
         return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid period type: %s", req.PeriodType)))
@@ -162,8 +182,8 @@ func (s *Service) handleCreateSubTask(c echo.Context) error {
         UserID:   userID,
         Type:     periodType,
         Period: biz.Period{
-            Start: req.StartDate,
-            End:   req.EndDate,
+            Start: startDate,
+            End:   endDate,
         },
         Icon:     req.Icon,
         Priority: priority,
@@ -210,9 +230,18 @@ func (s *Service) handleUpdateTask(c echo.Context) error {
 		updateParam.Title = req.Title
 	}
 	if req.StartDate != nil && req.EndDate != nil {
+		// 解析日期字符串
+		startDate, err := time.Parse("2006-01-02", *req.StartDate)
+		if err != nil {
+			return c.JSON(400, NewErrorResponse(400, "Invalid start_date format, expected YYYY-MM-DD"))
+		}
+		endDate, err := time.Parse("2006-01-02", *req.EndDate)
+		if err != nil {
+			return c.JSON(400, NewErrorResponse(400, "Invalid end_date format, expected YYYY-MM-DD"))
+		}
 		updateParam.Period = &biz.Period{
-			Start: *req.StartDate,
-			End:   *req.EndDate,
+			Start: startDate,
+			End:   endDate,
 		}
 	}
 	if req.Status != nil {
@@ -583,6 +612,16 @@ func (s *Service) handleCreateTaskWithOptimization(c echo.Context) error {
 		return c.JSON(400, NewErrorResponse(400, "Invalid icon format"))
 	}
 
+	// 解析日期字符串
+	startDate, err := time.Parse("2006-01-02", req.StartDate)
+	if err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid start_date format, expected YYYY-MM-DD"))
+	}
+	endDate, err := time.Parse("2006-01-02", req.EndDate)
+	if err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid end_date format, expected YYYY-MM-DD"))
+	}
+
 	pType, err := PeriodTypeFromString(req.PeriodType)
 	if err != nil {
 		return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid period type: %s", req.PeriodType)))
@@ -599,8 +638,8 @@ func (s *Service) handleCreateTaskWithOptimization(c echo.Context) error {
 		UserID: userID,
 		Type:   pType,
 		Period: biz.Period{
-			Start: req.StartDate,
-			End:   req.EndDate,
+			Start: startDate,
+			End:   endDate,
 		},
 		Icon:     req.Icon,
 		Tags:     req.Tags,

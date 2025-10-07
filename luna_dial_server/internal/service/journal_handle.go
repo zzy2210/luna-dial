@@ -71,9 +71,20 @@ func (s *Service) handleCreateJournal(c echo.Context) error {
 	if err != nil {
 		return c.JSON(401, NewErrorResponse(401, "User not found"))
 	}
-	if req.Title == "" || req.Content == "" || req.JournalType == "" || req.StartDate.IsZero() || req.EndDate.IsZero() {
+	if req.Title == "" || req.Content == "" || req.JournalType == "" || req.StartDate == "" || req.EndDate == "" {
 		return c.JSON(400, NewErrorResponse(400, "Title, content, journal type and time period are required"))
 	}
+
+	// 解析日期字符串
+	startDate, err := time.Parse("2006-01-02", req.StartDate)
+	if err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid start_date format, expected YYYY-MM-DD"))
+	}
+	endDate, err := time.Parse("2006-01-02", req.EndDate)
+	if err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid end_date format, expected YYYY-MM-DD"))
+	}
+
 	journalType, err := PeriodTypeFromString(req.JournalType)
 	if err != nil {
 		return c.JSON(400, NewErrorResponse(400, "Invalid journal type"))
@@ -85,8 +96,8 @@ func (s *Service) handleCreateJournal(c echo.Context) error {
 		Content:     req.Content,
 		JournalType: journalType,
 		TimePeriod: biz.Period{
-			Start: req.StartDate,
-			End:   req.EndDate,
+			Start: startDate,
+			End:   endDate,
 		},
 		Icon: req.Icon,
 	})
@@ -199,14 +210,31 @@ func (s *Service) handleListJournalsWithPagination(c echo.Context) error {
 		journalType = &intType
 	}
 
+	// 解析日期字符串
+	var periodStart, periodEnd *time.Time
+	if req.StartDate != nil && *req.StartDate != "" {
+		startDate, err := time.Parse("2006-01-02", *req.StartDate)
+		if err != nil {
+			return c.JSON(400, NewErrorResponse(400, "Invalid start_date format, expected YYYY-MM-DD"))
+		}
+		periodStart = &startDate
+	}
+	if req.EndDate != nil && *req.EndDate != "" {
+		endDate, err := time.Parse("2006-01-02", *req.EndDate)
+		if err != nil {
+			return c.JSON(400, NewErrorResponse(400, "Invalid end_date format, expected YYYY-MM-DD"))
+		}
+		periodEnd = &endDate
+	}
+
 	// 调用业务层
 	journals, total, err := s.journalUsecase.ListJournalsWithPagination(c.Request().Context(), biz.ListJournalsWithPaginationParam{
 		UserID:      userID,
 		Page:        req.Page,
 		PageSize:    req.PageSize,
 		JournalType: journalType,
-		PeriodStart: req.StartDate,
-		PeriodEnd:   req.EndDate,
+		PeriodStart: periodStart,
+		PeriodEnd:   periodEnd,
 	})
 	if err != nil {
 		return c.JSON(500, NewErrorResponse(500, "Failed to get journals"))
