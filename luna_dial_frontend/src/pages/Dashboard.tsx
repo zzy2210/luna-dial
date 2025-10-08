@@ -145,6 +145,14 @@ const Dashboard: React.FC = () => {
     setCurrentDate(newDate);
   };
 
+  // 本地时间格式化函数，避免 toISOString() 的时区问题
+  const formatLocalDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const getPeriodDates = (period: PeriodType, baseDate: Date = currentDate) => {
     const startDate = new Date(baseDate);
     const endDate = new Date(baseDate);
@@ -190,8 +198,8 @@ const Dashboard: React.FC = () => {
     }
 
     return {
-      start_date: startDate.toISOString().split('T')[0],
-      end_date: endDate.toISOString().split('T')[0]
+      start_date: formatLocalDate(startDate),
+      end_date: formatLocalDate(endDate)
     };
   };
 
