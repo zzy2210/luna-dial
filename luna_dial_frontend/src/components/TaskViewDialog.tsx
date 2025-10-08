@@ -1,6 +1,7 @@
 import React from 'react';
 import { Task, TaskStatus, TaskPriority } from '../types';
 import '../styles/dialog.css';
+import '../styles/task-view-dialog.css';
 
 interface TaskViewDialogProps {
   task: Task;
@@ -61,6 +62,49 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
     }
   };
 
+  const getStatusClassName = (status: TaskStatus): string => {
+    switch (status) {
+      case TaskStatus.NotStarted:
+        return 'not-started';
+      case TaskStatus.InProgress:
+        return 'in-progress';
+      case TaskStatus.Completed:
+        return 'completed';
+      case TaskStatus.Cancelled:
+        return 'cancelled';
+      default:
+        return 'not-started';
+    }
+  };
+
+  const getPriorityClassName = (priority: TaskPriority): string => {
+    switch (priority) {
+      case TaskPriority.Low:
+        return 'low';
+      case TaskPriority.Medium:
+        return 'medium';
+      case TaskPriority.High:
+        return 'high';
+      case TaskPriority.Urgent:
+        return 'urgent';
+      default:
+        return 'medium';
+    }
+  };
+
+  const renderScoreStars = (score: number) => {
+    const stars = [];
+    const fullStars = Math.floor(score / 2);
+    for (let i = 0; i < 5; i++) {
+      stars.push(
+        <span key={i} className={`score-star ${i < fullStars ? '' : 'empty'}`}>
+          ★
+        </span>
+      );
+    }
+    return stars;
+  };
+
   const tags = parseTags(task.tags);
 
   return (
@@ -71,133 +115,92 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
           <button className="dialog-close" onClick={onClose}>×</button>
         </div>
 
-        <div className="dialog-content">
-          {/* 任务图标和标题 */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '24px',
-            paddingBottom: '16px',
-            borderBottom: '1px solid var(--border-color, #eee)'
-          }}>
-            <span style={{ fontSize: '32px' }}>{task.icon || '📋'}</span>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 600 }}>
-                {task.title}
-              </h3>
-              <div style={{
-                display: 'flex',
-                gap: '12px',
-                marginTop: '8px',
-                fontSize: '14px',
-                color: 'var(--text-secondary, #666)'
-              }}>
-                <span>{taskTypeLabels[task.task_type]}</span>
-                <span>•</span>
-                <span>优先级: {priorityLabels[task.priority]}</span>
-                <span>•</span>
-                <span>状态: {statusLabels[task.status]}</span>
+        <div className="task-view-content">
+          {/* 任务头部卡片 */}
+          <div className="task-header-card">
+            <span className="task-icon-large">{task.icon || '📋'}</span>
+            <div className="task-header-info">
+              <h3 className="task-title">{task.title}</h3>
+              <div className="task-meta">
+                <span className="task-type-label">{taskTypeLabels[task.task_type]}</span>
+                <span className="meta-divider">·</span>
+                <span className={`priority-badge ${getPriorityClassName(task.priority)}`}>
+                  {priorityLabels[task.priority]}
+                </span>
+                <span className="meta-divider">·</span>
+                <span className={`status-badge ${getStatusClassName(task.status)}`}>
+                  {statusLabels[task.status]}
+                </span>
               </div>
             </div>
           </div>
 
           {/* 任务描述 */}
           {task.description && (
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{
-                fontSize: '14px',
-                fontWeight: 600,
-                color: 'var(--text-secondary, #666)',
-                marginBottom: '12px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
+            <div className="info-section">
+              <div className="info-section-title">
+                <span className="info-section-icon">📝</span>
                 描述
-              </h4>
-              <div style={{
-                whiteSpace: 'pre-wrap',
-                lineHeight: '1.6',
-                padding: '16px',
-                background: 'var(--bg-secondary, #f9f9f9)',
-                borderRadius: '8px',
-                fontSize: '15px'
-              }}>
+              </div>
+              <div className="info-card description">
                 {task.description}
               </div>
             </div>
           )}
 
           {/* 任务时间范围 */}
-          <div style={{ marginBottom: '24px' }}>
-            <h4 style={{
-              fontSize: '14px',
-              fontWeight: 600,
-              color: 'var(--text-secondary, #666)',
-              marginBottom: '12px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+          <div className="info-section">
+            <div className="info-section-title">
+              <span className="info-section-icon">📅</span>
               时间范围
-            </h4>
-            <div style={{
-              padding: '16px',
-              background: 'var(--bg-secondary, #f9f9f9)',
-              borderRadius: '8px',
-              fontSize: '15px'
-            }}>
-              {formatDate(task.period_start)} - {formatDate(task.period_end)}
+            </div>
+            <div className="date-range">
+              <span className="date-icon">📆</span>
+              <span className="date-text">
+                {formatDate(task.period_start)} → {formatDate(task.period_end)}
+              </span>
             </div>
           </div>
 
           {/* 努力评分 */}
-          <div style={{ marginBottom: '24px' }}>
-            <h4 style={{
-              fontSize: '14px',
-              fontWeight: 600,
-              color: 'var(--text-secondary, #666)',
-              marginBottom: '12px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+          <div className="info-section">
+            <div className="info-section-title">
+              <span className="info-section-icon">💪</span>
               努力评分
-            </h4>
-            <div style={{
-              padding: '16px',
-              background: 'var(--bg-secondary, #f9f9f9)',
-              borderRadius: '8px',
-              fontSize: '15px'
-            }}>
-              {task.status === TaskStatus.NotStarted ? '未开始' : `${task.score} / 10`}
             </div>
+            {task.status === TaskStatus.NotStarted ? (
+              <div className="info-card">
+                任务尚未开始,暂无评分
+              </div>
+            ) : (
+              <div className="score-container">
+                <div className="score-display">
+                  <span className="score-value">{task.score}</span>
+                  <span className="score-max">/ 10</span>
+                </div>
+                <div className="score-bar">
+                  <div
+                    className="score-bar-fill"
+                    style={{ width: `${(task.score / 10) * 100}%` }}
+                  />
+                </div>
+                <div className="score-stars">
+                  {renderScoreStars(task.score)}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 标签 */}
           {tags.length > 0 && (
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{
-                fontSize: '14px',
-                fontWeight: 600,
-                color: 'var(--text-secondary, #666)',
-                marginBottom: '12px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
+            <div className="info-section">
+              <div className="info-section-title">
+                <span className="info-section-icon">🏷️</span>
                 标签
-              </h4>
-              <div style={{
-                display: 'flex',
-                gap: '8px',
-                flexWrap: 'wrap'
-              }}>
+              </div>
+              <div className="tag-list">
                 {tags.map(tag => (
-                  <span key={tag} style={{
-                    padding: '4px 12px',
-                    background: 'var(--bg-secondary, #f0f0f0)',
-                    borderRadius: '12px',
-                    fontSize: '13px',
-                    color: 'var(--text-primary, #333)'
-                  }}>
+                  <span key={tag} className="task-tag">
                     {tag}
                   </span>
                 ))}
@@ -207,38 +210,38 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
 
           {/* 任务层级信息 */}
           {(task.parent_id || task.has_children) && (
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{
-                fontSize: '14px',
-                fontWeight: 600,
-                color: 'var(--text-secondary, #666)',
-                marginBottom: '12px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
+            <div className="info-section">
+              <div className="info-section-title">
+                <span className="info-section-icon">🌲</span>
                 任务层级
-              </h4>
-              <div style={{
-                padding: '16px',
-                background: 'var(--bg-secondary, #f9f9f9)',
-                borderRadius: '8px',
-                fontSize: '15px'
-              }}>
-                {task.parent_id && <div>父任务 ID: {task.parent_id}</div>}
-                {task.has_children && (
-                  <div>子任务数量: {task.children_count}</div>
+              </div>
+              <div className="hierarchy-card">
+                {task.parent_id && (
+                  <div className="hierarchy-item">
+                    <span className="hierarchy-icon">↑</span>
+                    <span className="hierarchy-label">父任务ID:</span>
+                    <span className="hierarchy-value">{task.parent_id}</span>
+                  </div>
                 )}
-                <div>树深度: {task.tree_depth}</div>
+                {task.has_children && (
+                  <div className="hierarchy-item">
+                    <span className="hierarchy-icon">↓</span>
+                    <span className="hierarchy-label">子任务数量:</span>
+                    <span className="hierarchy-value">{task.children_count}</span>
+                  </div>
+                )}
+                <div className="hierarchy-item">
+                  <span className="hierarchy-icon">📊</span>
+                  <span className="hierarchy-label">树深度:</span>
+                  <span className="hierarchy-value">{task.tree_depth}</span>
+                </div>
               </div>
             </div>
           )}
 
           {/* 创建时间 */}
-          <div style={{
-            fontSize: '13px',
-            color: 'var(--text-tertiary, #999)',
-            marginBottom: '24px'
-          }}>
+          <div className="timestamp">
+            <span className="timestamp-icon">🕐</span>
             创建于 {new Date(task.created_at).toLocaleString('zh-CN')}
             {task.updated_at !== task.created_at && (
               <> · 最后更新 {new Date(task.updated_at).toLocaleString('zh-CN')}</>
@@ -247,24 +250,22 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
         </div>
 
         {/* 操作按钮 */}
-        <div className="dialog-actions">
-          <button type="button" onClick={handleDelete} className="btn-cancel" style={{
-            marginRight: 'auto',
-            background: '#dc3545',
-            color: 'white'
-          }}>
-            删除
+        <div className="task-actions">
+          <button type="button" onClick={handleDelete} className="btn-delete">
+            删除任务
           </button>
-          <button type="button" onClick={onClose} className="btn-cancel">
-            关闭
-          </button>
-          <button
-            type="button"
-            onClick={() => onEdit(task)}
-            className="btn-primary"
-          >
-            编辑
-          </button>
+          <div className="action-buttons-right">
+            <button type="button" onClick={onClose} className="btn-cancel">
+              关闭
+            </button>
+            <button
+              type="button"
+              onClick={() => onEdit(task)}
+              className="btn-primary"
+            >
+              编辑
+            </button>
+          </div>
         </div>
       </div>
     </div>
