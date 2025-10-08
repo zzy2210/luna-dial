@@ -47,8 +47,8 @@ type UpdateTaskRequest struct {
     Description *string   `json:"description,omitempty"`
     StartDate   *string   `json:"start_date,omitempty"`
     EndDate     *string   `json:"end_date,omitempty"`
-    Priority    *string   `json:"priority,omitempty" validate:"omitempty,oneof=low medium high urgent"`
-    Status      *string   `json:"status,omitempty" validate:"omitempty,oneof=not_started in_progress completed cancelled"`
+    Priority    string    `json:"priority,omitempty" validate:"omitempty,oneof=low medium high urgent"`
+    Status      string    `json:"status,omitempty" validate:"omitempty,oneof=not_started in_progress completed cancelled"`
     Icon        *string   `json:"icon,omitempty"`
     Tags        *[]string `json:"tags,omitempty"`
     // 任务ID改由路径参数传入，保留字段以向后兼容
