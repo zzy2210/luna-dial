@@ -719,6 +719,7 @@ const Dashboard: React.FC = () => {
           onClose={() => setShowViewTaskDialog(false)}
           onEdit={(task) => handleEditTask(task)}
           onDelete={(taskId) => handleDeleteTask(taskId)}
+          onScoreUpdate={handleTaskScoreChange}
         />
       )}
 
