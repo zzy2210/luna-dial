@@ -8,6 +8,7 @@ import planService from '../services/plan';
 import { Task, TaskStatus, PeriodType, Journal, PlanResponse } from '../types';
 import TaskCreateDialog from '../components/TaskCreateDialog';
 import JournalEditDialog from '../components/JournalEditDialog';
+import JournalViewDialog from '../components/JournalViewDialog';
 import '../styles/dashboard.css';
 
 const Dashboard: React.FC = () => {
@@ -22,7 +23,9 @@ const Dashboard: React.FC = () => {
   // 对话框状态
   const [showTaskDialog, setShowTaskDialog] = useState(false);
   const [showJournalDialog, setShowJournalDialog] = useState(false);
+  const [showViewJournalDialog, setShowViewJournalDialog] = useState(false);
   const [editingJournal, setEditingJournal] = useState<Journal | null>(null);
+  const [viewingJournal, setViewingJournal] = useState<Journal | null>(null);
 
   // 统计数据
   const [stats, setStats] = useState({
@@ -87,8 +90,14 @@ const Dashboard: React.FC = () => {
     setShowJournalDialog(true);
   };
 
+  const handleViewJournal = (journal: Journal) => {
+    setViewingJournal(journal);
+    setShowViewJournalDialog(true);
+  };
+
   const handleEditJournal = (journal: Journal) => {
     setEditingJournal(journal);
+    setShowViewJournalDialog(false);
     setShowJournalDialog(true);
   };
 
@@ -399,7 +408,7 @@ const Dashboard: React.FC = () => {
                       </div>
                     </div>
                     <div className="journal-actions">
-                      <button onClick={() => console.log('View journal', journal)}>查看</button>
+                      <button onClick={() => handleViewJournal(journal)}>查看</button>
                       <button onClick={() => handleEditJournal(journal)}>编辑</button>
                       <button onClick={() => handleDeleteJournal(journal.id)}>删除</button>
                     </div>
@@ -512,6 +521,14 @@ const Dashboard: React.FC = () => {
             loadPlanData();
           }}
           currentPeriod={currentPeriod}
+        />
+      )}
+
+      {showViewJournalDialog && viewingJournal && (
+        <JournalViewDialog
+          journal={viewingJournal}
+          onClose={() => setShowViewJournalDialog(false)}
+          onEdit={(journal) => handleEditJournal(journal)}
         />
       )}
     </div>
