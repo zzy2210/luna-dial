@@ -153,6 +153,105 @@ const Dashboard: React.FC = () => {
     return `${year}-${month}-${day}`;
   };
 
+  // 获取ISO周数
+  const getWeekNumber = (date: Date): number => {
+    const year = date.getFullYear();
+    const yearStart = new Date(year, 0, 1);
+
+    let firstMonday = new Date(yearStart);
+    const startDay = yearStart.getDay();
+    if (startDay === 0) {
+      firstMonday.setDate(yearStart.getDate() + 1);
+    } else if (startDay > 1) {
+      firstMonday.setDate(yearStart.getDate() + (8 - startDay));
+    }
+
+    const diff = date.getTime() - firstMonday.getTime();
+    const weekNum = Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1;
+
+    return Math.max(1, Math.min(weekNum, 53));
+  };
+
+  // 获取季度数
+  const getQuarterNumber = (date: Date): number => {
+    return Math.floor(date.getMonth() / 3) + 1;
+  };
+
+  // 判断两个日期是否在同一周期
+  const isSamePeriod = (date1: Date, date2: Date, period: PeriodType): boolean => {
+    const y1 = date1.getFullYear();
+    const y2 = date2.getFullYear();
+    const m1 = date1.getMonth();
+    const m2 = date2.getMonth();
+    const d1 = date1.getDate();
+    const d2 = date2.getDate();
+
+    switch (period) {
+      case 'day':
+        return y1 === y2 && m1 === m2 && d1 === d2;
+      case 'week':
+        return y1 === y2 && getWeekNumber(date1) === getWeekNumber(date2);
+      case 'month':
+        return y1 === y2 && m1 === m2;
+      case 'quarter':
+        return y1 === y2 && getQuarterNumber(date1) === getQuarterNumber(date2);
+      case 'year':
+        return y1 === y2;
+      default:
+        return false;
+    }
+  };
+
+  // 格式化周期范围显示
+  const formatPeriodRange = (date: Date, period: PeriodType): string => {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+
+    switch (period) {
+      case 'day':
+        return '';  // 日期在外面单独显示
+      case 'week': {
+        const weekNum = getWeekNumber(date);
+        // 计算周的起止日期
+        const yearStart = new Date(year, 0, 1);
+        let firstMonday = new Date(yearStart);
+        const firstDayOfYear = yearStart.getDay();
+        if (firstDayOfYear === 0) {
+          firstMonday.setDate(yearStart.getDate() + 1);
+        } else if (firstDayOfYear > 1) {
+          firstMonday.setDate(yearStart.getDate() + (8 - firstDayOfYear));
+        }
+        const weekStart = new Date(firstMonday);
+        weekStart.setDate(firstMonday.getDate() + (weekNum - 1) * 7);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+
+        const startMonth = weekStart.getMonth() + 1;
+        const weekStartDay = weekStart.getDate();
+        const endMonth = weekEnd.getMonth() + 1;
+        const weekEndDay = weekEnd.getDate();
+
+        if (startMonth === endMonth) {
+          return `第${weekNum}周: ${startMonth}月${weekStartDay}日-${weekEndDay}日`;
+        } else {
+          return `第${weekNum}周: ${startMonth}月${weekStartDay}日-${endMonth}月${weekEndDay}日`;
+        }
+      }
+      case 'month':
+        return `${month}月`;
+      case 'quarter': {
+        const quarter = getQuarterNumber(date);
+        const startMonth = (quarter - 1) * 3 + 1;
+        const endMonth = quarter * 3;
+        return `第${quarter}季度 (${startMonth}-${endMonth}月)`;
+      }
+      case 'year':
+        return '';  // 年份在外面单独显示
+      default:
+        return '';
+    }
+  };
+
   const getPeriodDates = (period: PeriodType, baseDate: Date = currentDate) => {
     const startDate = new Date(baseDate);
     const endDate = new Date(baseDate);
@@ -291,8 +390,7 @@ const Dashboard: React.FC = () => {
     loadPlanData();
   }, [currentPeriod, currentDate]);
 
-  const getCurrentDateString = () => {
-    const date = new Date();
+  const getCurrentDateString = (date: Date = new Date()) => {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
@@ -300,15 +398,37 @@ const Dashboard: React.FC = () => {
     return `${year}年${month}月${day}日 ${weekDay}`;
   };
 
-  const getPeriodLabel = (period: PeriodType) => {
-    const labels = {
-      day: '今日',
-      week: '本周',
-      month: '本月',
-      quarter: '本季度',
-      year: '本年'
-    };
-    return labels[period];
+  const getPeriodLabel = (period: PeriodType, date: Date = new Date()) => {
+    const now = new Date();
+    const isCurrentPeriod = isSamePeriod(date, now, period);
+    const year = date.getFullYear();
+
+    if (isCurrentPeriod) {
+      const labels = {
+        day: '今日',
+        week: '本周',
+        month: '本月',
+        quarter: '本季度',
+        year: '本年'
+      };
+      return labels[period];
+    } else {
+      // 非当前周期，显示具体时间
+      switch (period) {
+        case 'day':
+          return getCurrentDateString(date).replace(/\s星期./, '');  // 移除星期部分
+        case 'week':
+          return `${year}年${formatPeriodRange(date, period)}`;
+        case 'month':
+          return `${year}年${formatPeriodRange(date, period)}`;
+        case 'quarter':
+          return `${year}年${formatPeriodRange(date, period)}`;
+        case 'year':
+          return `${year}年`;
+        default:
+          return '';
+      }
+    }
   };
 
   return (
@@ -378,8 +498,13 @@ const Dashboard: React.FC = () => {
         <section className="overview-panel">
           {/* 今日任务卡片 */}
           <div className="focus-card">
-            <h3>{getPeriodLabel(currentPeriod)}任务</h3>
-            <div className="current-date">{getCurrentDateString()}</div>
+            <h3>{getPeriodLabel(currentPeriod, currentDate)}任务</h3>
+            <div className="current-date">
+              {getCurrentDateString(currentDate)}
+              {formatPeriodRange(currentDate, currentPeriod) && (
+                <span className="period-range"> ({formatPeriodRange(currentDate, currentPeriod)})</span>
+              )}
+            </div>
 
             {loading ? (
               <div className="loading">加载中...</div>
@@ -429,14 +554,14 @@ const Dashboard: React.FC = () => {
             )}
 
             <button className="btn-add-task" onClick={handleCreateTask}>
-              + 添加{getPeriodLabel(currentPeriod)}任务
+              + 添加{getPeriodLabel(currentPeriod, currentDate)}任务
             </button>
           </div>
 
           {/* 当前周期日志 */}
           <div className="journal-card">
             <div className="journal-header">
-              <h3>{getPeriodLabel(currentPeriod)}日志</h3>
+              <h3>{getPeriodLabel(currentPeriod, currentDate)}日志</h3>
               <button className="btn-new-journal" onClick={handleCreateJournal}>
                 + 新建日志
               </button>
