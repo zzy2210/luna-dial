@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: luna-dial-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-luna_dial_db}
+      POSTGRES_USER: ${POSTGRES_USER:-luna_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-luna_secure_password_2024}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - luna-dial-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-luna_user} -d ${POSTGRES_DB:-luna_dial_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # 后端服务
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+    container_name: luna-dial-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      TZ: Asia/Shanghai
+      CONFIG_FILE: /app/config/backend.ini
+    volumes:
+      - ./config/backend.ini:/app/config/backend.ini:ro
+    networks:
+      - luna-dial-net
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "-", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Caddy 反向代理 + 前端静态文件服务
+  caddy:
+    build:
+      context: ..
+      dockerfile: docker/frontend.Dockerfile
+    container_name: luna-dial-caddy
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "10755:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - luna-dial-net
+    restart: unless-stopped
+
+networks:
+  luna-dial-net:
+    driver: bridge

@@ -3,18 +3,37 @@ package service
 import (
 	"fmt"
 	"luna_dial/internal/biz"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
 
 // 根据时间段与时间类型获取 无分页
 func (s *Service) handleListJournalsByPeriod(c echo.Context) error {
-    var req ListJournalByPeriodRequest
-    if err := c.Bind(&req); err != nil {
-        return c.JSON(400, NewErrorResponse(400, "Invalid request data"))
+    // 手动从查询参数获取值
+    periodType := c.QueryParam("period_type")
+    startDateStr := c.QueryParam("start_date")
+    endDateStr := c.QueryParam("end_date")
+
+    // 手动验证必填字段
+    if periodType == "" {
+        return c.JSON(400, NewErrorResponse(400, "field period_type is required"))
     }
-    if err := c.Validate(&req); err != nil {
-        return c.JSON(400, NewErrorResponse(400, err.Error()))
+    if startDateStr == "" {
+        return c.JSON(400, NewErrorResponse(400, "field start_date is required"))
+    }
+    if endDateStr == "" {
+        return c.JSON(400, NewErrorResponse(400, "field end_date is required"))
+    }
+
+    // 解析时间
+    startDate, err := time.Parse("2006-01-02", startDateStr)
+    if err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid start_date format, expected YYYY-MM-DD"))
+    }
+    endDate, err := time.Parse("2006-01-02", endDateStr)
+    if err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid end_date format, expected YYYY-MM-DD"))
     }
 
 	userID, _, err := GetUserFromContext(c)
@@ -22,18 +41,19 @@ func (s *Service) handleListJournalsByPeriod(c echo.Context) error {
 		return c.JSON(401, NewErrorResponse(401, "User not found"))
 	}
 
-	periodType, err := PeriodTypeFromString(req.PeriodType)
+	periodTypeEnum, err := PeriodTypeFromString(periodType)
 	if err != nil {
 		return c.JSON(400, NewErrorResponse(400, "Invalid period type"))
 	}
 
 	journalList, err := s.journalUsecase.ListJournalByPeriod(c.Request().Context(), biz.ListJournalByPeriodParam{
 		UserID:  userID,
-		Period:  biz.Period{Start: req.StartDate, End: req.EndDate},
-		GroupBy: periodType,
+		Period:  biz.Period{Start: startDate, End: endDate},
+		GroupBy: periodTypeEnum,
 	})
 	if err != nil {
-		return c.JSON(500, NewErrorResponse(500, "Failed to get journals"))
+		c.Logger().Error("Failed to get journals:", err)
+		return c.JSON(500, NewErrorResponse(500, "Failed to get journals: " + err.Error()))
 	}
 
 	return c.JSON(200, NewSuccessResponse(journalList))
@@ -51,9 +71,20 @@ func (s *Service) handleCreateJournal(c echo.Context) error {
 	if err != nil {
 		return c.JSON(401, NewErrorResponse(401, "User not found"))
 	}
-	if req.Title == "" || req.Content == "" || req.JournalType == "" || req.StartDate.IsZero() || req.EndDate.IsZero() {
+	if req.Title == "" || req.Content == "" || req.JournalType == "" || req.StartDate == "" || req.EndDate == "" {
 		return c.JSON(400, NewErrorResponse(400, "Title, content, journal type and time period are required"))
 	}
+
+	// 解析日期字符串
+	startDate, err := time.Parse("2006-01-02", req.StartDate)
+	if err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid start_date format, expected YYYY-MM-DD"))
+	}
+	endDate, err := time.Parse("2006-01-02", req.EndDate)
+	if err != nil {
+		return c.JSON(400, NewErrorResponse(400, "Invalid end_date format, expected YYYY-MM-DD"))
+	}
+
 	journalType, err := PeriodTypeFromString(req.JournalType)
 	if err != nil {
 		return c.JSON(400, NewErrorResponse(400, "Invalid journal type"))
@@ -65,8 +96,8 @@ func (s *Service) handleCreateJournal(c echo.Context) error {
 		Content:     req.Content,
 		JournalType: journalType,
 		TimePeriod: biz.Period{
-			Start: req.StartDate,
-			End:   req.EndDate,
+			Start: startDate,
+			End:   endDate,
 		},
 		Icon: req.Icon,
 	})
@@ -179,14 +210,31 @@ func (s *Service) handleListJournalsWithPagination(c echo.Context) error {
 		journalType = &intType
 	}
 
+	// 解析日期字符串
+	var periodStart, periodEnd *time.Time
+	if req.StartDate != nil && *req.StartDate != "" {
+		startDate, err := time.Parse("2006-01-02", *req.StartDate)
+		if err != nil {
+			return c.JSON(400, NewErrorResponse(400, "Invalid start_date format, expected YYYY-MM-DD"))
+		}
+		periodStart = &startDate
+	}
+	if req.EndDate != nil && *req.EndDate != "" {
+		endDate, err := time.Parse("2006-01-02", *req.EndDate)
+		if err != nil {
+			return c.JSON(400, NewErrorResponse(400, "Invalid end_date format, expected YYYY-MM-DD"))
+		}
+		periodEnd = &endDate
+	}
+
 	// 调用业务层
 	journals, total, err := s.journalUsecase.ListJournalsWithPagination(c.Request().Context(), biz.ListJournalsWithPaginationParam{
 		UserID:      userID,
 		Page:        req.Page,
 		PageSize:    req.PageSize,
 		JournalType: journalType,
-		PeriodStart: req.StartDate,
-		PeriodEnd:   req.EndDate,
+		PeriodStart: periodStart,
+		PeriodEnd:   periodEnd,
 	})
 	if err != nil {
 		return c.JSON(500, NewErrorResponse(500, "Failed to get journals"))

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luna Dial - 登录</title>
+    <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Logo和标题 -->
+        <div class="auth-header">
+            <div class="logo-container">
+                <span class="logo-icon">🌙</span>
+                <h1 class="logo-text">Luna Dial</h1>
+            </div>
+            <p class="tagline">积极向上，记录成长</p>
+        </div>
+
+        <!-- 登录卡片 -->
+        <div class="auth-card">
+            <h2 class="auth-title">欢迎回来</h2>
+
+            <!-- 错误提示 -->
+            <div class="error-message" id="errorMessage" style="display: none;">
+                <span class="error-icon">⚠️</span>
+                <span class="error-text" id="errorText"></span>
+            </div>
+
+            <!-- 登录表单 -->
+            <form id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <label for="username" class="form-label">用户名</label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        class="form-input"
+                        placeholder="请输入用户名"
+                        required
+                        autocomplete="username"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">密码</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="form-input"
+                        placeholder="请输入密码"
+                        required
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="rememberMe" class="checkbox-input">
+                        <span class="checkbox-text">记住我</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary" id="loginButton">
+                    <span class="btn-text">登录</span>
+                    <span class="btn-loading" style="display: none;">
+                        <span class="spinner"></span>
+                        登录中...
+                    </span>
+                </button>
+            </form>
+
+            <!-- 其他选项 -->
+            <div class="auth-footer">
+                <p class="footer-text">
+                    首次使用？请联系管理员创建账户
+                </p>
+            </div>
+        </div>
+
+        <!-- 底部信息 -->
+        <div class="auth-bottom">
+            <p class="copyright">© 2025 Luna Dial. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+</body>
+</html>

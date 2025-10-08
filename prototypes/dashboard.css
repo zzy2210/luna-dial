@@ -1,0 +1,929 @@
+/* 全局样式重置 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: #f5f5f7;
+    min-height: 100vh;
+    color: #1d1d1f;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 导航栏 */
+.navbar {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar-brand .logo {
+    font-size: 2rem;
+}
+
+.navbar-brand h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+/* 周期切换器 */
+.period-switcher {
+    display: flex;
+    gap: 0.25rem;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 0.25rem;
+    border-radius: 10px;
+}
+
+.period-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    color: #1d1d1f;
+    font-weight: 500;
+    font-size: 0.875rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.period-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.period-btn.active {
+    background: #007AFF;
+    color: white;
+}
+
+/* 时间导航器样式 */
+.time-navigator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.date-picker,
+.week-picker,
+.month-picker,
+.quarter-picker,
+.year-picker {
+    padding: 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    background: white;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.week-picker {
+    min-width: 200px; /* 为周选择器设置更宽的最小宽度 */
+}
+
+.month-picker {
+    min-width: 150px; /* 月份选择器宽度 */
+}
+
+.quarter-picker {
+    min-width: 180px; /* 季度选择器宽度 */
+}
+
+.date-picker:focus,
+.week-picker:focus,
+.month-picker:focus,
+.quarter-picker:focus,
+.year-picker:focus {
+    outline: none;
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.btn-time-jump {
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid #007AFF;
+    color: #007AFF;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.btn-time-jump:hover {
+    background: #007AFF;
+    color: white;
+}
+
+/* 模态框样式 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        0 10px 20px rgba(0, 0, 0, 0.08);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+}
+
+.modal-title-section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.modal-icon {
+    font-size: 1.5rem;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: #6e6e73;
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    color: #1d1d1f;
+    transform: scale(1.1);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    max-height: calc(80vh - 100px);
+}
+
+.modal-meta {
+    margin-bottom: 1rem;
+}
+
+.modal-time {
+    color: #6e6e73;
+    font-size: 0.875rem;
+}
+
+.modal-content-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #1d1d1f;
+    white-space: pre-wrap;
+}
+
+/* 用户信息 */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-name {
+    font-size: 0.875rem;
+    color: #6e6e73;
+}
+
+.btn-profile {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #1d1d1f;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-profile:hover {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+.btn-logout {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: 1px solid #FF3B30;
+    color: #FF3B30;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+    background: rgba(255, 59, 48, 0.1);
+}
+
+/* 主容器 */
+.dashboard-container {
+    display: grid;
+    grid-template-columns: 1.5fr 2fr 1.5fr;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* 面板通用样式 */
+.task-panel,
+.overview-panel,
+.stats-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* 卡片通用样式 - Apple风格 */
+.focus-card,
+.journal-card,
+.score-card,
+.progress-card,
+.status-card,
+.task-panel {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 0.5px solid rgba(0, 0, 0, 0.04);
+    box-shadow:
+        0 4px 6px rgba(0, 0, 0, 0.02),
+        0 1px 3px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    transition: all 0.3s ease;
+}
+
+.focus-card:hover,
+.journal-card:hover,
+.score-card:hover,
+.progress-card:hover,
+.status-card:hover {
+    box-shadow:
+        0 8px 16px rgba(0, 0, 0, 0.04),
+        0 4px 8px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    transform: translateY(-2px);
+}
+
+/* 任务面板 */
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.panel-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.btn-create-task {
+    padding: 0.5rem 1rem;
+    background: #007AFF;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: opacity 0.3s ease;
+}
+
+.btn-create-task:hover {
+    opacity: 0.8;
+}
+
+/* 任务树 */
+.task-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.task-node {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.task-node:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.task-toggle {
+    margin-right: 0.5rem;
+    color: #6e6e73;
+    transition: transform 0.3s ease;
+}
+
+.task-toggle.expanded {
+    transform: rotate(90deg);
+}
+
+.task-icon {
+    margin-right: 0.5rem;
+    font-size: 1.2rem;
+}
+
+.task-title {
+    flex: 1;
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+/* 任务状态选择器 - 新增 */
+.task-status-mini {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    background: white;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.task-status-mini:focus {
+    outline: none;
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.task-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+}
+
+.status-notstarted {
+    background: #f0f0f0;
+    color: #6e6e73;
+}
+
+.status-inprogress {
+    background: #FFF4E5;
+    color: #FF9500;
+}
+
+.status-completed {
+    background: #E8F5E9;
+    color: #34C759;
+}
+
+.status-cancelled {
+    background: #FFF0F0;
+    color: #FF3B30;
+}
+
+.task-children {
+    margin-left: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.task-children.hidden {
+    display: none;
+}
+
+/* 层级缩进 */
+.task-quarter { margin-left: 1rem; }
+.task-month { margin-left: 2rem; }
+.task-week { margin-left: 3rem; }
+.task-day { margin-left: 4rem; }
+
+/* 今日任务样式 */
+.focus-card h3 {
+    color: #1d1d1f;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.current-date {
+    color: #6e6e73;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.today-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.daily-task {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    transition: background 0.3s ease;
+}
+
+.daily-task:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.task-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.task-icon {
+    font-size: 1.2rem;
+}
+
+.task-text {
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+.task-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.task-status-select {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.task-status-select:focus {
+    outline: none;
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.score-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.score-control label {
+    font-size: 0.875rem;
+    color: #6e6e73;
+}
+
+.score-input {
+    width: 50px;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+.score-input:focus {
+    outline: none;
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.score-display {
+    font-weight: 600;
+    color: #007AFF;
+    min-width: 20px;
+    text-align: center;
+}
+
+.score-control.disabled {
+    opacity: 0.5;
+}
+
+.score-control.disabled .score-input {
+    cursor: not-allowed;
+    background: #f5f5f7;
+}
+
+.btn-add-task {
+    width: 100%;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    background: transparent;
+    border: 2px dashed #007AFF;
+    color: #007AFF;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-add-task:hover {
+    background: rgba(0, 122, 255, 0.05);
+}
+
+/* 日志卡片样式 */
+.journal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.journal-header h3 {
+    margin: 0;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.btn-new-journal {
+    padding: 0.5rem 1rem;
+    background: #007AFF;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: opacity 0.3s ease;
+}
+
+.btn-new-journal:hover {
+    opacity: 0.8;
+}
+
+.journal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.journal-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    transition: background 0.3s ease;
+}
+
+.journal-entry:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.journal-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.journal-icon {
+    font-size: 1.5rem;
+}
+
+.journal-info {
+    flex: 1;
+}
+
+.journal-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+.journal-time {
+    font-size: 0.875rem;
+    color: #6e6e73;
+}
+
+.journal-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-edit-journal,
+.btn-delete-journal {
+    padding: 0.25rem 0.75rem;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.btn-edit-journal:hover {
+    border-color: #007AFF;
+    color: #007AFF;
+}
+
+.btn-delete-journal:hover {
+    border-color: #FF3B30;
+    color: #FF3B30;
+}
+
+.journal-empty {
+    text-align: center;
+    padding: 2rem;
+    color: #6e6e73;
+}
+
+.journal-empty p {
+    margin-bottom: 1rem;
+}
+
+/* 旧的样式保留但可能需要移除 */
+.effort-card,
+.effort-rating,
+.effort-btn,
+.effort-message {
+    /* 这些可以删除了，因为努力程度评分已经整合到任务中 */
+    display: none;
+}
+
+/* 分数统计 */
+.score-card h3 {
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 1rem;
+}
+
+.score-display {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.score-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+}
+
+.score-label {
+    color: #6e6e73;
+    font-size: 0.875rem;
+}
+
+.score-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #007AFF;
+}
+
+/* 进度图表 */
+.progress-card h3 {
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 1rem;
+}
+
+.progress-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 150px;
+    margin-top: 1rem;
+}
+
+.chart-bar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.bar-fill {
+    width: 30px;
+    background: #007AFF;
+    border-radius: 8px 8px 0 0;
+    transition: height 0.5s ease;
+}
+
+.chart-bar.today .bar-fill {
+    background: #FF9500;
+}
+
+.bar-label {
+    margin-top: 0.5rem;
+    color: #6e6e73;
+    font-size: 0.875rem;
+}
+
+/* 任务状态分布 */
+.status-card h3 {
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 1rem;
+}
+
+.status-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.status-dot.status-notstarted {
+    background: #6e6e73;
+}
+
+.status-dot.status-inprogress {
+    background: #FF9500;
+}
+
+.status-dot.status-completed {
+    background: #34C759;
+}
+
+.status-dot.status-cancelled {
+    background: #FF3B30;
+}
+
+.status-label {
+    flex: 1;
+    color: #1d1d1f;
+    font-size: 0.875rem;
+}
+
+.status-count {
+    font-weight: 600;
+    color: #007AFF;
+}
+
+/* 快速操作栏 */
+.quick-actions {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.action-btn {
+    padding: 1rem 1.5rem;
+    background: white;
+    border: none;
+    border-radius: 12px;
+    box-shadow:
+        0 4px 6px rgba(0, 0, 0, 0.02),
+        0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 8px 16px rgba(0, 0, 0, 0.04),
+        0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.action-btn.primary {
+    background: #007AFF;
+    color: white;
+}
+
+.action-icon {
+    font-size: 1.2rem;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+    .dashboard-container {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .stats-panel {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        grid-template-columns: 1fr;
+    }
+
+    .navbar {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .period-switcher {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .quick-actions {
+        bottom: 1rem;
+        right: 1rem;
+        left: 1rem;
+        justify-content: center;
+    }
+
+    .stats-panel {
+        grid-template-columns: 1fr;
+    }
+}

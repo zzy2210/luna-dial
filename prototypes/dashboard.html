@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luna Dial - Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="navbar">
+        <div class="navbar-brand">
+            <span class="logo">🌙</span>
+            <h1>Luna Dial</h1>
+        </div>
+
+        <!-- 周期切换器 -->
+        <div class="period-switcher">
+            <button class="period-btn active" data-period="day">日</button>
+            <button class="period-btn" data-period="week">周</button>
+            <button class="period-btn" data-period="month">月</button>
+            <button class="period-btn" data-period="quarter">季</button>
+            <button class="period-btn" data-period="year">年</button>
+        </div>
+
+        <!-- 时间跳转器 -->
+        <div class="time-navigator">
+            <input type="date" class="date-picker" id="datePicker" style="display: none;">
+            <select class="week-picker" id="weekPicker" style="display: none;">
+                <option value="">选择周</option>
+            </select>
+            <select class="month-picker" id="monthPicker" style="display: none;">
+                <option value="">选择月份</option>
+            </select>
+            <select class="quarter-picker" id="quarterPicker" style="display: none;">
+                <option value="">选择季度</option>
+            </select>
+            <select class="year-picker" id="yearPicker" style="display: none;">
+                <option value="">选择年份</option>
+            </select>
+            <button class="btn-time-jump">跳转到...</button>
+        </div>
+
+        <div class="user-info">
+            <span class="user-name" id="currentUsername">用户名</span>
+            <button class="btn-profile" onclick="window.location.href='profile.html'">设置</button>
+            <button class="btn-logout" id="btnLogout">登出</button>
+        </div>
+    </header>
+
+    <!-- 主内容区域 -->
+    <main class="dashboard-container">
+        <!-- 左侧：任务管理区 -->
+        <section class="task-panel">
+            <div class="panel-header">
+                <h2>任务树</h2>
+                <button class="btn-create-task">+ 新建任务</button>
+            </div>
+
+            <div class="task-tree">
+                <!-- 年度任务 -->
+                <div class="task-node task-year">
+                    <span class="task-toggle">▶</span>
+                    <span class="task-icon">🎯</span>
+                    <span class="task-title">2025年度目标</span>
+                    <select class="task-status-mini" data-task-id="task-year-1">
+                        <option value="notstarted">未开始</option>
+                        <option value="inprogress" selected>进行中</option>
+                        <option value="completed">已完成</option>
+                        <option value="cancelled">已取消</option>
+                    </select>
+                </div>
+
+                <!-- 季度任务 -->
+                <div class="task-children hidden">
+                    <div class="task-node task-quarter">
+                        <span class="task-toggle">▶</span>
+                        <span class="task-icon">📅</span>
+                        <span class="task-title">Q1 第一季度计划</span>
+                        <select class="task-status-mini" data-task-id="task-quarter-1">
+                            <option value="notstarted">未开始</option>
+                            <option value="inprogress" selected>进行中</option>
+                            <option value="completed">已完成</option>
+                            <option value="cancelled">已取消</option>
+                        </select>
+                    </div>
+
+                    <!-- 月度任务 -->
+                    <div class="task-children hidden">
+                        <div class="task-node task-month">
+                            <span class="task-toggle">▶</span>
+                            <span class="task-icon">📆</span>
+                            <span class="task-title">1月份任务</span>
+                            <select class="task-status-mini" data-task-id="task-month-1">
+                                <option value="notstarted">未开始</option>
+                                <option value="inprogress" selected>进行中</option>
+                                <option value="completed">已完成</option>
+                                <option value="cancelled">已取消</option>
+                            </select>
+                        </div>
+
+                        <!-- 周任务 -->
+                        <div class="task-children hidden">
+                            <div class="task-node task-week">
+                                <span class="task-toggle">▶</span>
+                                <span class="task-icon">📋</span>
+                                <span class="task-title">第1周任务</span>
+                                <select class="task-status-mini" data-task-id="task-week-1">
+                                    <option value="notstarted">未开始</option>
+                                    <option value="inprogress" selected>进行中</option>
+                                    <option value="completed">已完成</option>
+                                    <option value="cancelled">已取消</option>
+                                </select>
+                            </div>
+
+                            <!-- 日任务 -->
+                            <div class="task-children hidden">
+                                <div class="task-node task-day">
+                                    <span class="task-icon">✅</span>
+                                    <span class="task-title">完成项目文档</span>
+                                    <select class="task-status-mini" data-task-id="task-day-1">
+                                        <option value="notstarted">未开始</option>
+                                        <option value="inprogress">进行中</option>
+                                        <option value="completed" selected>已完成</option>
+                                        <option value="cancelled">已取消</option>
+                                    </select>
+                                </div>
+                                <div class="task-node task-day">
+                                    <span class="task-icon">📝</span>
+                                    <span class="task-text">代码审查</span>
+                                    <select class="task-status-mini" data-task-id="task-day-2">
+                                        <option value="notstarted">未开始</option>
+                                        <option value="inprogress" selected>进行中</option>
+                                        <option value="completed">已完成</option>
+                                        <option value="cancelled">已取消</option>
+                                    </select>
+                                </div>
+                                <div class="task-node task-day">
+                                    <span class="task-icon">🔄</span>
+                                    <span class="task-title">系统优化</span>
+                                    <select class="task-status-mini" data-task-id="task-day-3">
+                                        <option value="notstarted" selected>未开始</option>
+                                        <option value="inprogress">进行中</option>
+                                        <option value="completed">已完成</option>
+                                        <option value="cancelled">已取消</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 中间：当前周期概览 -->
+        <section class="overview-panel">
+            <!-- 今日任务卡片 -->
+            <div class="focus-card">
+                <h3>今日任务</h3>
+                <div class="current-date">2025年1月6日 星期一</div>
+
+                <div class="today-tasks">
+                    <div class="daily-task">
+                        <div class="task-info">
+                            <span class="task-icon">📝</span>
+                            <span class="task-text">完成项目文档</span>
+                        </div>
+                        <div class="task-controls">
+                            <select class="task-status-select" data-task-id="task-day-1">
+                                <option value="notstarted">未开始</option>
+                                <option value="inprogress">进行中</option>
+                                <option value="completed" selected>已完成</option>
+                                <option value="cancelled">已取消</option>
+                            </select>
+                            <div class="score-control">
+                                <label>努力程度:</label>
+                                <input type="number" class="score-input" min="0" max="10" value="8" data-task-id="task-day-1">
+                                <span class="score-display">8</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="daily-task">
+                        <div class="task-info">
+                            <span class="task-icon">👨‍💻</span>
+                            <span class="task-text">代码审查</span>
+                        </div>
+                        <div class="task-controls">
+                            <select class="task-status-select" data-task-id="task-day-2">
+                                <option value="notstarted">未开始</option>
+                                <option value="inprogress" selected>进行中</option>
+                                <option value="completed">已完成</option>
+                                <option value="cancelled">已取消</option>
+                            </select>
+                            <div class="score-control">
+                                <label>努力程度:</label>
+                                <input type="number" class="score-input" min="0" max="10" value="6" data-task-id="task-day-2">
+                                <span class="score-display">6</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="daily-task">
+                        <div class="task-info">
+                            <span class="task-icon">🔧</span>
+                            <span class="task-text">系统优化</span>
+                        </div>
+                        <div class="task-controls">
+                            <select class="task-status-select" data-task-id="task-day-3">
+                                <option value="notstarted" selected>未开始</option>
+                                <option value="inprogress">进行中</option>
+                                <option value="completed">已完成</option>
+                                <option value="cancelled">已取消</option>
+                            </select>
+                            <div class="score-control disabled">
+                                <label>努力程度:</label>
+                                <input type="number" class="score-input" min="0" max="10" value="0" disabled data-task-id="task-day-3">
+                                <span class="score-display">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-add-task">+ 添加今日任务</button>
+            </div>
+
+            <!-- 当前周期日志 -->
+            <div class="journal-card">
+                <div class="journal-header">
+                    <h3>今日日志</h3>
+                    <button class="btn-new-journal">+ 新建日志</button>
+                </div>
+
+                <div class="journal-list">
+                    <!-- 有日志时显示 -->
+                    <div class="journal-entry">
+                        <div class="journal-content">
+                            <span class="journal-icon">🌅</span>
+                            <div class="journal-info">
+                                <h4 class="journal-title">早晨计划</h4>
+                                <span class="journal-time">09:00</span>
+                            </div>
+                        </div>
+                        <div class="journal-actions">
+                            <button class="btn-view-journal">查看</button>
+                            <button class="btn-edit-journal">编辑</button>
+                            <button class="btn-delete-journal">删除</button>
+                        </div>
+                    </div>
+
+                    <div class="journal-entry">
+                        <div class="journal-content">
+                            <span class="journal-icon">🌙</span>
+                            <div class="journal-info">
+                                <h4 class="journal-title">晚间总结</h4>
+                                <span class="journal-time">22:30</span>
+                            </div>
+                        </div>
+                        <div class="journal-actions">
+                            <button class="btn-view-journal">查看</button>
+                            <button class="btn-edit-journal">编辑</button>
+                            <button class="btn-delete-journal">删除</button>
+                        </div>
+                    </div>
+
+                    <!-- 无日志时显示 -->
+                    <!-- <div class="journal-empty">
+                        <p>暂无日志记录</p>
+                        <button class="btn-new-journal">创建第一篇日志</button>
+                    </div> -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 右侧：成长数据 -->
+        <section class="stats-panel">
+            <!-- 努力程度统计 -->
+            <div class="score-card">
+                <h3>努力程度统计</h3>
+                <div class="score-display">
+                    <div class="score-item">
+                        <span class="score-label">今日努力总分</span>
+                        <span class="score-value">14</span>
+                    </div>
+                    <div class="score-item">
+                        <span class="score-label">本周累计</span>
+                        <span class="score-value">68</span>
+                    </div>
+                    <div class="score-item">
+                        <span class="score-label">本月累计</span>
+                        <span class="score-value">245</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 努力趋势图表 -->
+            <div class="progress-card">
+                <h3>本周努力趋势</h3>
+                <div class="progress-chart">
+                    <div class="chart-bar">
+                        <div class="bar-fill" style="height: 60%"></div>
+                        <span class="bar-label">一</span>
+                    </div>
+                    <div class="chart-bar">
+                        <div class="bar-fill" style="height: 80%"></div>
+                        <span class="bar-label">二</span>
+                    </div>
+                    <div class="chart-bar">
+                        <div class="bar-fill" style="height: 45%"></div>
+                        <span class="bar-label">三</span>
+                    </div>
+                    <div class="chart-bar">
+                        <div class="bar-fill" style="height: 90%"></div>
+                        <span class="bar-label">四</span>
+                    </div>
+                    <div class="chart-bar">
+                        <div class="bar-fill" style="height: 70%"></div>
+                        <span class="bar-label">五</span>
+                    </div>
+                    <div class="chart-bar">
+                        <div class="bar-fill" style="height: 85%"></div>
+                        <span class="bar-label">六</span>
+                    </div>
+                    <div class="chart-bar today">
+                        <div class="bar-fill" style="height: 50%"></div>
+                        <span class="bar-label">日</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 任务状态分布 -->
+            <div class="status-card">
+                <h3>任务状态</h3>
+                <div class="status-stats">
+                    <div class="status-item">
+                        <span class="status-dot status-notstarted"></span>
+                        <span class="status-label">未开始</span>
+                        <span class="status-count">3</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-dot status-inprogress"></span>
+                        <span class="status-label">进行中</span>
+                        <span class="status-count">5</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-dot status-completed"></span>
+                        <span class="status-label">已完成</span>
+                        <span class="status-count">12</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-dot status-cancelled"></span>
+                        <span class="status-label">已取消</span>
+                        <span class="status-count">1</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 快速操作栏 -->
+    <footer class="quick-actions">
+        <button class="action-btn primary">
+            <span class="action-icon">➕</span>
+            <span>创建任务</span>
+        </button>
+        <button class="action-btn">
+            <span class="action-icon">📝</span>
+            <span>写日志</span>
+        </button>
+        <button class="action-btn">
+            <span class="action-icon">✅</span>
+            <span>每日打卡</span>
+        </button>
+    </footer>
+
+    <!-- 日志查看模态框 -->
+    <div class="modal-overlay" id="journalModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title-section">
+                    <span class="modal-icon" id="modalIcon">📝</span>
+                    <h2 class="modal-title" id="modalTitle">日志标题</h2>
+                </div>
+                <button class="modal-close" onclick="closeJournalModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-meta">
+                    <span class="modal-time" id="modalTime">创建时间</span>
+                </div>
+                <div class="modal-content-text" id="modalContent">
+                    日志内容...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>

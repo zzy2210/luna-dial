@@ -208,9 +208,13 @@ func (uc *TaskUsecase) CreateTask(ctx context.Context, param CreateTaskParam) (*
 	if !param.Period.IsValid() {
 		return nil, ErrInvalidInput // 时间段不合法
 	}
-	// 确保周期类型匹配
+	// 确保周期类型匹配，如果不匹配则尝试自动规范化
 	if !param.Period.MatchesPeriodType(param.Type) {
-		return nil, ErrInvalidInput // 周期类型不匹配
+		// 尝试自动规范化：根据 period_type 和开始时间生成标准时间周期
+		normalizedPeriod := NewPeriodFromPeriodType(param.Type, param.Period.Start)
+		log.Warnf("Period does not match type, auto-normalizing: original=%v, normalized=%v, type=%v",
+			param.Period, normalizedPeriod, param.Type)
+		param.Period = normalizedPeriod
 	}
 
 	task := &Task{

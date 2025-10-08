@@ -1,0 +1,660 @@
+/* ==================== 导航栏样式 ==================== */
+.navbar {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar-brand .logo {
+  font-size: 2rem;
+}
+
+.navbar-brand h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* 周期切换器 */
+.period-switcher {
+  display: flex;
+  gap: 0.25rem;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.25rem;
+  border-radius: 10px;
+}
+
+.period-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.period-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.period-btn.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* 用户信息 */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.btn-profile,
+.btn-logout {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid var(--border-color);
+  background: white;
+  color: var(--text-primary);
+}
+
+.btn-profile:hover,
+.btn-logout:hover {
+  background: var(--bg-primary);
+  border-color: var(--border-hover);
+}
+
+/* ==================== 主内容区域 ==================== */
+.dashboard-container {
+  display: grid;
+  grid-template-columns: 380px 1fr 320px;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  min-height: calc(100vh - 100px);
+}
+
+/* ==================== 任务面板 ==================== */
+.task-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 0.5px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.btn-create-task {
+  padding: 0.5rem 1rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-create-task:hover {
+  background: #0051D5;
+  transform: translateY(-1px);
+}
+
+/* 任务树 */
+.task-tree {
+  padding: 1rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.task-node {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.task-node:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.task-toggle {
+  width: 20px;
+  margin-right: 0.5rem;
+  color: var(--text-tertiary);
+  transition: transform 0.2s;
+}
+
+.task-toggle.expanded {
+  transform: rotate(90deg);
+}
+
+.task-icon {
+  font-size: 1.25rem;
+  margin-right: 0.75rem;
+}
+
+.task-title {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.task-status-mini {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: white;
+  cursor: pointer;
+  outline: none;
+}
+
+.task-children {
+  margin-left: 2rem;
+  transition: all 0.3s ease;
+}
+
+.task-children.hidden {
+  display: none;
+}
+
+/* 任务类型样式 */
+.task-year { padding-left: 0; }
+.task-quarter { padding-left: 1rem; }
+.task-month { padding-left: 2rem; }
+.task-week { padding-left: 3rem; }
+.task-day { padding-left: 4rem; }
+
+/* ==================== 概览面板 ==================== */
+.overview-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* 今日任务卡片 */
+.focus-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  padding: 1.5rem;
+}
+
+.focus-card h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.current-date {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.today-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.daily-task {
+  padding: 1rem;
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+}
+
+.task-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.task-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-left: 0.75rem;
+}
+
+.task-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.task-status-select {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.813rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: white;
+  cursor: pointer;
+  outline: none;
+}
+
+.score-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.score-control label {
+  font-size: 0.813rem;
+  color: var(--text-secondary);
+}
+
+.score-input {
+  width: 50px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.813rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.score-display {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.score-control.disabled {
+  opacity: 0.5;
+}
+
+.btn-add-task {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: transparent;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-add-task:hover {
+  background: var(--bg-primary);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* 日志卡片 */
+.journal-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  padding: 1.5rem;
+}
+
+.journal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.journal-header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.btn-new-journal {
+  padding: 0.5rem 1rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.813rem;
+  cursor: pointer;
+}
+
+.journal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.journal-entry {
+  padding: 1rem;
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.journal-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.journal-icon {
+  font-size: 1.5rem;
+}
+
+.journal-info h4 {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.journal-time {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.journal-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.journal-actions button {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: white;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.journal-actions button:hover {
+  background: var(--bg-primary);
+}
+
+/* ==================== 统计面板 ==================== */
+.stats-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* 努力程度统计 */
+.score-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  padding: 1.5rem;
+}
+
+.score-card h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.score-display {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.score-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--bg-primary);
+  border-radius: 8px;
+}
+
+.score-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.score-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+/* 进度图表 */
+.progress-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  padding: 1.5rem;
+}
+
+.progress-card h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.progress-chart {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 120px;
+  gap: 0.5rem;
+}
+
+.chart-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, var(--primary-color) 0%, #667eea 100%);
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+}
+
+.chart-bar.today .bar-fill {
+  background: linear-gradient(180deg, var(--success-color) 0%, #52c41a 100%);
+}
+
+.bar-label {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-top: 0.5rem;
+}
+
+/* 任务状态 */
+.status-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  padding: 1.5rem;
+}
+
+.status-card h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.status-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.status-dot.status-notstarted { background: var(--text-tertiary); }
+.status-dot.status-inprogress { background: var(--primary-color); }
+.status-dot.status-completed { background: var(--success-color); }
+.status-dot.status-cancelled { background: var(--danger-color); }
+
+.status-label {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.status-count {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ==================== 快速操作栏 ==================== */
+.quick-actions {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+  z-index: 99;
+}
+
+.action-btn {
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: white;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.action-btn:hover {
+  background: var(--bg-primary);
+  transform: translateY(-2px);
+}
+
+.action-btn.primary {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.action-btn.primary:hover {
+  background: #0051D5;
+}
+
+.action-icon {
+  font-size: 1rem;
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 1440px) {
+  .dashboard-container {
+    grid-template-columns: 320px 1fr 280px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-container {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .task-panel,
+  .stats-panel {
+    display: none;
+  }
+
+  .quick-actions {
+    bottom: 1rem;
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0.75rem 1rem;
+  }
+
+  .period-switcher {
+    display: none;
+  }
+
+  .user-info {
+    gap: 0.5rem;
+  }
+
+  .user-name {
+    display: none;
+  }
+}

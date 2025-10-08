@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luna Dial - 个人设置</title>
+    <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+    <div class="profile-container">
+        <!-- 顶部导航栏 -->
+        <header class="profile-navbar">
+            <div class="navbar-left">
+                <button class="btn-back" onclick="window.location.href='dashboard.html'">
+                    <span class="back-icon">←</span>
+                    <span>返回主页</span>
+                </button>
+            </div>
+            <div class="navbar-center">
+                <span class="logo-icon">🌙</span>
+                <h1 class="page-title">个人设置</h1>
+            </div>
+            <div class="navbar-right">
+                <span class="current-time" id="currentTime"></span>
+            </div>
+        </header>
+
+        <!-- 主内容区域 -->
+        <main class="profile-main">
+            <!-- 用户信息卡片 -->
+            <section class="profile-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">👤</span>
+                        基本信息
+                    </h2>
+                </div>
+                <div class="info-card">
+                    <div class="info-row">
+                        <label class="info-label">用户名</label>
+                        <span class="info-value" id="username">-</span>
+                    </div>
+                    <div class="info-row">
+                        <label class="info-label">姓名</label>
+                        <span class="info-value" id="name">-</span>
+                    </div>
+                    <div class="info-row">
+                        <label class="info-label">邮箱</label>
+                        <span class="info-value" id="email">-</span>
+                    </div>
+                    <div class="info-row">
+                        <label class="info-label">用户ID</label>
+                        <span class="info-value mono" id="userId">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 账户信息卡片 -->
+            <section class="profile-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">📊</span>
+                        账户信息
+                    </h2>
+                </div>
+                <div class="info-card">
+                    <div class="info-row">
+                        <label class="info-label">创建时间</label>
+                        <span class="info-value" id="createdAt">-</span>
+                    </div>
+                    <div class="info-row">
+                        <label class="info-label">最后更新</label>
+                        <span class="info-value" id="updatedAt">-</span>
+                    </div>
+                    <div class="info-row">
+                        <label class="info-label">账户状态</label>
+                        <span class="info-value status-active">
+                            <span class="status-dot"></span>
+                            正常
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 会话信息卡片 -->
+            <section class="profile-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">🔐</span>
+                        会话信息
+                    </h2>
+                </div>
+                <div class="info-card">
+                    <div class="info-row">
+                        <label class="info-label">会话ID</label>
+                        <span class="info-value mono small" id="sessionId">-</span>
+                    </div>
+                    <div class="info-row">
+                        <label class="info-label">最后活动</label>
+                        <span class="info-value" id="lastAccess">-</span>
+                    </div>
+                    <div class="info-row">
+                        <label class="info-label">过期时间</label>
+                        <span class="info-value" id="expiresAt">-</span>
+                    </div>
+                    <div class="info-row">
+                        <label class="info-label">剩余时间</label>
+                        <span class="info-value" id="remainingTime">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 操作区域 -->
+            <section class="profile-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">⚙️</span>
+                        账户操作
+                    </h2>
+                </div>
+                <div class="action-card">
+                    <div class="action-group">
+                        <button class="btn-action btn-logout" id="btnLogout">
+                            <span class="action-icon">🚪</span>
+                            <div class="action-text">
+                                <span class="action-title">退出登录</span>
+                                <span class="action-desc">退出当前设备的登录状态</span>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="action-group">
+                        <button class="btn-action btn-danger" id="btnLogoutAll">
+                            <span class="action-icon">🚨</span>
+                            <div class="action-text">
+                                <span class="action-title">退出所有设备</span>
+                                <span class="action-desc">清除所有设备上的登录状态</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 统计信息 -->
+            <section class="profile-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">📈</span>
+                        使用统计
+                    </h2>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalTasks">0</div>
+                        <div class="stat-label">任务总数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="completedTasks">0</div>
+                        <div class="stat-label">已完成</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalJournals">0</div>
+                        <div class="stat-label">日志总数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalEffort">0</div>
+                        <div class="stat-label">累计努力值</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 确认对话框 -->
+    <div class="modal-overlay" id="confirmModal" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">确认操作</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage">确定要执行此操作吗？</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="btnCancel">取消</button>
+                <button class="btn-confirm" id="btnConfirm">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner-large"></div>
+            <p class="loading-text">加载中...</p>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        // 页面加载时获取用户信息
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserProfile();
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+        });
+
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('currentTime').textContent = timeStr;
+        }
+    </script>
+</body>
+</html>
