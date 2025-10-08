@@ -17,26 +17,23 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
   parentTaskId
 }) => {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<CreateTaskRequest>({
-    title: '',
-    description: '',
-    start_date: new Date().toISOString().split('T')[0],
-    end_date: new Date().toISOString().split('T')[0],
-    priority: 'medium',
-    icon: '📝',
-    tags: [],
-    parent_id: parentTaskId
-  });
-
   const [tagInput, setTagInput] = useState('');
 
-  // 根据当前周期设置默认日期
-  const getDefaultDates = () => {
+  // 本地时间格式化函数，避免 toISOString() 的时区问题
+  const formatLocalDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // 根据周期类型计算默认日期（左闭右开）
+  const getDefaultDates = (periodType: PeriodType) => {
     const today = new Date();
     const startDate = new Date();
     const endDate = new Date();
 
-    switch (currentPeriod) {
+    switch (periodType) {
       case 'day':
         // 今天 [today 00:00, tomorrow 00:00)
         startDate.setHours(0, 0, 0, 0);
@@ -77,18 +74,37 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
     }
 
     return {
-      start_date: startDate.toISOString().split('T')[0],
-      end_date: endDate.toISOString().split('T')[0]
+      start_date: formatLocalDate(startDate),
+      end_date: formatLocalDate(endDate)
     };
   };
 
-  React.useEffect(() => {
-    const dates = getDefaultDates();
+  // 使用计算后的默认日期初始化表单
+  const [formData, setFormData] = useState<CreateTaskRequest>(() => {
+    const dates = getDefaultDates(currentPeriod);
+    return {
+      title: '',
+      description: '',
+      start_date: dates.start_date,
+      end_date: dates.end_date,
+      period_type: currentPeriod,
+      priority: 'medium',
+      icon: '📝',
+      tags: [],
+      parent_id: parentTaskId
+    };
+  });
+
+  // 处理周期类型改变：自动更新日期为符合规范的格式
+  const handlePeriodTypeChange = (newPeriodType: PeriodType) => {
+    const dates = getDefaultDates(newPeriodType);
     setFormData(prev => ({
       ...prev,
-      ...dates
+      period_type: newPeriodType,
+      start_date: dates.start_date,
+      end_date: dates.end_date
     }));
-  }, [currentPeriod]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,6 +221,20 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
           </div>
 
           <div className="form-group">
+            <label>任务周期</label>
+            <select
+              value={formData.period_type}
+              onChange={e => handlePeriodTypeChange(e.target.value as PeriodType)}
+            >
+              <option value="day">日任务</option>
+              <option value="week">周任务</option>
+              <option value="month">月任务</option>
+              <option value="quarter">季度任务</option>
+              <option value="year">年度任务</option>
+            </select>
+          </div>
+
+          <div className="form-group">
             <label>任务图标</label>
             <div className="icon-selector">
               {icons.map(icon => (
@@ -228,7 +258,7 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
                 value={tagInput}
                 onChange={e => setTagInput(e.target.value)}
                 placeholder="输入标签后按回车或点击添加"
-                onKeyPress={e => {
+                onKeyDown={e => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
                     handleAddTag();

@@ -94,6 +94,7 @@ export interface CreateTaskRequest {
   description?: string;
   start_date: string;
   end_date: string;
+  period_type: 'day' | 'week' | 'month' | 'quarter' | 'year';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   icon?: string;
   tags?: string[];
