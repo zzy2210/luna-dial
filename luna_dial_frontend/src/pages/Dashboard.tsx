@@ -7,7 +7,8 @@ import taskService from '../services/task';
 import journalService from '../services/journal';
 import planService from '../services/plan';
 import { Task, TaskStatus, PeriodType, Journal, PlanResponse } from '../types';
-import TaskCreateDialog from '../components/TaskCreateDialog';
+import TaskEditDialog from '../components/TaskEditDialog';
+import TaskViewDialog from '../components/TaskViewDialog';
 import JournalEditDialog from '../components/JournalEditDialog';
 import JournalViewDialog from '../components/JournalViewDialog';
 import '../styles/dashboard.css';
@@ -24,6 +25,9 @@ const Dashboard: React.FC = () => {
 
   // 对话框状态
   const [showTaskDialog, setShowTaskDialog] = useState(false);
+  const [showViewTaskDialog, setShowViewTaskDialog] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [showJournalDialog, setShowJournalDialog] = useState(false);
   const [showViewJournalDialog, setShowViewJournalDialog] = useState(false);
   const [editingJournal, setEditingJournal] = useState<Journal | null>(null);
@@ -79,12 +83,30 @@ const Dashboard: React.FC = () => {
   };
 
   const handleTaskClick = (task: Task) => {
-    console.log('Task clicked:', task);
-    // TODO: 显示任务详情
+    setViewingTask(task);
+    setShowViewTaskDialog(true);
   };
 
   const handleCreateTask = () => {
+    setEditingTask(null);
     setShowTaskDialog(true);
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setShowViewTaskDialog(false);
+    setShowTaskDialog(true);
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await taskService.deleteTask(taskId);
+      setShowViewTaskDialog(false);
+      loadPlanData();
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      alert('删除任务失败，请重试');
+    }
   };
 
   const handleCreateJournal = () => {
@@ -680,13 +702,23 @@ const Dashboard: React.FC = () => {
 
       {/* 对话框组件 */}
       {showTaskDialog && (
-        <TaskCreateDialog
+        <TaskEditDialog
+          task={editingTask}
           onClose={() => setShowTaskDialog(false)}
           onSuccess={() => {
             setShowTaskDialog(false);
             loadPlanData();
           }}
           currentPeriod={currentPeriod}
+        />
+      )}
+
+      {showViewTaskDialog && viewingTask && (
+        <TaskViewDialog
+          task={viewingTask}
+          onClose={() => setShowViewTaskDialog(false)}
+          onEdit={(task) => handleEditTask(task)}
+          onDelete={(taskId) => handleDeleteTask(taskId)}
         />
       )}
 

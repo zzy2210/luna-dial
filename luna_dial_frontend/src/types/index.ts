@@ -70,6 +70,7 @@ export interface Task {
   id: string;
   user_id: string;
   title: string;
+  description?: string;
   task_type: TaskType;
   period_start: string;
   period_end: string;
