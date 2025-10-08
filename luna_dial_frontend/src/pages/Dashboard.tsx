@@ -205,6 +205,10 @@ const Dashboard: React.FC = () => {
 
   const loadPlanData = async () => {
     setLoading(true);
+    // 重置状态，确保从干净状态开始
+    setTasks([]);
+    setJournals([]);
+
     try {
       const dates = getPeriodDates(currentPeriod);
 
@@ -254,27 +258,28 @@ const Dashboard: React.FC = () => {
           }));
         }
 
-        // 更新日志列表
-        if (plan.journals) {
-          setJournals(plan.journals);
-        }
+        // 更新日志列表（总是设置，即使为空）
+        setJournals(plan.journals || []);
       } catch (planError) {
         console.warn('Failed to load plan data, using empty data:', planError);
-        // 使用空数据，防止页面崩溃
+        // Plan API失败时，确保状态被清空
+        setTasks([]);
+        setJournals([]);
       }
 
       // 获取任务树数据（用于左侧面板）
       try {
         const treeResponse = await taskService.getTaskTree();
-        setTasks(treeResponse.items);
+        setTasks(treeResponse.items || []);
       } catch (treeError) {
         console.warn('Failed to load task tree, using empty data:', treeError);
+        // TaskTree API失败时，确保状态被清空（虽然开头已重置，但这里明确处理）
         setTasks([]);
       }
 
     } catch (error) {
       console.error('Failed to load data:', error);
-      // 确保即使API失败也设置空数据
+      // 确保即使外层异常也设置空数据
       setTasks([]);
       setJournals([]);
     } finally {
