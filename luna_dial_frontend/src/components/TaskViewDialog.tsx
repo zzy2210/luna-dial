@@ -157,7 +157,7 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
             <div className="date-range">
               <span className="date-icon">📆</span>
               <span className="date-text">
-                {formatDate(task.period_start)} → {formatDate(task.period_end)}
+                {formatDate(task.period.start)} → {formatDate(task.period.end)}
               </span>
             </div>
           </div>

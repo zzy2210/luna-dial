@@ -30,6 +30,11 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
     return `${year}-${month}-${day}`;
   };
 
+  // 将ISO时间字符串转换为YYYY-MM-DD格式
+  const isoToDateInput = (isoString: string): string => {
+    return isoString.split('T')[0];
+  };
+
   // 根据周期类型计算默认日期（左闭右开）
   const getDefaultDates = (periodType: PeriodType) => {
     const today = new Date();
@@ -122,8 +127,8 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
       return {
         title: task.title,
         description: task.description || '',
-        start_date: task.period_start,
-        end_date: task.period_end,
+        start_date: isoToDateInput(task.period.start),
+        end_date: isoToDateInput(task.period.end),
         period_type: taskTypeToPeriodType(task.task_type),
         priority: priorityToString(task.priority),
         icon: task.icon || '📝',
