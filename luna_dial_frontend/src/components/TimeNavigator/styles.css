@@ -1,0 +1,94 @@
+/* 时间导航器样式 */
+.time-navigator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 前进/后退按钮 */
+.nav-btn {
+  padding: 0.5rem 0.75rem;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  color: var(--text-primary);
+}
+
+.nav-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--primary-color);
+}
+
+.nav-btn:active {
+  transform: scale(0.95);
+}
+
+/* 选择器容器 */
+.picker-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 各类选择器通用样式 */
+.date-picker,
+.week-picker,
+.month-picker,
+.quarter-picker,
+.year-picker {
+  padding: 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: white;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: var(--text-primary);
+}
+
+.week-picker {
+  min-width: 200px;
+}
+
+.month-picker {
+  min-width: 150px;
+}
+
+.quarter-picker {
+  min-width: 180px;
+}
+
+.date-picker:focus,
+.week-picker:focus,
+.month-picker:focus,
+.quarter-picker:focus,
+.year-picker:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+/* 跳转按钮 */
+.btn-time-jump {
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.btn-time-jump:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-time-jump:active {
+  transform: scale(0.98);
+}

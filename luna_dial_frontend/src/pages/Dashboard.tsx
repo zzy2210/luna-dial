@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/auth';
 import TaskTree from '../components/TaskTree';
+import TimeNavigator from '../components/TimeNavigator';
 import taskService from '../services/task';
 import journalService from '../services/journal';
 import planService from '../services/plan';
@@ -15,6 +16,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [currentPeriod, setCurrentPeriod] = useState<PeriodType>('day');
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [tasks, setTasks] = useState<Task[]>([]);
   const [journals, setJournals] = useState<Journal[]>([]);
   const [planData, setPlanData] = useState<PlanResponse | null>(null);
@@ -112,44 +114,74 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const getPeriodDates = (period: PeriodType) => {
-    const today = new Date();
-    const startDate = new Date();
-    const endDate = new Date();
+  // 处理日期变化
+  const handleDateChange = (newDate: Date) => {
+    setCurrentDate(newDate);
+  };
+
+  // 处理前进/后退导航
+  const handleNavigate = (direction: 'prev' | 'next') => {
+    const newDate = new Date(currentDate);
+    const offset = direction === 'prev' ? -1 : 1;
+
+    switch (currentPeriod) {
+      case 'day':
+        newDate.setDate(newDate.getDate() + offset);
+        break;
+      case 'week':
+        newDate.setDate(newDate.getDate() + (offset * 7));
+        break;
+      case 'month':
+        newDate.setMonth(newDate.getMonth() + offset);
+        break;
+      case 'quarter':
+        newDate.setMonth(newDate.getMonth() + (offset * 3));
+        break;
+      case 'year':
+        newDate.setFullYear(newDate.getFullYear() + offset);
+        break;
+    }
+
+    setCurrentDate(newDate);
+  };
+
+  const getPeriodDates = (period: PeriodType, baseDate: Date = currentDate) => {
+    const startDate = new Date(baseDate);
+    const endDate = new Date(baseDate);
 
     switch (period) {
       case 'day':
-        // 今天 [today 00:00, tomorrow 00:00)
+        // 指定日期 [date 00:00, date+1 00:00)
         startDate.setHours(0, 0, 0, 0);
         endDate.setDate(endDate.getDate() + 1);
         endDate.setHours(0, 0, 0, 0);
         break;
       case 'week':
-        // 本周 ISO Week [Monday 00:00, Next Monday 00:00)
-        const day = today.getDay();
-        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+        // 指定周 ISO Week [Monday 00:00, Next Monday 00:00)
+        const day = startDate.getDay();
+        const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
         startDate.setDate(diff);
         startDate.setHours(0, 0, 0, 0);
         endDate.setDate(startDate.getDate() + 7);
         endDate.setHours(0, 0, 0, 0);
         break;
       case 'month':
-        // 本月 [1st 00:00, Next Month 1st 00:00)
+        // 指定月 [1st 00:00, Next Month 1st 00:00)
         startDate.setDate(1);
         startDate.setHours(0, 0, 0, 0);
         endDate.setMonth(endDate.getMonth() + 1, 1);
         endDate.setHours(0, 0, 0, 0);
         break;
       case 'quarter':
-        // 本季度 [Quarter Start 00:00, Next Quarter Start 00:00)
-        const quarter = Math.floor(today.getMonth() / 3);
+        // 指定季度 [Quarter Start 00:00, Next Quarter Start 00:00)
+        const quarter = Math.floor(startDate.getMonth() / 3);
         startDate.setMonth(quarter * 3, 1);
         startDate.setHours(0, 0, 0, 0);
         endDate.setMonth((quarter + 1) * 3, 1);
         endDate.setHours(0, 0, 0, 0);
         break;
       case 'year':
-        // 本年 [Jan 1 00:00, Next Year Jan 1 00:00)
+        // 指定年 [Jan 1 00:00, Next Year Jan 1 00:00)
         startDate.setMonth(0, 1);
         startDate.setHours(0, 0, 0, 0);
         endDate.setFullYear(endDate.getFullYear() + 1, 0, 1);
@@ -244,7 +276,7 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     loadPlanData();
-  }, [currentPeriod]);
+  }, [currentPeriod, currentDate]);
 
   const getCurrentDateString = () => {
     const date = new Date();
@@ -291,6 +323,14 @@ const Dashboard: React.FC = () => {
             </button>
           ))}
         </div>
+
+        {/* 时间导航器 */}
+        <TimeNavigator
+          currentPeriod={currentPeriod}
+          currentDate={currentDate}
+          onDateChange={handleDateChange}
+          onNavigate={handleNavigate}
+        />
 
         <div className="user-info">
           <span className="user-name">{user?.name || user?.username}</span>
