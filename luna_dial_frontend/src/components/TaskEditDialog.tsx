@@ -30,6 +30,11 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
     return `${year}-${month}-${day}`;
   };
 
+  // 将ISO时间字符串转换为YYYY-MM-DD格式
+  const isoToDateInput = (isoString: string): string => {
+    return isoString.split('T')[0];
+  };
+
   // 根据周期类型计算默认日期（左闭右开）
   const getDefaultDates = (periodType: PeriodType) => {
     const today = new Date();
@@ -122,8 +127,8 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
       return {
         title: task.title,
         description: task.description || '',
-        start_date: task.period_start,
-        end_date: task.period_end,
+        start_date: isoToDateInput(task.period.start),
+        end_date: isoToDateInput(task.period.end),
         period_type: taskTypeToPeriodType(task.task_type),
         priority: priorityToString(task.priority),
         icon: task.icon || '📝',
@@ -146,6 +151,8 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
       };
     }
   });
+
+  const [score, setScore] = useState<number>(task?.score || 0);
 
   // 处理周期类型改变：自动更新日期为符合规范的格式
   const handlePeriodTypeChange = (newPeriodType: PeriodType) => {
@@ -178,6 +185,11 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
           tags: formData.tags
         };
         await taskService.updateTask(task.id, updateData);
+
+        // 如果评分有变化，单独更新评分
+        if (score !== task.score) {
+          await taskService.updateScore(task.id, score);
+        }
       } else {
         // 新建模式
         if (parentTaskId) {
@@ -286,6 +298,32 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
               <option value="urgent">紧急</option>
             </select>
           </div>
+
+          {isEdit && (
+            <div className="form-group">
+              <label>努力评分 (0-10)</label>
+              <div className="score-input-group">
+                <input
+                  type="range"
+                  min="0"
+                  max="10"
+                  step="1"
+                  value={score}
+                  onChange={e => setScore(parseInt(e.target.value))}
+                  className="score-slider-edit"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  max="10"
+                  value={score}
+                  onChange={e => setScore(Math.min(10, Math.max(0, parseInt(e.target.value) || 0)))}
+                  className="score-number-edit"
+                />
+                <span className="score-display-text">{score} / 10</span>
+              </div>
+            </div>
+          )}
 
           <div className="form-group">
             <label>任务周期</label>

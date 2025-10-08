@@ -23,8 +23,8 @@ func NewServer(ctx context.Context, dataInstance *data.Data) *echo.Echo {
     e.Use(middleware.Logger())
     e.Use(middleware.Recover())
 
-    // Validator
-    e.Validator = service.NewSimpleValidator()
+    // Validator - 使用 go-playground/validator/v10
+    e.Validator = service.NewValidator()
 
 	// Initialize service
 	svc := service.NewService(ctx, e, dataInstance)

@@ -19,12 +19,20 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const isEdit = !!journal;
 
+  // 本地时间格式化函数，避免 toISOString() 的时区问题
+  const formatLocalDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [formData, setFormData] = useState<CreateJournalRequest>({
     title: '',
     content: '',
     journal_type: currentPeriod,
-    start_date: new Date().toISOString().split('T')[0],
-    end_date: new Date().toISOString().split('T')[0],
+    start_date: formatLocalDate(new Date()),
+    end_date: formatLocalDate(new Date()),
     icon: '📝'
   });
 
@@ -75,8 +83,8 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
     }
 
     return {
-      start_date: startDate.toISOString().split('T')[0],
-      end_date: endDate.toISOString().split('T')[0]
+      start_date: formatLocalDate(startDate),
+      end_date: formatLocalDate(endDate)
     };
   };
 
@@ -95,8 +103,8 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
         title: journal.title,
         content: journal.content,
         journal_type: journalTypeMap[journal.journal_type] || 'day',
-        start_date: journal.time_period?.start || new Date().toISOString().split('T')[0],
-        end_date: journal.time_period?.end || new Date().toISOString().split('T')[0],
+        start_date: journal.time_period?.start || formatLocalDate(new Date()),
+        end_date: journal.time_period?.end || formatLocalDate(new Date()),
         icon: journal.icon || '📝'
       });
     } else {

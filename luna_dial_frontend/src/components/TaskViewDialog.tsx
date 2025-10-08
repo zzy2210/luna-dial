@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Task, TaskStatus, TaskPriority } from '../types';
 import '../styles/dialog.css';
 import '../styles/task-view-dialog.css';
@@ -8,14 +8,20 @@ interface TaskViewDialogProps {
   onClose: () => void;
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
+  onScoreUpdate?: (taskId: string, score: number) => void;
 }
 
 const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
   task,
   onClose,
   onEdit,
-  onDelete
+  onDelete,
+  onScoreUpdate
 }) => {
+  const [currentScore, setCurrentScore] = useState<number>(task.score);
+  const [editingScore, setEditingScore] = useState<number>(task.score);
+  const [isEditingScore, setIsEditingScore] = useState(false);
+
   const taskTypeLabels = {
     0: '日任务',
     1: '周任务',
@@ -61,6 +67,25 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
       onDelete(task.id);
     }
   };
+
+  const handleScoreChange = (newScore: number) => {
+    setEditingScore(newScore);
+  };
+
+  const handleScoreSave = () => {
+    if (onScoreUpdate && editingScore !== currentScore) {
+      onScoreUpdate(task.id, editingScore);
+      setCurrentScore(editingScore);
+    }
+    setIsEditingScore(false);
+  };
+
+  const handleScoreCancel = () => {
+    setEditingScore(currentScore);
+    setIsEditingScore(false);
+  };
+
+  const canEditScore = task.status === TaskStatus.InProgress || task.status === TaskStatus.Completed;
 
   const getStatusClassName = (status: TaskStatus): string => {
     switch (status) {
@@ -157,7 +182,7 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
             <div className="date-range">
               <span className="date-icon">📆</span>
               <span className="date-text">
-                {formatDate(task.period_start)} → {formatDate(task.period_end)}
+                {formatDate(task.period.start)} → {formatDate(task.period.end)}
               </span>
             </div>
           </div>
@@ -167,25 +192,88 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
             <div className="info-section-title">
               <span className="info-section-icon">💪</span>
               努力评分
+              {canEditScore && !isEditingScore && onScoreUpdate && (
+                <button
+                  type="button"
+                  className="btn-edit-score"
+                  onClick={() => setIsEditingScore(true)}
+                  title="编辑评分"
+                >
+                  ✏️
+                </button>
+              )}
             </div>
             {task.status === TaskStatus.NotStarted ? (
               <div className="info-card">
                 任务尚未开始,暂无评分
               </div>
+            ) : isEditingScore ? (
+              <div className="score-editor">
+                <div className="score-input-container">
+                  <input
+                    type="range"
+                    min="0"
+                    max="10"
+                    step="1"
+                    value={editingScore}
+                    onChange={(e) => handleScoreChange(parseInt(e.target.value))}
+                    className="score-slider"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    value={editingScore}
+                    onChange={(e) => handleScoreChange(Math.min(10, Math.max(0, parseInt(e.target.value) || 0)))}
+                    className="score-number-input"
+                  />
+                </div>
+                <div className="score-preview">
+                  <div className="score-display">
+                    <span className="score-value">{editingScore}</span>
+                    <span className="score-max">/ 10</span>
+                  </div>
+                  <div className="score-bar">
+                    <div
+                      className="score-bar-fill"
+                      style={{ width: `${(editingScore / 10) * 100}%` }}
+                    />
+                  </div>
+                  <div className="score-stars">
+                    {renderScoreStars(editingScore)}
+                  </div>
+                </div>
+                <div className="score-actions">
+                  <button
+                    type="button"
+                    className="btn-cancel-score"
+                    onClick={handleScoreCancel}
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-save-score"
+                    onClick={handleScoreSave}
+                  >
+                    保存
+                  </button>
+                </div>
+              </div>
             ) : (
               <div className="score-container">
                 <div className="score-display">
-                  <span className="score-value">{task.score}</span>
+                  <span className="score-value">{currentScore}</span>
                   <span className="score-max">/ 10</span>
                 </div>
                 <div className="score-bar">
                   <div
                     className="score-bar-fill"
-                    style={{ width: `${(task.score / 10) * 100}%` }}
+                    style={{ width: `${(currentScore / 10) * 100}%` }}
                   />
                 </div>
                 <div className="score-stars">
-                  {renderScoreStars(task.score)}
+                  {renderScoreStars(currentScore)}
                 </div>
               </div>
             )}

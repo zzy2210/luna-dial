@@ -138,6 +138,81 @@
   gap: 16px;
 }
 
+/* 评分输入组 */
+.score-input-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.score-slider-edit {
+  flex: 1;
+  height: 6px;
+  background: var(--slider-bg, #e5e7eb);
+  border-radius: 3px;
+  outline: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.score-slider-edit::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.score-slider-edit::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.score-slider-edit::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.score-slider-edit::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+
+.score-number-edit {
+  width: 60px;
+  padding: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  background: var(--input-bg, #fff);
+  color: var(--text-primary, #333);
+  transition: all 0.2s;
+}
+
+.score-number-edit:focus {
+  outline: none;
+  border-color: var(--primary-color, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.score-display-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary, #666);
+  min-width: 50px;
+}
+
+
 /* 图标选择器 */
 .icon-selector {
   display: flex;
@@ -347,5 +422,6 @@
     --info-border: #3730a3;
     --info-text: #bfdbfe;
     --danger-color: #f87171;
+    --slider-bg: #374151;
   }
 }

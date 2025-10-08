@@ -72,8 +72,10 @@ export interface Task {
   title: string;
   description?: string;
   task_type: TaskType;
-  period_start: string;
-  period_end: string;
+  period: {
+    start: string;
+    end: string;
+  };
   tags?: string;
   icon?: string;
   score: number;

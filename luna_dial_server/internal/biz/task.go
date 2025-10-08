@@ -33,7 +33,7 @@ const (
 type Task struct {
 	ID         string       `json:"id"`
 	Title      string       `json:"title"`
-	TaskType   PeriodType   `json:"type"`
+	TaskType   PeriodType   `json:"task_type"`
 	TimePeriod Period       `json:"period"`
 	Tags       []string     `json:"tags"`
 	Icon       string       `json:"icon"`
@@ -233,22 +233,22 @@ func (uc *TaskUsecase) CreateTask(ctx context.Context, param CreateTaskParam) (*
 		UpdatedAt:  time.Now(),
 	}
 
-    err := uc.repo.CreateTask(ctx, task)
-    if err != nil {
-        return nil, err // 返回仓库层的错误
-    }
+	err := uc.repo.CreateTask(ctx, task)
+	if err != nil {
+		return nil, err // 返回仓库层的错误
+	}
 
-    // 创建后维护树优化字段（包括父任务计数）
-    if err := uc.repo.UpdateTreeOptimizationFields(ctx, task.ID, task.UserID); err != nil {
-        log.Warnf("Failed to update tree optimization for task %s: %v", task.ID, err)
-    }
-    if task.ParentID != "" {
-        if err := uc.repo.UpdateTreeOptimizationFields(ctx, task.ParentID, task.UserID); err != nil {
-            log.Warnf("Failed to update tree optimization for parent %s: %v", task.ParentID, err)
-        }
-    }
+	// 创建后维护树优化字段（包括父任务计数）
+	if err := uc.repo.UpdateTreeOptimizationFields(ctx, task.ID, task.UserID); err != nil {
+		log.Warnf("Failed to update tree optimization for task %s: %v", task.ID, err)
+	}
+	if task.ParentID != "" {
+		if err := uc.repo.UpdateTreeOptimizationFields(ctx, task.ParentID, task.UserID); err != nil {
+			log.Warnf("Failed to update tree optimization for parent %s: %v", task.ParentID, err)
+		}
+	}
 
-    return task, nil
+	return task, nil
 }
 
 // 更新任务
@@ -721,8 +721,8 @@ func (uc *TaskUsecase) GetTaskParentChain(ctx context.Context, param GetTaskPare
 
 // 优化CreateTask方法：自动维护树字段
 func (uc *TaskUsecase) CreateTaskWithTreeOptimization(ctx context.Context, param CreateTaskParam) (*Task, error) {
-    // 统一走 CreateTask，内部已维护优化字段
-    return uc.CreateTask(ctx, param)
+	// 统一走 CreateTask，内部已维护优化字段
+	return uc.CreateTask(ctx, param)
 }
 
 func generateID() string {

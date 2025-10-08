@@ -244,17 +244,17 @@ func (s *Service) handleUpdateTask(c echo.Context) error {
 			End:   endDate,
 		}
 	}
-	if req.Status != nil {
-		status, err := TaskStatusFromString(*req.Status)
+	if req.Status != "" {
+		status, err := TaskStatusFromString(req.Status)
 		if err != nil {
-			return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid status: %s", *req.Status)))
+			return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid status: %s", req.Status)))
 		}
 		updateParam.Status = &status
 	}
-	if req.Priority != nil {
-		priority, err := TaskPriorityFromString(*req.Priority)
+	if req.Priority != "" {
+		priority, err := TaskPriorityFromString(req.Priority)
 		if err != nil {
-			return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid priority: %s", *req.Priority)))
+			return c.JSON(400, NewErrorResponse(400, fmt.Sprintf("Invalid priority: %s", req.Priority)))
 		}
 		updateParam.Priority = &priority
 	}
