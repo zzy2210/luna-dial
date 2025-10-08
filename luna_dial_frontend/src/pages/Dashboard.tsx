@@ -6,11 +6,12 @@ import TimeNavigator from '../components/TimeNavigator';
 import taskService from '../services/task';
 import journalService from '../services/journal';
 import planService from '../services/plan';
-import { Task, TaskStatus, PeriodType, Journal, PlanResponse } from '../types';
+import { Task, TaskStatus, TaskPriority, PeriodType, Journal, PlanResponse } from '../types';
 import TaskEditDialog from '../components/TaskEditDialog';
 import TaskViewDialog from '../components/TaskViewDialog';
 import JournalEditDialog from '../components/JournalEditDialog';
 import JournalViewDialog from '../components/JournalViewDialog';
+import ScoreEditDialog from '../components/ScoreEditDialog';
 import '../styles/dashboard.css';
 
 const Dashboard: React.FC = () => {
@@ -32,6 +33,8 @@ const Dashboard: React.FC = () => {
   const [showViewJournalDialog, setShowViewJournalDialog] = useState(false);
   const [editingJournal, setEditingJournal] = useState<Journal | null>(null);
   const [viewingJournal, setViewingJournal] = useState<Journal | null>(null);
+  const [showScoreDialog, setShowScoreDialog] = useState(false);
+  const [editingScoreTask, setEditingScoreTask] = useState<Task | null>(null);
 
   // 统计数据
   const [stats, setStats] = useState({
@@ -134,6 +137,34 @@ const Dashboard: React.FC = () => {
         console.error('Failed to delete journal:', error);
       }
     }
+  };
+
+  // 打开评分编辑对话框
+  const handleOpenScoreDialog = (task: Task) => {
+    setEditingScoreTask(task);
+    setShowScoreDialog(true);
+  };
+
+  // 获取优先级标签文本
+  const getPriorityLabel = (priority: TaskPriority): string => {
+    const labels = {
+      [TaskPriority.Low]: '低',
+      [TaskPriority.Medium]: '中',
+      [TaskPriority.High]: '高',
+      [TaskPriority.Urgent]: '紧急'
+    };
+    return labels[priority] || '中';
+  };
+
+  // 获取优先级样式类名
+  const getPriorityClass = (priority: TaskPriority): string => {
+    const classes = {
+      [TaskPriority.Low]: 'priority-low',
+      [TaskPriority.Medium]: 'priority-medium',
+      [TaskPriority.High]: 'priority-high',
+      [TaskPriority.Urgent]: 'priority-urgent'
+    };
+    return classes[priority] || 'priority-medium';
   };
 
   // 处理日期变化
@@ -539,35 +570,44 @@ const Dashboard: React.FC = () => {
                                       currentPeriod === 'quarter' ? 3 : 4)
                 ).map(task => (
                   <div key={task.id} className="daily-task">
-                    <div className="task-info">
-                      <span className="task-icon">{task.icon || '📝'}</span>
-                      <span className="task-text">{task.title}</span>
+                    <div className="task-header">
+                      <div className="task-info">
+                        <span className="task-icon">{task.icon || '📝'}</span>
+                        <span className="task-text">{task.title}</span>
+                        <span className={`priority-badge ${getPriorityClass(task.priority)}`}>
+                          {getPriorityLabel(task.priority)}
+                        </span>
+                      </div>
                     </div>
                     <div className="task-controls">
-                      <select
-                        className="task-status-select"
-                        value={task.status}
-                        onChange={(e) => handleTaskStatusChange(task.id, Number(e.target.value) as TaskStatus)}
-                      >
-                        <option value={TaskStatus.NotStarted}>未开始</option>
-                        <option value={TaskStatus.InProgress}>进行中</option>
-                        <option value={TaskStatus.Completed}>已完成</option>
-                        <option value={TaskStatus.Cancelled}>已取消</option>
-                      </select>
-                      <div className={`score-control ${task.status === TaskStatus.NotStarted ? 'disabled' : ''}`}>
-                        <label>努力程度:</label>
-                        <input
-                          type="number"
-                          className="score-input"
-                          min="0"
-                          max="10"
-                          value={task.score}
-                          disabled={task.status === TaskStatus.NotStarted}
-                          onChange={(e) => handleTaskScoreChange(task.id, Number(e.target.value))}
-                        />
-                        <span className="score-display">
-                          {task.status === TaskStatus.NotStarted ? '-' : task.score}
-                        </span>
+                      <div className="control-item">
+                        <label className="control-label">状态</label>
+                        <select
+                          className="task-status-select"
+                          value={task.status}
+                          onChange={(e) => handleTaskStatusChange(task.id, Number(e.target.value) as TaskStatus)}
+                        >
+                          <option value={TaskStatus.NotStarted}>未开始</option>
+                          <option value={TaskStatus.InProgress}>进行中</option>
+                          <option value={TaskStatus.Completed}>已完成</option>
+                          <option value={TaskStatus.Cancelled}>已取消</option>
+                        </select>
+                      </div>
+                      <div className="control-item">
+                        <label className="control-label">努力程度</label>
+                        <div className="score-display-container">
+                          <span className={`score-value ${task.status === TaskStatus.NotStarted ? 'disabled' : ''}`}>
+                            {task.status === TaskStatus.NotStarted ? '-' : `${task.score}/10`}
+                          </span>
+                          <button
+                            className="btn-edit-score"
+                            onClick={() => handleOpenScoreDialog(task)}
+                            disabled={task.status === TaskStatus.NotStarted}
+                            title="修改努力程度"
+                          >
+                            ✏️
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -740,6 +780,22 @@ const Dashboard: React.FC = () => {
           journal={viewingJournal}
           onClose={() => setShowViewJournalDialog(false)}
           onEdit={(journal) => handleEditJournal(journal)}
+        />
+      )}
+
+      {showScoreDialog && editingScoreTask && (
+        <ScoreEditDialog
+          taskTitle={editingScoreTask.title}
+          currentScore={editingScoreTask.score}
+          onClose={() => {
+            setShowScoreDialog(false);
+            setEditingScoreTask(null);
+          }}
+          onSave={async (score) => {
+            await handleTaskScoreChange(editingScoreTask.id, score);
+            setShowScoreDialog(false);
+            setEditingScoreTask(null);
+          }}
         />
       )}
     </div>

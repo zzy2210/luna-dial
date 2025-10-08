@@ -1,0 +1,302 @@
+/* 评分编辑对话框覆盖层 */
+.score-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 对话框主体 */
+.score-dialog {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  width: 90%;
+  max-width: 480px;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 对话框头部 */
+.score-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.score-dialog-header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.close-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.close-btn:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* 对话框内容 */
+.score-dialog-body {
+  padding: 1.5rem;
+}
+
+.task-title-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.task-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.task-name {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* 评分输入区域 */
+.score-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.score-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* 滑块容器 */
+.slider-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.score-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #f0f0f0 0%, var(--primary-color) 100%);
+  outline: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.score-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: var(--transition);
+}
+
+.score-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.score-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: var(--transition);
+}
+
+.score-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.score-value-display {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  text-align: center;
+  min-width: 60px;
+}
+
+/* 快速选择按钮 */
+.quick-score-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.quick-score-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  background: white;
+  color: var(--text-secondary);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.quick-score-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: rgba(0, 102, 255, 0.05);
+}
+
+.quick-score-btn.active {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  color: white;
+}
+
+/* 数字输入框 */
+.number-input-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.number-input-container label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.score-number-input {
+  width: 80px;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.score-number-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+/* 对话框底部 */
+.score-dialog-footer {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.btn-cancel,
+.btn-save {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-cancel {
+  border: 1px solid var(--border-color);
+  background: white;
+  color: var(--text-primary);
+}
+
+.btn-cancel:hover {
+  background: var(--bg-primary);
+}
+
+.btn-save {
+  border: none;
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-save:hover {
+  background: #0051D5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 102, 255, 0.3);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .score-dialog {
+    width: 95%;
+    margin: 1rem;
+  }
+
+  .score-dialog-header,
+  .score-dialog-body,
+  .score-dialog-footer {
+    padding: 1rem;
+  }
+
+  .quick-score-buttons {
+    gap: 0.25rem;
+  }
+
+  .quick-score-btn {
+    padding: 0.375rem;
+    font-size: 0.75rem;
+  }
+}
