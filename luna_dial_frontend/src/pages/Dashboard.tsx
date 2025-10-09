@@ -734,10 +734,6 @@ const Dashboard: React.FC = () => {
           <span className="action-icon">📝</span>
           <span>写日志</span>
         </button>
-        <button className="action-btn" onClick={() => console.log('Daily check-in')}>
-          <span className="action-icon">✅</span>
-          <span>每日打卡</span>
-        </button>
       </footer>
 
       {/* 对话框组件 */}
