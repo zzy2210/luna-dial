@@ -18,41 +18,38 @@ type ListTaskRequest struct {
 }
 
 type CreateTaskRequest struct {
-	Title       string   `json:"title" validate:"required"`
-	Description string   `json:"description"`
-	StartDate   string   `json:"start_date" validate:"required"`
-	EndDate     string   `json:"end_date" validate:"required"`
-	PeriodType  string   `json:"period_type" validate:"required,oneof=day week month quarter year"`
-	Priority    string   `json:"priority" validate:"required,oneof=low medium high urgent"`
-	Icon        string   `json:"icon"`
-	Tags        []string `json:"tags"`
+	Title      string   `json:"title" validate:"required"`
+	StartDate  string   `json:"start_date" validate:"required"`
+	EndDate    string   `json:"end_date" validate:"required"`
+	PeriodType string   `json:"period_type" validate:"required,oneof=day week month quarter year"`
+	Priority   string   `json:"priority" validate:"required,oneof=low medium high urgent"`
+	Icon       string   `json:"icon"`
+	Tags       []string `json:"tags"`
 }
 
 type CreateSubTaskRequest struct {
-    Title       string   `json:"title" validate:"required"`
-    Description string   `json:"description"`
-    StartDate   string   `json:"start_date" validate:"required"`
-    EndDate     string   `json:"end_date" validate:"required"`
-    PeriodType  string   `json:"period_type" validate:"required,oneof=day week month quarter year"`
-    Priority    string   `json:"priority" validate:"required,oneof=low medium high urgent"`
-    Icon        string   `json:"icon"`
-    Tags        []string `json:"tags"`
+    Title      string   `json:"title" validate:"required"`
+    StartDate  string   `json:"start_date" validate:"required"`
+    EndDate    string   `json:"end_date" validate:"required"`
+    PeriodType string   `json:"period_type" validate:"required,oneof=day week month quarter year"`
+    Priority   string   `json:"priority" validate:"required,oneof=low medium high urgent"`
+    Icon       string   `json:"icon"`
+    Tags       []string `json:"tags"`
     // 兼容旧客户端：允许携带 task_id，但不再校验；服务端使用路径参数作为父任务ID
-    TaskID      string   `json:"task_id,omitempty"`
+    TaskID     string   `json:"task_id,omitempty"`
 }
 
 // 更新任务
 type UpdateTaskRequest struct {
-    Title       *string   `json:"title,omitempty"`
-    Description *string   `json:"description,omitempty"`
-    StartDate   *string   `json:"start_date,omitempty"`
-    EndDate     *string   `json:"end_date,omitempty"`
-    Priority    string    `json:"priority,omitempty" validate:"omitempty,oneof=low medium high urgent"`
-    Status      string    `json:"status,omitempty" validate:"omitempty,oneof=not_started in_progress completed cancelled"`
-    Icon        *string   `json:"icon,omitempty"`
-    Tags        *[]string `json:"tags,omitempty"`
+    Title     *string   `json:"title,omitempty"`
+    StartDate *string   `json:"start_date,omitempty"`
+    EndDate   *string   `json:"end_date,omitempty"`
+    Priority  string    `json:"priority,omitempty" validate:"omitempty,oneof=low medium high urgent"`
+    Status    string    `json:"status,omitempty" validate:"omitempty,oneof=not_started in_progress completed cancelled"`
+    Icon      *string   `json:"icon,omitempty"`
+    Tags      *[]string `json:"tags,omitempty"`
     // 任务ID改由路径参数传入，保留字段以向后兼容
-    TaskID      string    `json:"task_id,omitempty"`
+    TaskID    string    `json:"task_id,omitempty"`
 }
 
 // 标记任务完成

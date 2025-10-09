@@ -160,19 +160,6 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
             </div>
           </div>
 
-          {/* 任务描述 */}
-          {task.description && (
-            <div className="info-section">
-              <div className="info-section-title">
-                <span className="info-section-icon">📝</span>
-                描述
-              </div>
-              <div className="info-card description">
-                {task.description}
-              </div>
-            </div>
-          )}
-
           {/* 任务时间范围 */}
           <div className="info-section">
             <div className="info-section-title">

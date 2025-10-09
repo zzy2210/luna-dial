@@ -126,7 +126,6 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
       // 编辑模式：从现有任务加载数据
       return {
         title: task.title,
-        description: task.description || '',
         start_date: isoToDateInput(task.period.start),
         end_date: isoToDateInput(task.period.end),
         period_type: taskTypeToPeriodType(task.task_type),
@@ -140,7 +139,6 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
       const dates = getDefaultDates(currentPeriod);
       return {
         title: '',
-        description: '',
         start_date: dates.start_date,
         end_date: dates.end_date,
         period_type: currentPeriod,
@@ -179,7 +177,6 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
         // 编辑模式
         const updateData: UpdateTaskRequest = {
           title: formData.title,
-          description: formData.description,
           priority: formData.priority,
           icon: formData.icon,
           tags: formData.tags
@@ -248,16 +245,6 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
               placeholder="输入任务标题"
               maxLength={100}
               required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>任务描述</label>
-            <textarea
-              value={formData.description}
-              onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="输入任务描述（可选）"
-              rows={3}
             />
           </div>
 

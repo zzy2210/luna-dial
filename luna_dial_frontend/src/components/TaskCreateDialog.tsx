@@ -84,7 +84,6 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
     const dates = getDefaultDates(currentPeriod);
     return {
       title: '',
-      description: '',
       start_date: dates.start_date,
       end_date: dates.end_date,
       period_type: currentPeriod,
@@ -171,16 +170,6 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
               placeholder="输入任务标题"
               maxLength={100}
               required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>任务描述</label>
-            <textarea
-              value={formData.description}
-              onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="输入任务描述（可选）"
-              rows={3}
             />
           </div>
 

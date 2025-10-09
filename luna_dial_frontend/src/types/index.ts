@@ -70,7 +70,6 @@ export interface Task {
   id: string;
   user_id: string;
   title: string;
-  description?: string;
   task_type: TaskType;
   period: {
     start: string;
@@ -94,7 +93,6 @@ export interface Task {
 // 任务创建请求
 export interface CreateTaskRequest {
   title: string;
-  description?: string;
   start_date: string;
   end_date: string;
   period_type: 'day' | 'week' | 'month' | 'quarter' | 'year';
@@ -107,7 +105,6 @@ export interface CreateTaskRequest {
 // 任务更新请求
 export interface UpdateTaskRequest {
   title?: string;
-  description?: string;
   start_date?: string;
   end_date?: string;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
