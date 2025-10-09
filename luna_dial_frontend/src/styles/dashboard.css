@@ -96,7 +96,7 @@
   display: grid;
   grid-template-columns: 380px 1fr 320px;
   gap: 1.5rem;
-  padding: 1.5rem 2rem;
+  padding: 1.5rem 2rem 120px 2rem;
   max-width: 1600px;
   margin: 0 auto;
   min-height: calc(100vh - 100px);
