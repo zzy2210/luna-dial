@@ -400,6 +400,32 @@
   cursor: not-allowed;
 }
 
+/* 任务删除按钮 */
+.btn-delete-task {
+  padding: 0.375rem 0.75rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-delete-task:hover {
+  background: #fff1f0;
+  border-color: #ffa39e;
+  color: var(--danger-color);
+  transform: translateY(-1px);
+}
+
+.task-actions {
+  margin-left: auto;
+}
+
+
 .btn-add-task {
   width: 100%;
   margin-top: 1rem;

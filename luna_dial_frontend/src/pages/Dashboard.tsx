@@ -618,6 +618,19 @@ const Dashboard: React.FC = () => {
                           </button>
                         </div>
                       </div>
+                      <div className="control-item task-actions">
+                        <button
+                          className="btn-delete-task"
+                          onClick={() => {
+                            if (window.confirm('确定要删除这个任务吗？')) {
+                              handleDeleteTask(task.id);
+                            }
+                          }}
+                          title="删除任务"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
