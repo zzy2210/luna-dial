@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Task, TaskStatus, TaskPriority } from '../types';
+import { Task, TaskStatus, TaskPriority, TaskType } from '../types';
 import '../styles/dialog.css';
 import '../styles/task-view-dialog.css';
 
@@ -87,7 +87,7 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
     setIsEditingScore(false);
   };
 
-  const canEditScore = task.status === TaskStatus.InProgress || task.status === TaskStatus.Completed;
+  const canEditScore = (task.status === TaskStatus.InProgress || task.status === TaskStatus.Completed) && task.task_type === TaskType.Day;
 
   const getStatusClassName = (status: TaskStatus): string => {
     switch (status) {
@@ -195,6 +195,10 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
             {task.status === TaskStatus.NotStarted ? (
               <div className="info-card">
                 任务尚未开始,暂无评分
+              </div>
+            ) : task.task_type !== TaskType.Day ? (
+              <div className="info-card">
+                仅日任务支持评分功能
               </div>
             ) : isEditingScore ? (
               <div className="score-editor">

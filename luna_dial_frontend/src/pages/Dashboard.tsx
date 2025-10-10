@@ -854,14 +854,14 @@ const Dashboard: React.FC = () => {
                       <div className="control-item">
                         <label className="control-label">努力程度</label>
                         <div className="score-display-container">
-                          <span className={`score-value ${task.status === TaskStatus.NotStarted ? 'disabled' : ''}`}>
-                            {task.status === TaskStatus.NotStarted ? '-' : `${task.score}/10`}
+                          <span className={`score-value ${task.status === TaskStatus.NotStarted || task.task_type !== 0 ? 'disabled' : ''}`}>
+                            {task.status === TaskStatus.NotStarted || task.task_type !== 0 ? '-' : `${task.score}/10`}
                           </span>
                           <button
                             className="btn-edit-score"
                             onClick={() => handleOpenScoreDialog(task)}
-                            disabled={task.status === TaskStatus.NotStarted}
-                            title="修改努力程度"
+                            disabled={task.status === TaskStatus.NotStarted || task.task_type !== 0}
+                            title={task.task_type !== 0 ? "仅日任务支持评分" : "修改努力程度"}
                           >
                             ✏️
                           </button>
