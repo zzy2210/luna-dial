@@ -962,13 +962,122 @@ const Dashboard: React.FC = () => {
               {currentPeriod === 'year' ? '本年' : ''}
               努力趋势
             </h3>
-            <div className="progress-chart">
-              {stats.trendData.map((item, index) => (
-                <div key={index} className={`chart-bar ${item.isCurrent ? 'today' : ''}`}>
-                  <div className="bar-fill" style={{ height: `${item.percentage}%` }}></div>
-                  <span className="bar-label">{item.label}</span>
-                </div>
-              ))}
+            <div className="trend-chart-container">
+              {stats.trendData.length > 0 ? (() => {
+                const width = 280;
+                const height = 160;
+                const padding = { top: 20, right: 10, bottom: 30, left: 35 };
+                const chartWidth = width - padding.left - padding.right;
+                const chartHeight = height - padding.top - padding.bottom;
+
+                // 计算最大值和刻度
+                const maxScore = Math.max(...stats.trendData.map(d => d.score), 1);
+                const yMax = Math.ceil(maxScore / 5) * 5 || 10; // 向上取整到5的倍数
+                const yTicks = 5;
+                const yStep = yMax / yTicks;
+
+                // 计算数据点坐标
+                const points = stats.trendData.map((item, i) => {
+                  const x = padding.left + (chartWidth / (stats.trendData.length - 1 || 1)) * i;
+                  const y = padding.top + chartHeight - (item.score / yMax) * chartHeight;
+                  return { x, y, ...item };
+                });
+
+                // 生成折线路径
+                const linePath = points.map((p, i) =>
+                  `${i === 0 ? 'M' : 'L'} ${p.x},${p.y}`
+                ).join(' ');
+
+                // 生成填充区域路径
+                const areaPath = `${linePath} L ${points[points.length - 1].x},${height - padding.bottom} L ${padding.left},${height - padding.bottom} Z`;
+
+                return (
+                  <svg width={width} height={height} className="trend-chart">
+                    {/* 背景网格线 */}
+                    {Array.from({ length: yTicks + 1 }).map((_, i) => {
+                      const y = padding.top + (chartHeight / yTicks) * i;
+                      return (
+                        <line
+                          key={`grid-${i}`}
+                          x1={padding.left}
+                          y1={y}
+                          x2={width - padding.right}
+                          y2={y}
+                          className="grid-line"
+                        />
+                      );
+                    })}
+
+                    {/* Y轴刻度标签 */}
+                    {Array.from({ length: yTicks + 1 }).map((_, i) => {
+                      const value = yMax - (yStep * i);
+                      const y = padding.top + (chartHeight / yTicks) * i;
+                      return (
+                        <text
+                          key={`y-label-${i}`}
+                          x={padding.left - 8}
+                          y={y + 4}
+                          className="axis-label"
+                          textAnchor="end"
+                        >
+                          {Math.round(value)}
+                        </text>
+                      );
+                    })}
+
+                    {/* 填充区域 */}
+                    <path
+                      d={areaPath}
+                      className="area-fill"
+                    />
+
+                    {/* 折线 */}
+                    <path
+                      d={linePath}
+                      className="trend-line"
+                    />
+
+                    {/* 数据点 */}
+                    {points.map((point, i) => (
+                      <g key={`point-${i}`}>
+                        {/* 数据点圆圈 */}
+                        <circle
+                          cx={point.x}
+                          cy={point.y}
+                          r={point.isCurrent ? 5 : 4}
+                          className={`data-point ${point.isCurrent ? 'current' : ''}`}
+                        />
+                        {/* 分数标签 */}
+                        {point.score > 0 && (
+                          <text
+                            x={point.x}
+                            y={point.y - 10}
+                            className="score-label"
+                            textAnchor="middle"
+                          >
+                            {point.score}
+                          </text>
+                        )}
+                      </g>
+                    ))}
+
+                    {/* X轴标签 */}
+                    {points.map((point, i) => (
+                      <text
+                        key={`x-label-${i}`}
+                        x={point.x}
+                        y={height - padding.bottom + 20}
+                        className={`x-axis-label ${point.isCurrent ? 'current' : ''}`}
+                        textAnchor="middle"
+                      >
+                        {point.label}
+                      </text>
+                    ))}
+                  </svg>
+                );
+              })() : (
+                <div className="empty-chart">暂无数据</div>
+              )}
             </div>
           </div>
 

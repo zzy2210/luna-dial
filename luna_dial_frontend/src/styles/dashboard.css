@@ -579,7 +579,7 @@
   color: var(--primary-color);
 }
 
-/* 进度图表 */
+/* 趋势图卡片 */
 .progress-card {
   background: var(--bg-card);
   backdrop-filter: blur(20px);
@@ -594,38 +594,97 @@
   margin-bottom: 1.5rem;
 }
 
-.progress-chart {
+/* 趋势图表容器 */
+.trend-chart-container {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  height: 120px;
-  gap: 0.5rem;
-}
-
-.chart-bar {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: 0.5rem;
-  position: relative;
+  padding: 1rem 0;
 }
 
-.bar-fill {
-  width: 100%;
-  background: linear-gradient(180deg, var(--primary-color) 0%, #667eea 100%);
-  border-radius: 4px 4px 0 0;
-  transition: height 0.3s ease;
+.trend-chart {
+  overflow: visible;
 }
 
-.chart-bar.today .bar-fill {
-  background: linear-gradient(180deg, var(--success-color) 0%, #52c41a 100%);
+/* 网格线 */
+.grid-line {
+  stroke: rgba(0, 0, 0, 0.08);
+  stroke-width: 1;
+  stroke-dasharray: 3, 3;
 }
 
-.bar-label {
+/* 坐标轴标签 */
+.axis-label {
+  font-size: 0.688rem;
+  fill: var(--text-tertiary);
+  font-weight: 500;
+}
+
+/* 填充区域 */
+.area-fill {
+  fill: url(#gradient);
+  opacity: 0.15;
+  fill: linear-gradient(180deg, var(--primary-color) 0%, transparent 100%);
+}
+
+/* 折线 */
+.trend-line {
+  fill: none;
+  stroke: var(--primary-color);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 数据点 */
+.data-point {
+  fill: white;
+  stroke: var(--primary-color);
+  stroke-width: 2.5;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.data-point:hover {
+  r: 6;
+  stroke-width: 3;
+}
+
+.data-point.current {
+  fill: var(--success-color);
+  stroke: var(--success-color);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 4px rgba(52, 211, 153, 0.5));
+}
+
+/* 分数标签 */
+.score-label {
   font-size: 0.75rem;
+  fill: var(--text-primary);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+/* X轴标签 */
+.x-axis-label {
+  font-size: 0.75rem;
+  fill: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.x-axis-label.current {
+  fill: var(--success-color);
+  font-weight: 700;
+}
+
+/* 空数据提示 */
+.empty-chart {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 160px;
   color: var(--text-tertiary);
-  margin-top: 0.5rem;
+  font-size: 0.875rem;
 }
 
 /* 任务状态 */
