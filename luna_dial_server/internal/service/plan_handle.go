@@ -77,3 +77,71 @@ func (s *Service) handleListPlans(c echo.Context) error {
     }
     return c.JSON(200, NewSuccessResponse(plan))
 }
+
+func (s *Service) handleGetPlanStats(c echo.Context) error {
+    // 从查询参数获取值
+    groupBy := c.QueryParam("group_by")
+    startDateStr := c.QueryParam("start_date")
+    endDateStr := c.QueryParam("end_date")
+
+    // 手动验证必填字段
+    if groupBy == "" {
+        return c.JSON(400, NewErrorResponse(400, "field group_by is required"))
+    }
+    if startDateStr == "" {
+        return c.JSON(400, NewErrorResponse(400, "field start_date is required"))
+    }
+    if endDateStr == "" {
+        return c.JSON(400, NewErrorResponse(400, "field end_date is required"))
+    }
+
+    // 解析时间
+    startDate, err := time.Parse("2006-01-02", startDateStr)
+    if err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid start_date format, expected YYYY-MM-DD"))
+    }
+    endDate, err := time.Parse("2006-01-02", endDateStr)
+    if err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid end_date format, expected YYYY-MM-DD"))
+    }
+
+    userID, _, err := GetUserFromContext(c)
+    if err != nil {
+        return c.JSON(401, NewErrorResponse(401, "User not found"))
+    }
+
+    groupByType, err := PeriodTypeFromString(groupBy)
+    if err != nil {
+        return c.JSON(400, NewErrorResponse(400, "Invalid group_by type"))
+    }
+
+    stats, err := s.planUsecase.GetPlanStats(c.Request().Context(), biz.GetPlanStatsParam{
+        UserID: userID,
+        Period: biz.Period{
+            Start: startDate,
+            End:   endDate,
+        },
+        GroupBy: groupByType,
+    })
+    if err != nil {
+        c.Logger().Error("Failed to get plan stats:", err)
+
+        switch err {
+        case biz.ErrInvalidInput:
+            if !startDate.Before(endDate) {
+                return c.JSON(400, NewErrorResponse(400,
+                    fmt.Sprintf("Invalid time period: end_date must be after start_date. Got start=%s, end=%s",
+                        startDateStr, endDateStr)))
+            }
+            return c.JSON(400, NewErrorResponse(400, "Invalid input parameters"))
+        case biz.ErrPlanPeriodInvalid:
+            return c.JSON(400, NewErrorResponse(400,
+                fmt.Sprintf("Invalid period: start_date must be before end_date. Got start=%s, end=%s",
+                    startDateStr, endDateStr)))
+        default:
+            return c.JSON(500, NewErrorResponse(500, "Failed to get plan stats: "+err.Error()))
+        }
+    }
+
+    return c.JSON(200, NewSuccessResponse(stats))
+}

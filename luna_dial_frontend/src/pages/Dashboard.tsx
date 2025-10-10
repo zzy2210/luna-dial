@@ -652,8 +652,8 @@ const Dashboard: React.FC = () => {
         const trendGroupBy = getTrendGroupBy();
         const trendPeriod = getTrendPeriod();
 
-        const trendPlan = await planService.getPlan({
-          period_type: trendGroupBy,
+        const groupStats = await planService.getPlanStats({
+          group_by: trendGroupBy,
           ...trendPeriod
         });
 
@@ -662,16 +662,16 @@ const Dashboard: React.FC = () => {
         switch (currentPeriod) {
           case 'day':
           case 'week':
-            trendData = parseWeekTrend(trendPlan.group_stats || []);
+            trendData = parseWeekTrend(groupStats || []);
             break;
           case 'month':
-            trendData = parseMonthTrend(trendPlan.group_stats || []);
+            trendData = parseMonthTrend(groupStats || []);
             break;
           case 'quarter':
-            trendData = parseQuarterTrend(trendPlan.group_stats || []);
+            trendData = parseQuarterTrend(groupStats || []);
             break;
           case 'year':
-            trendData = parseYearTrend(trendPlan.group_stats || []);
+            trendData = parseYearTrend(groupStats || []);
             break;
         }
 
