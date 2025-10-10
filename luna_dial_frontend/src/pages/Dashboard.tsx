@@ -29,6 +29,7 @@ const Dashboard: React.FC = () => {
   const [showViewTaskDialog, setShowViewTaskDialog] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
+  const [parentTaskIdForCreation, setParentTaskIdForCreation] = useState<string | undefined>(undefined);
   const [showJournalDialog, setShowJournalDialog] = useState(false);
   const [showViewJournalDialog, setShowViewJournalDialog] = useState(false);
   const [editingJournal, setEditingJournal] = useState<Journal | null>(null);
@@ -92,6 +93,14 @@ const Dashboard: React.FC = () => {
 
   const handleCreateTask = () => {
     setEditingTask(null);
+    setParentTaskIdForCreation(undefined);
+    setShowTaskDialog(true);
+  };
+
+  const handleCreateSubtask = (parentTaskId: string) => {
+    setParentTaskIdForCreation(parentTaskId);
+    setEditingTask(null);
+    setShowViewTaskDialog(false);
     setShowTaskDialog(true);
   };
 
@@ -740,12 +749,17 @@ const Dashboard: React.FC = () => {
       {showTaskDialog && (
         <TaskEditDialog
           task={editingTask}
-          onClose={() => setShowTaskDialog(false)}
+          onClose={() => {
+            setShowTaskDialog(false);
+            setParentTaskIdForCreation(undefined);
+          }}
           onSuccess={() => {
             setShowTaskDialog(false);
+            setParentTaskIdForCreation(undefined);
             loadPlanData();
           }}
           currentPeriod={currentPeriod}
+          parentTaskId={parentTaskIdForCreation}
         />
       )}
 
@@ -756,6 +770,7 @@ const Dashboard: React.FC = () => {
           onEdit={(task) => handleEditTask(task)}
           onDelete={(taskId) => handleDeleteTask(taskId)}
           onScoreUpdate={handleTaskScoreChange}
+          onCreateSubtask={handleCreateSubtask}
         />
       )}
 

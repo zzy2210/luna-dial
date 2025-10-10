@@ -9,6 +9,7 @@ interface TaskViewDialogProps {
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   onScoreUpdate?: (taskId: string, score: number) => void;
+  onCreateSubtask?: (parentTaskId: string) => void;
 }
 
 const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
@@ -16,7 +17,8 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
   onClose,
   onEdit,
   onDelete,
-  onScoreUpdate
+  onScoreUpdate,
+  onCreateSubtask
 }) => {
   const [currentScore, setCurrentScore] = useState<number>(task.score);
   const [editingScore, setEditingScore] = useState<number>(task.score);
@@ -333,6 +335,15 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
             <button type="button" onClick={onClose} className="btn-cancel">
               关闭
             </button>
+            {onCreateSubtask && (
+              <button
+                type="button"
+                onClick={() => onCreateSubtask(task.id)}
+                className="btn-secondary"
+              >
+                创建子任务
+              </button>
+            )}
             <button
               type="button"
               onClick={() => onEdit(task)}
