@@ -325,10 +325,20 @@ func (uc *TaskUsecase) DeleteTask(ctx context.Context, param DeleteTaskParam) er
 		return ErrTaskNotFound // 任务不存在
 	}
 
+	// 保存父任务ID,用于后续更新树优化字段
+	parentID := task.ParentID
+
 	// 删除任务
 	err = uc.repo.DeleteTask(ctx, param.TaskID, param.UserID)
 	if err != nil {
 		return err // 返回仓库层的错误
+	}
+
+	// 删除后维护父任务的树优化字段
+	if parentID != "" {
+		if err := uc.repo.UpdateTreeOptimizationFields(ctx, parentID, param.UserID); err != nil {
+			log.Warnf("Failed to update tree optimization for parent %s after deletion: %v", parentID, err)
+		}
 	}
 
 	return nil
