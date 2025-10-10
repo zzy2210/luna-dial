@@ -325,10 +325,20 @@ func (uc *TaskUsecase) DeleteTask(ctx context.Context, param DeleteTaskParam) er
 		return ErrTaskNotFound // 任务不存在
 	}
 
+	// 保存父任务ID,用于后续更新树优化字段
+	parentID := task.ParentID
+
 	// 删除任务
 	err = uc.repo.DeleteTask(ctx, param.TaskID, param.UserID)
 	if err != nil {
 		return err // 返回仓库层的错误
+	}
+
+	// 删除后维护父任务的树优化字段
+	if parentID != "" {
+		if err := uc.repo.UpdateTreeOptimizationFields(ctx, parentID, param.UserID); err != nil {
+			log.Warnf("Failed to update tree optimization for parent %s after deletion: %v", parentID, err)
+		}
 	}
 
 	return nil
@@ -368,7 +378,7 @@ func (uc *TaskUsecase) SetTaskScore(ctx context.Context, param SetTaskScoreParam
 
 // 创建子任务
 // 检查USERID和ParentID
-// 子任务的时间段和类型必须与父任务一致
+// 子任务应该在父任务的时间范围内(至少 start要在 （这是考虑边界情况，比如 1.1-2.1 正好最后一周横跨了一月到二月)
 func (uc *TaskUsecase) CreateSubTask(ctx context.Context, param CreateSubTaskParam) (*Task, error) {
 	if param.ParentID == "" || param.UserID == "" || param.Title == "" {
 		return nil, ErrInvalidInput // 参数不合法
@@ -383,18 +393,20 @@ func (uc *TaskUsecase) CreateSubTask(ctx context.Context, param CreateSubTaskPar
 		return nil, ErrTaskNotFound // 父任务不存在
 	}
 
-	// 验证子任务的时间段和类型必须与父任务一致
-	if param.Type != parentTask.TaskType {
-		return nil, ErrInvalidInput // 子任务类型必须与父任务一致
+	// 验证子任务的类型必须小于等于父任务类型（粒度更小或相等）
+	// 例如：周任务的子任务可以是日或周；月任务的子任务可以是日、周或月
+	if param.Type > parentTask.TaskType {
+		return nil, ErrInvalidInput // 子任务类型不能大于父任务类型
 	}
 
 	if !param.Period.IsValid() {
 		return nil, ErrInvalidInput // 时间段不合法
 	}
 
-	// 子任务的时间段必须在父任务时间段内
-	if param.Period.Start.Before(parentTask.TimePeriod.Start) || param.Period.End.After(parentTask.TimePeriod.End) {
-		return nil, ErrInvalidInput // 子任务时间段必须在父任务时间段内
+	// 子任务的开始时间必须在父任务的时间范围内
+	// 注意：不检查结束时间，以支持边界情况（如1月任务的最后一周可能横跨到2月）
+	if param.Period.Start.Before(parentTask.TimePeriod.Start) || param.Period.Start.After(parentTask.TimePeriod.End) {
+		return nil, ErrInvalidInput // 子任务的开始时间必须在父任务时间范围内
 	}
 
 	// 继承父任务的标签
@@ -423,6 +435,14 @@ func (uc *TaskUsecase) CreateSubTask(ctx context.Context, param CreateSubTaskPar
 	err = uc.repo.CreateTask(ctx, task)
 	if err != nil {
 		return nil, err // 返回仓库层的错误
+	}
+
+	// 创建后维护树优化字段（包括父任务计数）
+	if err := uc.repo.UpdateTreeOptimizationFields(ctx, task.ID, task.UserID); err != nil {
+		log.Warnf("Failed to update tree optimization for task %s: %v", task.ID, err)
+	}
+	if err := uc.repo.UpdateTreeOptimizationFields(ctx, task.ParentID, task.UserID); err != nil {
+		log.Warnf("Failed to update tree optimization for parent %s: %v", task.ParentID, err)
 	}
 
 	return task, nil

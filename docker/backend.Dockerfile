@@ -1,9 +1,11 @@
 # ==========================================
 # 阶段 1: 构建阶段 (Build Stage)
 # ==========================================
-FROM golang:1.24-alpine AS builder
+FROM golang:1.24.8-alpine3.22 AS builder
 
 # 安装构建依赖
+ARG ALPINE_MIRROR=mirrors.aliyun.com 
+RUN sed -i "s|dl-cdn.alpinelinux.org|${ALPINE_MIRROR}|g" /etc/apk/repositories && apk update
 RUN apk add --no-cache \
     git \
     ca-certificates \
@@ -31,9 +33,11 @@ RUN CGO_ENABLED=0 \
 # ==========================================
 # 阶段 2: 运行阶段 (Runtime Stage)
 # ==========================================
-FROM alpine:3.18
+FROM alpine:3.22
 
 # 安装运行时依赖
+ARG ALPINE_MIRROR=mirrors.aliyun.com 
+RUN sed -i "s|dl-cdn.alpinelinux.org|${ALPINE_MIRROR}|g" /etc/apk/repositories && apk update
 RUN apk add --no-cache \
     ca-certificates \
     tzdata \

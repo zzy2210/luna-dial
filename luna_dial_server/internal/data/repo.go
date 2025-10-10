@@ -3,6 +3,7 @@ package data
 import (
     "context"
     "errors"
+    "fmt"
     "luna_dial/internal/biz"
     "luna_dial/internal/model"
     "time"
@@ -196,7 +197,9 @@ func (r *taskRepo) ListTasksByRootIDs(ctx context.Context, userID string, rootTa
 		return nil, err
 	}
 
-	return r.converter.DataToBizList(dataTasks), nil
+	// 转换为业务模型并构建树结构
+	bizTasks := r.converter.DataToBizList(dataTasks)
+	return r.buildTreeStructure(bizTasks), nil
 }
 
 // GetCompleteTaskTree 获取包含指定任务的完整任务树
@@ -292,7 +295,8 @@ func (r *taskRepo) UpdateTreeOptimizationFields(ctx context.Context, taskID, use
 			Where("id = ? AND user_id = ?", currentParentID, userID).
 			First(&parentTask).Error
 		if err != nil {
-			break // 父任务不存在
+			// 父任务查询失败，返回错误避免写入脏数据
+			return fmt.Errorf("failed to query parent task %s: %w", currentParentID, err)
 		}
 
 		treeDepth++

@@ -29,6 +29,7 @@ const Dashboard: React.FC = () => {
   const [showViewTaskDialog, setShowViewTaskDialog] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
+  const [parentTaskIdForCreation, setParentTaskIdForCreation] = useState<string | undefined>(undefined);
   const [showJournalDialog, setShowJournalDialog] = useState(false);
   const [showViewJournalDialog, setShowViewJournalDialog] = useState(false);
   const [editingJournal, setEditingJournal] = useState<Journal | null>(null);
@@ -92,6 +93,14 @@ const Dashboard: React.FC = () => {
 
   const handleCreateTask = () => {
     setEditingTask(null);
+    setParentTaskIdForCreation(undefined);
+    setShowTaskDialog(true);
+  };
+
+  const handleCreateSubtask = (parentTaskId: string) => {
+    setParentTaskIdForCreation(parentTaskId);
+    setEditingTask(null);
+    setShowViewTaskDialog(false);
     setShowTaskDialog(true);
   };
 
@@ -609,6 +618,19 @@ const Dashboard: React.FC = () => {
                           </button>
                         </div>
                       </div>
+                      <div className="control-item task-actions">
+                        <button
+                          className="btn-delete-task"
+                          onClick={() => {
+                            if (window.confirm('确定要删除这个任务吗？')) {
+                              handleDeleteTask(task.id);
+                            }
+                          }}
+                          title="删除任务"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -734,22 +756,23 @@ const Dashboard: React.FC = () => {
           <span className="action-icon">📝</span>
           <span>写日志</span>
         </button>
-        <button className="action-btn" onClick={() => console.log('Daily check-in')}>
-          <span className="action-icon">✅</span>
-          <span>每日打卡</span>
-        </button>
       </footer>
 
       {/* 对话框组件 */}
       {showTaskDialog && (
         <TaskEditDialog
           task={editingTask}
-          onClose={() => setShowTaskDialog(false)}
+          onClose={() => {
+            setShowTaskDialog(false);
+            setParentTaskIdForCreation(undefined);
+          }}
           onSuccess={() => {
             setShowTaskDialog(false);
+            setParentTaskIdForCreation(undefined);
             loadPlanData();
           }}
           currentPeriod={currentPeriod}
+          parentTaskId={parentTaskIdForCreation}
         />
       )}
 
@@ -760,6 +783,7 @@ const Dashboard: React.FC = () => {
           onEdit={(task) => handleEditTask(task)}
           onDelete={(taskId) => handleDeleteTask(taskId)}
           onScoreUpdate={handleTaskScoreChange}
+          onCreateSubtask={handleCreateSubtask}
         />
       )}
 
