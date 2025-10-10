@@ -99,4 +99,5 @@ func (s *Service) setupSessionRoutes() {
 
 	planGroup := protected.Group("/plans")
 	planGroup.GET("", s.handleListPlans)
+	planGroup.GET("/stats", s.handleGetPlanStats)
 }

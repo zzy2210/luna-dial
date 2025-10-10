@@ -14,6 +14,14 @@ import JournalViewDialog from '../components/JournalViewDialog';
 import ScoreEditDialog from '../components/ScoreEditDialog';
 import '../styles/dashboard.css';
 
+// 趋势数据项接口
+interface TrendDataItem {
+  label: string;
+  score: number;
+  percentage: number;
+  isCurrent: boolean;
+}
+
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
@@ -43,6 +51,7 @@ const Dashboard: React.FC = () => {
     weekScore: 0,
     monthScore: 0,
     weekProgress: [0, 0, 0, 0, 0, 0, 0],
+    trendData: [] as TrendDataItem[],
     taskStats: {
       notStarted: 0,
       inProgress: 0,
@@ -364,6 +373,206 @@ const Dashboard: React.FC = () => {
     };
   };
 
+  // 获取趋势图的分组粒度
+  const getTrendGroupBy = (): PeriodType => {
+    switch (currentPeriod) {
+      case 'day':
+      case 'week':
+        return 'day';     // 日/周视图：按日分组
+      case 'month':
+        return 'week';    // 月视图：按周分组
+      case 'quarter':
+        return 'month';   // 季视图：按月分组
+      case 'year':
+        return 'quarter'; // 年视图：按季度分组
+      default:
+        return 'day';
+    }
+  };
+
+  // 获取趋势图的时间范围
+  const getTrendPeriod = () => {
+    const trendPeriod = currentPeriod === 'day' ? 'week' : currentPeriod;
+    return getPeriodDates(trendPeriod, currentDate);
+  };
+
+  // 解析本周趋势（7天）
+  const parseWeekTrend = (groupStats: { group_key: string; score_total: number }[]): TrendDataItem[] => {
+    const weekStart = new Date(currentDate);
+    const day = weekStart.getDay();
+    const diff = weekStart.getDate() - day + (day === 0 ? -6 : 1);
+    weekStart.setDate(diff);
+    weekStart.setHours(0, 0, 0, 0);
+
+    const result: TrendDataItem[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 创建7天的数据
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + i);
+      const dateKey = formatLocalDate(date);
+
+      const stat = groupStats?.find(s => s.group_key === dateKey);
+      const score = stat?.score_total || 0;
+
+      result.push({
+        label: ['一', '二', '三', '四', '五', '六', '日'][i],
+        score,
+        percentage: 0, // 将在后面归一化
+        isCurrent: date.getTime() === today.getTime()
+      });
+    }
+
+    // 归一化百分比
+    const maxScore = Math.max(...result.map(r => r.score), 1);
+    result.forEach(item => {
+      item.percentage = (item.score / maxScore) * 100;
+    });
+
+    return result;
+  };
+
+  // 解析本月趋势（各周）
+  const parseMonthTrend = (groupStats: { group_key: string; score_total: number }[]): TrendDataItem[] => {
+    const monthStart = new Date(currentDate);
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const monthEnd = new Date(currentDate);
+    monthEnd.setMonth(monthEnd.getMonth() + 1, 1);
+    monthEnd.setHours(0, 0, 0, 0);
+
+    const result: TrendDataItem[] = [];
+    const currentWeekKey = (() => {
+      const year = new Date().getFullYear();
+      const isoWeek = getWeekNumber(new Date());
+      return `${year}-W${String(isoWeek).padStart(2, '0')}`;
+    })();
+
+    // 收集本月内的周
+    const weeks: { key: string; weekNum: number; monday: Date }[] = [];
+    let currentMonday = new Date(monthStart);
+
+    // 找到本月第一个周一
+    const firstDay = currentMonday.getDay();
+    if (firstDay !== 1) {
+      const daysToMonday = firstDay === 0 ? 1 : (8 - firstDay);
+      currentMonday.setDate(currentMonday.getDate() + daysToMonday);
+    }
+
+    // 如果第一个周一已经超出本月，说明本月1号之前就有周一，回退一周
+    if (currentMonday >= monthEnd) {
+      currentMonday.setDate(currentMonday.getDate() - 7);
+    } else if (currentMonday > monthStart) {
+      // 如果第一个周一不是1号，检查是否应该包含前一周
+      const prevMonday = new Date(currentMonday);
+      prevMonday.setDate(prevMonday.getDate() - 7);
+      if (prevMonday >= monthStart || prevMonday.getMonth() === monthStart.getMonth() - 1) {
+        currentMonday = prevMonday;
+      }
+    }
+
+    // 收集所有周一在本月或之前，且不超过月末的周
+    while (currentMonday < monthEnd) {
+      const year = currentMonday.getFullYear();
+      const weekNum = getWeekNumber(currentMonday);
+      const weekKey = `${year}-W${String(weekNum).padStart(2, '0')}`;
+
+      weeks.push({
+        key: weekKey,
+        weekNum,
+        monday: new Date(currentMonday)
+      });
+
+      currentMonday.setDate(currentMonday.getDate() + 7);
+    }
+
+    // 生成趋势数据
+    weeks.forEach((week, index) => {
+      const stat = groupStats?.find(s => s.group_key === week.key);
+      const score = stat?.score_total || 0;
+
+      result.push({
+        label: `第${index + 1}周`,
+        score,
+        percentage: 0,
+        isCurrent: week.key === currentWeekKey
+      });
+    });
+
+    // 归一化百分比
+    const maxScore = Math.max(...result.map(r => r.score), 1);
+    result.forEach(item => {
+      item.percentage = (item.score / maxScore) * 100;
+    });
+
+    return result;
+  };
+
+  // 解析本季度趋势（各月）
+  const parseQuarterTrend = (groupStats: { group_key: string; score_total: number }[]): TrendDataItem[] => {
+    const quarter = getQuarterNumber(currentDate);
+    const year = currentDate.getFullYear();
+    const startMonth = (quarter - 1) * 3 + 1;
+
+    const result: TrendDataItem[] = [];
+    const currentMonth = new Date().getMonth() + 1;
+
+    for (let i = 0; i < 3; i++) {
+      const month = startMonth + i;
+      const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+
+      const stat = groupStats?.find(s => s.group_key === monthKey);
+      const score = stat?.score_total || 0;
+
+      result.push({
+        label: `${month}月`,
+        score,
+        percentage: 0,
+        isCurrent: month === currentMonth && year === new Date().getFullYear()
+      });
+    }
+
+    // 归一化百分比
+    const maxScore = Math.max(...result.map(r => r.score), 1);
+    result.forEach(item => {
+      item.percentage = (item.score / maxScore) * 100;
+    });
+
+    return result;
+  };
+
+  // 解析本年趋势（各季度）
+  const parseYearTrend = (groupStats: { group_key: string; score_total: number }[]): TrendDataItem[] => {
+    const year = currentDate.getFullYear();
+    const result: TrendDataItem[] = [];
+    const currentQuarter = getQuarterNumber(new Date());
+
+    for (let i = 1; i <= 4; i++) {
+      const quarterKey = `${year}-Q${i}`;
+
+      const stat = groupStats?.find(s => s.group_key === quarterKey);
+      const score = stat?.score_total || 0;
+
+      result.push({
+        label: `Q${i}`,
+        score,
+        percentage: 0,
+        isCurrent: i === currentQuarter && year === new Date().getFullYear()
+      });
+    }
+
+    // 归一化百分比
+    const maxScore = Math.max(...result.map(r => r.score), 1);
+    result.forEach(item => {
+      item.percentage = (item.score / maxScore) * 100;
+    });
+
+    return result;
+  };
+
   const loadPlanData = async () => {
     setLoading(true);
     // 重置状态，确保从干净状态开始
@@ -436,6 +645,46 @@ const Dashboard: React.FC = () => {
         console.warn('Failed to load task tree, using empty data:', treeError);
         // TaskTree API失败时，确保状态被清空（虽然开头已重置，但这里明确处理）
         setTasks([]);
+      }
+
+      // 获取趋势数据（独立的API调用）
+      try {
+        const trendGroupBy = getTrendGroupBy();
+        const trendPeriod = getTrendPeriod();
+
+        const groupStats = await planService.getPlanStats({
+          group_by: trendGroupBy,
+          ...trendPeriod
+        });
+
+        // 根据当前周期类型解析趋势数据
+        let trendData: TrendDataItem[] = [];
+        switch (currentPeriod) {
+          case 'day':
+          case 'week':
+            trendData = parseWeekTrend(groupStats || []);
+            break;
+          case 'month':
+            trendData = parseMonthTrend(groupStats || []);
+            break;
+          case 'quarter':
+            trendData = parseQuarterTrend(groupStats || []);
+            break;
+          case 'year':
+            trendData = parseYearTrend(groupStats || []);
+            break;
+        }
+
+        setStats(prev => ({
+          ...prev,
+          trendData
+        }));
+      } catch (trendError) {
+        console.warn('Failed to load trend data, using empty data:', trendError);
+        setStats(prev => ({
+          ...prev,
+          trendData: []
+        }));
       }
 
     } catch (error) {
@@ -706,14 +955,129 @@ const Dashboard: React.FC = () => {
 
           {/* 努力趋势图表 */}
           <div className="progress-card">
-            <h3>本周努力趋势</h3>
-            <div className="progress-chart">
-              {['一', '二', '三', '四', '五', '六', '日'].map((day, index) => (
-                <div key={day} className={`chart-bar ${index === new Date().getDay() - 1 ? 'today' : ''}`}>
-                  <div className="bar-fill" style={{ height: `${stats.weekProgress[index]}%` }}></div>
-                  <span className="bar-label">{day}</span>
-                </div>
-              ))}
+            <h3>
+              {currentPeriod === 'day' || currentPeriod === 'week' ? '本周' : ''}
+              {currentPeriod === 'month' ? '本月' : ''}
+              {currentPeriod === 'quarter' ? '本季' : ''}
+              {currentPeriod === 'year' ? '本年' : ''}
+              努力趋势
+            </h3>
+            <div className="trend-chart-container">
+              {stats.trendData.length > 0 ? (() => {
+                const width = 280;
+                const height = 160;
+                const padding = { top: 20, right: 10, bottom: 30, left: 35 };
+                const chartWidth = width - padding.left - padding.right;
+                const chartHeight = height - padding.top - padding.bottom;
+
+                // 计算最大值和刻度
+                const maxScore = Math.max(...stats.trendData.map(d => d.score), 1);
+                const yMax = Math.ceil(maxScore / 5) * 5 || 10; // 向上取整到5的倍数
+                const yTicks = 5;
+                const yStep = yMax / yTicks;
+
+                // 计算数据点坐标
+                const points = stats.trendData.map((item, i) => {
+                  const x = padding.left + (chartWidth / (stats.trendData.length - 1 || 1)) * i;
+                  const y = padding.top + chartHeight - (item.score / yMax) * chartHeight;
+                  return { x, y, ...item };
+                });
+
+                // 生成折线路径
+                const linePath = points.map((p, i) =>
+                  `${i === 0 ? 'M' : 'L'} ${p.x},${p.y}`
+                ).join(' ');
+
+                // 生成填充区域路径
+                const areaPath = `${linePath} L ${points[points.length - 1].x},${height - padding.bottom} L ${padding.left},${height - padding.bottom} Z`;
+
+                return (
+                  <svg width={width} height={height} className="trend-chart">
+                    {/* 背景网格线 */}
+                    {Array.from({ length: yTicks + 1 }).map((_, i) => {
+                      const y = padding.top + (chartHeight / yTicks) * i;
+                      return (
+                        <line
+                          key={`grid-${i}`}
+                          x1={padding.left}
+                          y1={y}
+                          x2={width - padding.right}
+                          y2={y}
+                          className="grid-line"
+                        />
+                      );
+                    })}
+
+                    {/* Y轴刻度标签 */}
+                    {Array.from({ length: yTicks + 1 }).map((_, i) => {
+                      const value = yMax - (yStep * i);
+                      const y = padding.top + (chartHeight / yTicks) * i;
+                      return (
+                        <text
+                          key={`y-label-${i}`}
+                          x={padding.left - 8}
+                          y={y + 4}
+                          className="axis-label"
+                          textAnchor="end"
+                        >
+                          {Math.round(value)}
+                        </text>
+                      );
+                    })}
+
+                    {/* 填充区域 */}
+                    <path
+                      d={areaPath}
+                      className="area-fill"
+                    />
+
+                    {/* 折线 */}
+                    <path
+                      d={linePath}
+                      className="trend-line"
+                    />
+
+                    {/* 数据点 */}
+                    {points.map((point, i) => (
+                      <g key={`point-${i}`}>
+                        {/* 数据点圆圈 */}
+                        <circle
+                          cx={point.x}
+                          cy={point.y}
+                          r={point.isCurrent ? 5 : 4}
+                          className={`data-point ${point.isCurrent ? 'current' : ''}`}
+                        />
+                        {/* 分数标签 */}
+                        {point.score > 0 && (
+                          <text
+                            x={point.x}
+                            y={point.y - 10}
+                            className="score-label"
+                            textAnchor="middle"
+                          >
+                            {point.score}
+                          </text>
+                        )}
+                      </g>
+                    ))}
+
+                    {/* X轴标签 */}
+                    {points.map((point, i) => (
+                      <text
+                        key={`x-label-${i}`}
+                        x={point.x}
+                        y={height - padding.bottom + 20}
+                        className={`x-axis-label ${point.isCurrent ? 'current' : ''}`}
+                        textAnchor="middle"
+                      >
+                        {point.label}
+                      </text>
+                    ))}
+                  </svg>
+                );
+              })() : (
+                <div className="empty-chart">暂无数据</div>
+              )}
             </div>
           </div>
 
