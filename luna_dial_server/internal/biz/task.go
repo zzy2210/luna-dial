@@ -427,6 +427,14 @@ func (uc *TaskUsecase) CreateSubTask(ctx context.Context, param CreateSubTaskPar
 		return nil, err // 返回仓库层的错误
 	}
 
+	// 创建后维护树优化字段（包括父任务计数）
+	if err := uc.repo.UpdateTreeOptimizationFields(ctx, task.ID, task.UserID); err != nil {
+		log.Warnf("Failed to update tree optimization for task %s: %v", task.ID, err)
+	}
+	if err := uc.repo.UpdateTreeOptimizationFields(ctx, task.ParentID, task.UserID); err != nil {
+		log.Warnf("Failed to update tree optimization for parent %s: %v", task.ParentID, err)
+	}
+
 	return task, nil
 }
 
