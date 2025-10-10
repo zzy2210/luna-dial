@@ -197,7 +197,9 @@ func (r *taskRepo) ListTasksByRootIDs(ctx context.Context, userID string, rootTa
 		return nil, err
 	}
 
-	return r.converter.DataToBizList(dataTasks), nil
+	// 转换为业务模型并构建树结构
+	bizTasks := r.converter.DataToBizList(dataTasks)
+	return r.buildTreeStructure(bizTasks), nil
 }
 
 // GetCompleteTaskTree 获取包含指定任务的完整任务树
