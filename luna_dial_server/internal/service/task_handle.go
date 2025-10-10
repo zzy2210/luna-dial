@@ -180,6 +180,7 @@ func (s *Service) handleCreateSubTask(c echo.Context) error {
     subTask, err := s.taskUsecase.CreateSubTask(c.Request().Context(), biz.CreateSubTaskParam{
         ParentID: parentID,
         UserID:   userID,
+        Title:    req.Title,
         Type:     periodType,
         Period: biz.Period{
             Start: startDate,
@@ -187,9 +188,10 @@ func (s *Service) handleCreateSubTask(c echo.Context) error {
         },
         Icon:     req.Icon,
         Priority: priority,
+        Tags:     req.Tags,
     })
     if err != nil {
-        return c.JSON(500, NewErrorResponse(500, "Failed to create subtask"))
+        return c.JSON(500, NewErrorResponse(500, fmt.Sprintf("Failed to create subtask: %v", err)))
     }
     return c.JSON(200, NewSuccessResponseWithMessage("create subtask endpoint", subTask))
 }
