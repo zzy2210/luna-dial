@@ -87,4 +87,3 @@ func (s *Service) handlePersonalBackupImportOverwrite(c echo.Context) error {
 		"imported_journals": res.ImportedJournals,
 	}))
 }
-
