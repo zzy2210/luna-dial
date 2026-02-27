@@ -7,7 +7,7 @@ WORKDIR /app
 
 # 复制前端项目文件
 COPY luna_dial_frontend/package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 COPY luna_dial_frontend/ ./
 
