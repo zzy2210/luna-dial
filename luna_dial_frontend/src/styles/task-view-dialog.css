@@ -517,7 +517,7 @@
 }
 
 /* 操作按钮组 */
-.task-actions {
+.task-view-dialog .task-actions {
   display: flex;
   justify-content: space-between;
   gap: 12px;
@@ -626,7 +626,7 @@
     color: #9ca3af;
   }
 
-  .task-actions {
+  .task-view-dialog .task-actions {
     background: #111827;
     border-color: #374151;
   }
@@ -681,7 +681,7 @@
     text-align: center;
   }
 
-  .task-actions {
+  .task-view-dialog .task-actions {
     flex-direction: column;
   }
 

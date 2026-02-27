@@ -94,7 +94,6 @@
 /* ==================== 主内容区域 ==================== */
 .dashboard-container {
   display: grid;
-  grid-template-columns: 380px 1fr 320px;
   gap: 1.5rem;
   padding: 1.5rem 2rem 120px 2rem;
   max-width: 1600px;
@@ -102,8 +101,18 @@
   min-height: calc(100vh - 100px);
 }
 
-/* ==================== 任务面板 ==================== */
-.task-panel {
+/* 有左侧上级任务面板的布局（日/周/月/季） */
+.dashboard-container.has-parent-panel {
+  grid-template-columns: 380px 1fr 320px;
+}
+
+/* 无左侧面板的布局（年任务） */
+.dashboard-container.no-parent-panel {
+  grid-template-columns: 1fr 320px;
+}
+
+/* ==================== 上级任务面板 ==================== */
+.parent-task-panel {
   background: var(--bg-card);
   backdrop-filter: blur(20px);
   border-radius: var(--radius-lg);
@@ -111,6 +120,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  max-height: calc(100vh - 180px);
 }
 
 .panel-header {
@@ -125,6 +135,24 @@
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--text-primary);
+  margin: 0;
+}
+
+.btn-view-tree {
+  padding: 0.5rem 1rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-view-tree:hover {
+  background: #0051D5;
+  transform: translateY(-1px);
 }
 
 .btn-create-task {
@@ -790,18 +818,23 @@
 
 /* ==================== 响应式设计 ==================== */
 @media (max-width: 1440px) {
-  .dashboard-container {
-    grid-template-columns: 320px 1fr 280px;
+  .dashboard-container.has-parent-panel {
+    grid-template-columns: 300px 1fr 280px;
+  }
+
+  .dashboard-container.no-parent-panel {
+    grid-template-columns: 1fr 280px;
   }
 }
 
 @media (max-width: 1024px) {
-  .dashboard-container {
+  .dashboard-container.has-parent-panel,
+  .dashboard-container.no-parent-panel {
     grid-template-columns: 1fr;
     padding: 1rem;
   }
 
-  .task-panel,
+  .parent-task-panel,
   .stats-panel {
     display: none;
   }
