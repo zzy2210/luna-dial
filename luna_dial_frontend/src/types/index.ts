@@ -37,6 +37,12 @@ export interface ApiResponse<T = any> {
   data?: T;
 }
 
+// 个人备份导入结果
+export interface PersonalBackupImportResult {
+  imported_tasks: number;
+  imported_journals: number;
+}
+
 // 任务状态枚举
 export const TaskStatus = {
   NotStarted: 0,
