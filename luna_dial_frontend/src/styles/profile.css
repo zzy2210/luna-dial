@@ -332,6 +332,64 @@ input:checked + .slider:before {
   color: var(--danger-color, #dc2626);
 }
 
+/* Backup Section */
+.backup-item {
+  padding: 20px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: var(--bg-secondary, #fff);
+}
+
+.backup-item h3 {
+  font-size: 16px;
+  margin: 0 0 8px;
+  color: var(--text-primary, #111827);
+}
+
+.backup-item p {
+  font-size: 14px;
+  color: var(--text-secondary, #6b7280);
+  margin: 0 0 16px;
+}
+
+.backup-item.danger {
+  border-color: var(--danger-light, #fecaca);
+  background: var(--danger-bg, #fef2f2);
+}
+
+.backup-item.danger h3 {
+  color: var(--danger-color, #dc2626);
+}
+
+.form-group .checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.backup-message {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  border: 1px solid transparent;
+}
+
+.backup-message.success {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
+.backup-message.error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
 /* About Section */
 .about-content {
   max-width: 600px;

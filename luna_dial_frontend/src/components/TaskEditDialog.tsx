@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import taskService from '../services/task';
 import { CreateTaskRequest, UpdateTaskRequest, PeriodType, Task } from '../types';
+import { getPeriodDates } from '../utils/dateUtils';
 import '../styles/dialog.css';
 
 interface TaskEditDialogProps {
@@ -8,6 +9,7 @@ interface TaskEditDialogProps {
   onClose: () => void;
   onSuccess: () => void;
   currentPeriod?: PeriodType;
+   currentDate?: Date;
   parentTaskId?: string;
 }
 
@@ -16,19 +18,12 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
   onClose,
   onSuccess,
   currentPeriod = 'day',
+   currentDate,
   parentTaskId
 }) => {
   const [loading, setLoading] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const isEdit = !!task;
-
-  // 本地时间格式化函数，避免 toISOString() 的时区问题
-  const formatLocalDate = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
 
   // 将ISO时间字符串转换为YYYY-MM-DD格式
   const isoToDateInput = (isoString: string): string => {
@@ -37,53 +32,13 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
 
   // 根据周期类型计算默认日期（左闭右开）
   const getDefaultDates = (periodType: PeriodType) => {
-    const today = new Date();
-    const startDate = new Date();
-    const endDate = new Date();
-
-    switch (periodType) {
-      case 'day':
-        // 今天 [today 00:00, tomorrow 00:00)
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setDate(endDate.getDate() + 1);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-      case 'week':
-        // 本周 ISO Week [Monday 00:00, Next Monday 00:00)
-        const day = today.getDay();
-        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-        startDate.setDate(diff);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setDate(startDate.getDate() + 7);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-      case 'month':
-        // 本月 [1st 00:00, Next Month 1st 00:00)
-        startDate.setDate(1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setMonth(endDate.getMonth() + 1, 1);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-      case 'quarter':
-        // 本季度 [Quarter Start 00:00, Next Quarter Start 00:00)
-        const quarter = Math.floor(today.getMonth() / 3);
-        startDate.setMonth(quarter * 3, 1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setMonth((quarter + 1) * 3, 1);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-      case 'year':
-        // 本年 [Jan 1 00:00, Next Year Jan 1 00:00)
-        startDate.setMonth(0, 1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setFullYear(endDate.getFullYear() + 1, 0, 1);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-    }
-
+    // 优先使用外部传入的当前界面日期，否则回退到今天
+    const baseDate = currentDate || new Date();
+    const dates = getPeriodDates(periodType, baseDate);
+    // Task 创建接口期望的是左闭右开的日期区间的日期字符串，这里与 Dashboard 保持一致
     return {
-      start_date: formatLocalDate(startDate),
-      end_date: formatLocalDate(endDate)
+      start_date: dates.start_date,
+      end_date: dates.end_date
     };
   };
 

@@ -1,12 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/auth';
+import personalBackupService from '../services/personalBackup';
 import '../styles/profile.css';
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [activeTab, setActiveTab] = useState('profile');
+  const [backupExporting, setBackupExporting] = useState(false);
+  const [backupImporting, setBackupImporting] = useState(false);
+  const [backupFile, setBackupFile] = useState<File | null>(null);
+  const [backupForce, setBackupForce] = useState(false);
+  const [backupExportMessage, setBackupExportMessage] = useState<string | null>(null);
+  const [backupExportError, setBackupExportError] = useState<string | null>(null);
+  const [backupImportMessage, setBackupImportMessage] = useState<string | null>(null);
+  const [backupImportError, setBackupImportError] = useState<string | null>(null);
 
   const handleLogout = async () => {
     await logout();
@@ -15,6 +24,62 @@ const Profile: React.FC = () => {
 
   const handleGoBack = () => {
     navigate('/dashboard');
+  };
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const handleExportBackup = async () => {
+    setBackupExportError(null);
+    setBackupExportMessage(null);
+    setBackupExporting(true);
+
+    try {
+      const { blob, filename } = await personalBackupService.exportArchive();
+      downloadBlob(blob, filename);
+      setBackupExportMessage(`导出成功：${filename}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '导出失败';
+      setBackupExportError(msg);
+    } finally {
+      setBackupExporting(false);
+    }
+  };
+
+  const handleImportBackup = async () => {
+    setBackupImportError(null);
+    setBackupImportMessage(null);
+
+    if (!backupFile) {
+      setBackupImportError('请先选择备份文件');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      '导入会覆盖你当前账号下的任务与日志数据（不可撤销）。确定继续吗？'
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setBackupImporting(true);
+    try {
+      const res = await personalBackupService.importOverwrite(backupFile, backupForce);
+      setBackupImportMessage(`导入成功：任务 ${res.imported_tasks} 条，日志 ${res.imported_journals} 条。`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '导入失败';
+      setBackupImportError(msg);
+    } finally {
+      setBackupImporting(false);
+    }
   };
 
   return (
@@ -60,6 +125,13 @@ const Profile: React.FC = () => {
             >
               <span className="nav-icon">🔒</span>
               账号安全
+            </button>
+            <button
+              className={`nav-item ${activeTab === 'backup' ? 'active' : ''}`}
+              onClick={() => setActiveTab('backup')}
+            >
+              <span className="nav-icon">💾</span>
+              数据备份
             </button>
             <button
               className={`nav-item ${activeTab === 'about' ? 'active' : ''}`}
@@ -198,6 +270,75 @@ const Profile: React.FC = () => {
                   <h3>删除账号</h3>
                   <p>永久删除您的账号和所有相关数据</p>
                   <button className="btn-danger">删除账号</button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {activeTab === 'backup' && (
+            <section className="settings-section">
+              <h2>数据备份</h2>
+              <div className="settings-card">
+                <div className="backup-item">
+                  <h3>导出备份</h3>
+                  <p>下载当前账号的任务与日志数据（tar.gz）。</p>
+                  <button
+                    className="btn-secondary"
+                    onClick={handleExportBackup}
+                    disabled={backupExporting}
+                  >
+                    {backupExporting ? '正在导出...' : '下载备份'}
+                  </button>
+                  {backupExportMessage && (
+                    <div className="backup-message success">{backupExportMessage}</div>
+                  )}
+                  {backupExportError && (
+                    <div className="backup-message error">{backupExportError}</div>
+                  )}
+                </div>
+
+                <div className="backup-item danger">
+                  <h3>导入备份（覆盖）</h3>
+                  <p>将备份文件导入到当前账号，并覆盖你现有的任务与日志数据。</p>
+
+                  <div className="form-group">
+                    <label>备份文件</label>
+                    <input
+                      type="file"
+                      accept=".tar.gz,application/gzip"
+                      onChange={(e) => setBackupFile(e.target.files?.[0] ?? null)}
+                    />
+                    <span className="form-hint">仅支持通过“导出备份”生成的 tar.gz 文件</span>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="checkbox-row">
+                      <input
+                        type="checkbox"
+                        checked={backupForce}
+                        onChange={(e) => setBackupForce(e.target.checked)}
+                      />
+                      <span>强制导入（忽略备份文件中的用户名校验）</span>
+                    </label>
+                    <span className="form-hint">
+                      仅在你确认该备份属于你且需要迁移账号时使用
+                    </span>
+                  </div>
+
+                  <button
+                    className="btn-danger"
+                    onClick={handleImportBackup}
+                    disabled={backupImporting || !backupFile}
+                  >
+                    {backupImporting ? '正在导入...' : '开始导入（覆盖）'}
+                  </button>
+
+                  {backupImportMessage && (
+                    <div className="backup-message success">{backupImportMessage}</div>
+                  )}
+                  {backupImportError && (
+                    <div className="backup-message error">{backupImportError}</div>
+                  )}
                 </div>
               </div>
             </section>

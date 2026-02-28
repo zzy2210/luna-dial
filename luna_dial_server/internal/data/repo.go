@@ -6,6 +6,7 @@ import (
     "fmt"
     "luna_dial/internal/biz"
     "luna_dial/internal/model"
+    "sort"
     "time"
 
     "gorm.io/gorm"
@@ -101,7 +102,35 @@ func (r *taskRepo) buildTreeStructure(tasks []*biz.Task) []*biz.Task {
 		}
 	}
 
+	// 对整个任务树按状态递归排序
+	sortTasksByStatus(rootTasks)
+
 	return rootTasks
+}
+
+// sortTasksByStatus 按状态递归排序任务树
+// 排序规则：未开始(0) < 进行中(1) < 已完成(2) < 已取消(3)
+// 状态相同时保持创建时间顺序
+func sortTasksByStatus(tasks []*biz.Task) {
+	if len(tasks) == 0 {
+		return
+	}
+
+	// 对当前层级的任务按状态排序
+	sort.Slice(tasks, func(i, j int) bool {
+		if tasks[i].Status != tasks[j].Status {
+			return tasks[i].Status < tasks[j].Status
+		}
+		// 状态相同时，保持创建时间顺序
+		return tasks[i].CreatedAt.Before(tasks[j].CreatedAt)
+	})
+
+	// 递归排序每个任务的子任务
+	for _, task := range tasks {
+		if len(task.Children) > 0 {
+			sortTasksByStatus(task.Children)
+		}
+	}
 }
 
 func (r *taskRepo) ListTaskParentTree(ctx context.Context, taskID, userID string) ([]*biz.Task, error) {

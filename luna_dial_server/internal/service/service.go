@@ -17,6 +17,8 @@ type Service struct {
 	userUsecase    *biz.UserUsecase
 	taskUsecase    *biz.TaskUsecase
 	planUsecase    *biz.PlanUsecase
+	// personalBackupUsecase 个人备份用例层
+	personalBackupUsecase *biz.PersonalBackupUsecase
 }
 
 func NewService(ctx context.Context, e *echo.Echo, dataInstance *data.Data) *Service {
@@ -24,14 +26,16 @@ func NewService(ctx context.Context, e *echo.Echo, dataInstance *data.Data) *Ser
 	taskRepo := data.NewTaskRepo(dataInstance.DB)
 	journalRepo := data.NewJournalRepo(dataInstance.DB)
 	userRepo := data.NewUserRepo(dataInstance.DB)
+	personalBackupRepo := data.NewPersonalBackupRepo(dataInstance.DB)
 
 	s := &Service{
-		e:              e,
-		systemConfig:   dataInstance.SystemConfig,
-		sessionManager: dataInstance.SessionManager,
-		journalUsecase: biz.NewJournalUsecase(journalRepo),
-		userUsecase:    biz.NewUserUsecase(userRepo),
-		taskUsecase:    biz.NewTaskUsecase(taskRepo),
+		e:                     e,
+		systemConfig:          dataInstance.SystemConfig,
+		sessionManager:        dataInstance.SessionManager,
+		journalUsecase:        biz.NewJournalUsecase(journalRepo),
+		userUsecase:           biz.NewUserUsecase(userRepo),
+		taskUsecase:           biz.NewTaskUsecase(taskRepo),
+		personalBackupUsecase: biz.NewPersonalBackupUsecase(personalBackupRepo),
 	}
 	s.planUsecase = biz.NewPlanUsecase(s.taskUsecase, s.journalUsecase)
 	return s
@@ -100,4 +104,8 @@ func (s *Service) setupSessionRoutes() {
 	planGroup := protected.Group("/plans")
 	planGroup.GET("", s.handleListPlans)
 	planGroup.GET("/stats", s.handleGetPlanStats)
+
+	backupGroup := protected.Group("/personal-backup")
+	backupGroup.POST("/export", s.handlePersonalBackupExport)
+	backupGroup.POST("/import-overwrite", s.handlePersonalBackupImportOverwrite)
 }

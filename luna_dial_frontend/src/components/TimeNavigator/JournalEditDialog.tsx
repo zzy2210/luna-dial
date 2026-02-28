@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import journalService from '../services/journal';
-import { Journal, CreateJournalRequest, UpdateJournalRequest, PeriodType } from '../types';
-import '../styles/dialog.css';
+import journalService from '../../services/journal';
+import { Journal, CreateJournalRequest, UpdateJournalRequest, PeriodType, JournalType } from '../../types';
+import '../../styles/dialog.css';
 
 interface JournalEditDialogProps {
   journal?: Journal | null;
@@ -93,18 +93,18 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
   useEffect(() => {
     if (journal) {
       // 编辑模式，加载现有日志数据
-      const journalTypeMap = {
-        0: 'day' as const,
-        1: 'week' as const,
-        2: 'month' as const,
-        3: 'quarter' as const,
-        4: 'year' as const
+      const journalTypeMap: Record<JournalType, PeriodType> = {
+        0: 'day',
+        1: 'week',
+        2: 'month',
+        3: 'quarter',
+        4: 'year',
       };
 
       setFormData({
         title: journal.title,
         content: journal.content,
-        journal_type: journalTypeMap[journal.journal_type] || 'day',
+        journal_type: journalTypeMap[journal.journal_type] ?? 'day',
         start_date: journal.time_period?.start || formatLocalDate(new Date()),
         end_date: journal.time_period?.end || formatLocalDate(new Date()),
         icon: journal.icon || '📝'
@@ -112,7 +112,7 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
     } else {
       // 新建模式，设置默认值
       const dates = getDefaultDates();
-      setFormData(prev => ({
+      setFormData((prev: CreateJournalRequest) => ({
         ...prev,
         journal_type: currentPeriod,
         ...dates
@@ -157,12 +157,12 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
   };
 
   const handleIconSelect = (icon: string) => {
-    setFormData(prev => ({ ...prev, icon }));
+    setFormData((prev: CreateJournalRequest) => ({ ...prev, icon }));
   };
 
   const icons = ['📝', '🌅', '🌙', '💭', '🎯', '📚', '💡', '🌟', '📊', '✨'];
 
-  const journalTypeLabels = {
+  const journalTypeLabels: Record<PeriodType, string> = {
     day: '日志',
     week: '周志',
     month: '月志',
@@ -184,7 +184,7 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
             <input
               type="text"
               value={formData.title}
-              onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(e) => setFormData((prev: CreateJournalRequest) => ({ ...prev, title: e.target.value }))}
               placeholder="输入日志标题"
               maxLength={100}
               required
@@ -195,7 +195,7 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
             <label>日志内容 *</label>
             <textarea
               value={formData.content}
-              onChange={e => setFormData(prev => ({ ...prev, content: e.target.value }))}
+              onChange={(e) => setFormData((prev: CreateJournalRequest) => ({ ...prev, content: e.target.value }))}
               placeholder="记录你的想法、计划或总结..."
               rows={10}
               required
@@ -210,7 +210,12 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
               <label>日志类型</label>
               <select
                 value={formData.journal_type}
-                onChange={e => setFormData(prev => ({ ...prev, journal_type: e.target.value as PeriodType }))}
+                onChange={(e) =>
+                  setFormData((prev: CreateJournalRequest) => ({
+                    ...prev,
+                    journal_type: e.target.value as PeriodType,
+                  }))
+                }
                 disabled={isEdit}
               >
                 <option value="day">日志</option>
@@ -226,7 +231,7 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
               <input
                 type="date"
                 value={formData.start_date}
-                onChange={e => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                onChange={(e) => setFormData((prev: CreateJournalRequest) => ({ ...prev, start_date: e.target.value }))}
                 disabled={isEdit}
                 required
               />
@@ -237,7 +242,7 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
               <input
                 type="date"
                 value={formData.end_date}
-                onChange={e => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
+                onChange={(e) => setFormData((prev: CreateJournalRequest) => ({ ...prev, end_date: e.target.value }))}
                 min={formData.start_date}
                 disabled={isEdit}
                 required

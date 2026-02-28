@@ -81,15 +81,26 @@ const TaskNode: React.FC<TaskNodeProps> = ({ task, level, onStatusChange, onClic
 
       {isExpanded && task.children && (
         <div className="task-children">
-          {task.children.map(child => (
-            <TaskNode
-              key={child.id}
-              task={child}
-              level={level + 1}
-              onStatusChange={onStatusChange}
-              onClick={onClick}
-            />
-          ))}
+          {task.children
+            .slice() // 创建副本避免修改原数组
+            .sort((a, b) => {
+              // 按状态排序：未开始(0) < 进行中(1) < 已完成(2) < 已取消(3)
+              if (a.status !== b.status) {
+                return a.status - b.status;
+              }
+              // 状态相同时保持原顺序
+              return 0;
+            })
+            .map(child => (
+              <TaskNode
+                key={child.id}
+                task={child}
+                level={level + 1}
+                onStatusChange={onStatusChange}
+                onClick={onClick}
+              />
+            ))
+          }
         </div>
       )}
     </>
@@ -97,10 +108,21 @@ const TaskNode: React.FC<TaskNodeProps> = ({ task, level, onStatusChange, onClic
 };
 
 const TaskTree: React.FC<TaskTreeProps> = ({ tasks, onTaskStatusChange, onTaskClick }) => {
+  // 对根任务按状态排序：未开始 → 进行中 → 已完成 → 已取消
+  const sortedTasks = React.useMemo(() => {
+    return [...tasks].sort((a, b) => {
+      if (a.status !== b.status) {
+        return a.status - b.status;
+      }
+      // 状态相同时保持原顺序
+      return 0;
+    });
+  }, [tasks]);
+
   return (
     <div className="task-tree">
-      {tasks.length > 0 ? (
-        tasks.map(task => (
+      {sortedTasks.length > 0 ? (
+        sortedTasks.map(task => (
           <TaskNode
             key={task.id}
             task={task}
