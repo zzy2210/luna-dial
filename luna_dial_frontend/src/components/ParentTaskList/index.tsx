@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Task, TaskStatus, TaskPriority, PeriodType } from '../../types';
 import planService from '../../services/plan';
 import { getPeriodDates, getParentPeriodConfig, getPeriodLabel } from '../../utils/dateUtils';
+import { TASK_STATUS_LABELS } from '../../constants/task';
 import '../../styles/parent-task-list.css';
 
 interface ParentTaskListProps {
@@ -63,16 +64,6 @@ const ParentTaskList: React.FC<ParentTaskListProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const getStatusText = (status: TaskStatus) => {
-    const statusMap = {
-      [TaskStatus.NotStarted]: '未开始',
-      [TaskStatus.InProgress]: '进行中',
-      [TaskStatus.Completed]: '已完成',
-      [TaskStatus.Cancelled]: '已取消',
-    };
-    return statusMap[status];
   };
 
   const getPriorityLabel = (priority: TaskPriority): string => {
@@ -170,25 +161,25 @@ const ParentTaskList: React.FC<ParentTaskListProps> = ({
           className={`filter-btn ${statusFilter.includes(TaskStatus.NotStarted) ? 'active' : ''}`}
           onClick={() => toggleStatusFilter(TaskStatus.NotStarted)}
         >
-          未开始
+          {TASK_STATUS_LABELS[TaskStatus.NotStarted]}
         </button>
         <button
           className={`filter-btn ${statusFilter.includes(TaskStatus.InProgress) ? 'active' : ''}`}
           onClick={() => toggleStatusFilter(TaskStatus.InProgress)}
         >
-          进行中
+          {TASK_STATUS_LABELS[TaskStatus.InProgress]}
         </button>
         <button
           className={`filter-btn ${statusFilter.includes(TaskStatus.Completed) ? 'active' : ''}`}
           onClick={() => toggleStatusFilter(TaskStatus.Completed)}
         >
-          已完成
+          {TASK_STATUS_LABELS[TaskStatus.Completed]}
         </button>
         <button
           className={`filter-btn ${statusFilter.includes(TaskStatus.Cancelled) ? 'active' : ''}`}
           onClick={() => toggleStatusFilter(TaskStatus.Cancelled)}
         >
-          已取消
+          {TASK_STATUS_LABELS[TaskStatus.Cancelled]}
         </button>
       </div>
 
@@ -222,10 +213,10 @@ const ParentTaskList: React.FC<ParentTaskListProps> = ({
                   onChange={(e) => handleStatusChange(task.id, Number(e.target.value) as TaskStatus)}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <option value={TaskStatus.NotStarted}>{getStatusText(TaskStatus.NotStarted)}</option>
-                  <option value={TaskStatus.InProgress}>{getStatusText(TaskStatus.InProgress)}</option>
-                  <option value={TaskStatus.Completed}>{getStatusText(TaskStatus.Completed)}</option>
-                  <option value={TaskStatus.Cancelled}>{getStatusText(TaskStatus.Cancelled)}</option>
+                  <option value={TaskStatus.NotStarted}>{TASK_STATUS_LABELS[TaskStatus.NotStarted]}</option>
+                  <option value={TaskStatus.InProgress}>{TASK_STATUS_LABELS[TaskStatus.InProgress]}</option>
+                  <option value={TaskStatus.Completed}>{TASK_STATUS_LABELS[TaskStatus.Completed]}</option>
+                  <option value={TaskStatus.Cancelled}>{TASK_STATUS_LABELS[TaskStatus.Cancelled]}</option>
                 </select>
 
                 <div className="task-actions">

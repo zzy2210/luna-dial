@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import journalService from '../services/journal';
 import { Journal, CreateJournalRequest, UpdateJournalRequest, PeriodType } from '../types';
+import { formatLocalDate, getPeriodDates } from '../utils/dateUtils';
+import { JOURNAL_ICONS } from '../constants/icons';
 import '../styles/dialog.css';
 
 interface JournalEditDialogProps {
@@ -21,74 +23,17 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const isEdit = !!journal;
 
-  // 本地时间格式化函数，避免 toISOString() 的时区问题
-  const formatLocalDate = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const [formData, setFormData] = useState<CreateJournalRequest>({
-    title: '',
-    content: '',
-    journal_type: currentPeriod,
-    start_date: formatLocalDate(new Date()),
-    end_date: formatLocalDate(new Date()),
-    icon: '📝'
-  });
-
-  // 根据当前周期设置默认日期
-  const getDefaultDates = () => {
-    const today = currentDate || new Date();
-    const startDate = new Date(today);
-    const endDate = new Date(today);
-
-    switch (currentPeriod) {
-      case 'day':
-        // 今天 [today 00:00, tomorrow 00:00)
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setDate(endDate.getDate() + 1);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-      case 'week':
-        // 本周 ISO Week [Monday 00:00, Next Monday 00:00)
-        const day = today.getDay();
-        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-        startDate.setDate(diff);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setDate(startDate.getDate() + 7);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-      case 'month':
-        // 本月 [1st 00:00, Next Month 1st 00:00)
-        startDate.setDate(1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setMonth(endDate.getMonth() + 1, 1);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-      case 'quarter':
-        // 本季度 [Quarter Start 00:00, Next Quarter Start 00:00)
-        const quarter = Math.floor(today.getMonth() / 3);
-        startDate.setMonth(quarter * 3, 1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setMonth((quarter + 1) * 3, 1);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-      case 'year':
-        // 本年 [Jan 1 00:00, Next Year Jan 1 00:00)
-        startDate.setMonth(0, 1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setFullYear(endDate.getFullYear() + 1, 0, 1);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-    }
-
+  const [formData, setFormData] = useState<CreateJournalRequest>(() => {
+    const dates = getPeriodDates(currentPeriod, currentDate || new Date());
     return {
-      start_date: formatLocalDate(startDate),
-      end_date: formatLocalDate(endDate)
+      title: '',
+      content: '',
+      journal_type: currentPeriod,
+      start_date: dates.start_date,
+      end_date: dates.end_date,
+      icon: '📝'
     };
-  };
+  });
 
   useEffect(() => {
     if (journal) {
@@ -111,7 +56,7 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
       });
     } else {
       // 新建模式，设置默认值
-      const dates = getDefaultDates();
+      const dates = getPeriodDates(currentPeriod, currentDate || new Date());
       setFormData(prev => ({
         ...prev,
         journal_type: currentPeriod,
@@ -159,8 +104,6 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
   const handleIconSelect = (icon: string) => {
     setFormData(prev => ({ ...prev, icon }));
   };
-
-  const icons = ['📝', '🌅', '🌙', '💭', '🎯', '📚', '💡', '🌟', '📊', '✨'];
 
   const journalTypeLabels = {
     day: '日志',
@@ -248,7 +191,7 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
           <div className="form-group">
             <label>日志图标</label>
             <div className="icon-selector">
-              {icons.map(icon => (
+              {JOURNAL_ICONS.map(icon => (
                 <button
                   key={icon}
                   type="button"

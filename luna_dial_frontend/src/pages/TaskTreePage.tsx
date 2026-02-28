@@ -5,6 +5,7 @@ import TaskViewDialog from '../components/TaskViewDialog';
 import TaskEditDialog from '../components/TaskEditDialog';
 import taskService from '../services/task';
 import { Task, TaskStatus } from '../types';
+import { TASK_STATUS_TO_API } from '../constants/task';
 import '../styles/task-tree-page.css';
 
 const TaskTreePage: React.FC = () => {
@@ -42,15 +43,8 @@ const TaskTreePage: React.FC = () => {
 
   const handleTaskStatusChange = async (taskId: string, status: TaskStatus) => {
     try {
-      const statusMap = {
-        [TaskStatus.NotStarted]: 'not_started',
-        [TaskStatus.InProgress]: 'in_progress',
-        [TaskStatus.Completed]: 'completed',
-        [TaskStatus.Cancelled]: 'cancelled'
-      };
-
       await taskService.updateTask(taskId, {
-        status: statusMap[status] as any
+        status: TASK_STATUS_TO_API[status]
       });
 
       // 刷新任务树

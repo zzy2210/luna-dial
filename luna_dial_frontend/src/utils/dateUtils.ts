@@ -1,5 +1,8 @@
 import { PeriodType } from '../types';
 
+// 一周的毫秒数
+const MillisPerWeek = 7 * 24 * 60 * 60 * 1000;
+
 /**
  * 本地时间格式化函数，避免 toISOString() 的时区问题
  */
@@ -11,13 +14,12 @@ export const formatLocalDate = (date: Date): string => {
 };
 
 /**
- * 获取ISO周数
+ * 获取指定年份的第一个周一（用于周数/周范围计算）
  */
-export const getWeekNumber = (date: Date): number => {
-  const year = date.getFullYear();
+export const getFirstMondayOfYear = (year: number): Date => {
   const yearStart = new Date(year, 0, 1);
 
-  let firstMonday = new Date(yearStart);
+  const firstMonday = new Date(yearStart);
   const startDay = yearStart.getDay();
   if (startDay === 0) {
     firstMonday.setDate(yearStart.getDate() + 1);
@@ -25,8 +27,40 @@ export const getWeekNumber = (date: Date): number => {
     firstMonday.setDate(yearStart.getDate() + (8 - startDay));
   }
 
+  return firstMonday;
+};
+
+/**
+ * 根据年份与周数获取该周的周一日期
+ */
+export const getDateFromYearWeek = (year: number, week: number): Date => {
+  const firstMonday = getFirstMondayOfYear(year);
+  const targetMonday = new Date(firstMonday);
+  targetMonday.setDate(firstMonday.getDate() + (week - 1) * 7);
+  return targetMonday;
+};
+
+/**
+ * 获取指定日期所在周的周一日期（周一 00:00）
+ */
+export const getWeekStartDate = (date: Date): Date => {
+  const startDate = new Date(date);
+  const day = startDate.getDay();
+  const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
+  startDate.setDate(diff);
+  startDate.setHours(0, 0, 0, 0);
+  return startDate;
+};
+
+/**
+ * 获取ISO周数
+ */
+export const getWeekNumber = (date: Date): number => {
+  const year = date.getFullYear();
+  const firstMonday = getFirstMondayOfYear(year);
+
   const diff = date.getTime() - firstMonday.getTime();
-  const weekNum = Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1;
+  const weekNum = Math.floor(diff / MillisPerWeek) + 1;
 
   return Math.max(1, Math.min(weekNum, 53));
 };
@@ -79,15 +113,15 @@ export const getPeriodDates = (period: PeriodType, baseDate: Date = new Date()) 
       endDate.setDate(endDate.getDate() + 1);
       endDate.setHours(0, 0, 0, 0);
       break;
-    case 'week':
+    case 'week': {
       // 指定周 ISO Week [Monday 00:00, Next Monday 00:00)
-      const day = startDate.getDay();
-      const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
-      startDate.setDate(diff);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setDate(startDate.getDate() + 7);
+      const monday = getWeekStartDate(startDate);
+      startDate.setTime(monday.getTime());
+      endDate.setTime(monday.getTime());
+      endDate.setDate(endDate.getDate() + 7);
       endDate.setHours(0, 0, 0, 0);
       break;
+    }
     case 'month':
       // 指定月 [1st 00:00, Next Month 1st 00:00)
       startDate.setDate(1);
@@ -95,7 +129,7 @@ export const getPeriodDates = (period: PeriodType, baseDate: Date = new Date()) 
       endDate.setMonth(endDate.getMonth() + 1, 1);
       endDate.setHours(0, 0, 0, 0);
       break;
-    case 'quarter':
+    case 'quarter': {
       // 指定季度 [Quarter Start 00:00, Next Quarter Start 00:00)
       const quarter = Math.floor(startDate.getMonth() / 3);
       startDate.setMonth(quarter * 3, 1);
@@ -103,6 +137,7 @@ export const getPeriodDates = (period: PeriodType, baseDate: Date = new Date()) 
       endDate.setMonth((quarter + 1) * 3, 1);
       endDate.setHours(0, 0, 0, 0);
       break;
+    }
     case 'year':
       // 指定年 [Jan 1 00:00, Next Year Jan 1 00:00)
       startDate.setMonth(0, 1);
@@ -130,17 +165,7 @@ export const formatPeriodRange = (date: Date, period: PeriodType): string => {
       return '';  // 日期在外面单独显示
     case 'week': {
       const weekNum = getWeekNumber(date);
-      // 计算周的起止日期
-      const yearStart = new Date(year, 0, 1);
-      let firstMonday = new Date(yearStart);
-      const firstDayOfYear = yearStart.getDay();
-      if (firstDayOfYear === 0) {
-        firstMonday.setDate(yearStart.getDate() + 1);
-      } else if (firstDayOfYear > 1) {
-        firstMonday.setDate(yearStart.getDate() + (8 - firstDayOfYear));
-      }
-      const weekStart = new Date(firstMonday);
-      weekStart.setDate(firstMonday.getDate() + (weekNum - 1) * 7);
+      const weekStart = getDateFromYearWeek(year, weekNum);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
 

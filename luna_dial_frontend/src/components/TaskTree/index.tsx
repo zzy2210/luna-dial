@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Task, TaskStatus } from '../../types';
+import { TASK_STATUS_LABELS } from '../../constants/task';
 
 interface TaskTreeProps {
   tasks: Task[];
@@ -20,16 +21,6 @@ const TaskNode: React.FC<TaskNodeProps> = ({ task, level, onStatusChange, onClic
   const getTaskTypeClass = (level: number) => {
     const classes = ['task-year', 'task-quarter', 'task-month', 'task-week', 'task-day'];
     return classes[Math.min(level, classes.length - 1)];
-  };
-
-  const getStatusText = (status: TaskStatus) => {
-    const statusMap = {
-      [TaskStatus.NotStarted]: '未开始',
-      [TaskStatus.InProgress]: '进行中',
-      [TaskStatus.Completed]: '已完成',
-      [TaskStatus.Cancelled]: '已取消',
-    };
-    return statusMap[status];
   };
 
   const handleToggle = (e: React.MouseEvent) => {
@@ -72,10 +63,10 @@ const TaskNode: React.FC<TaskNodeProps> = ({ task, level, onStatusChange, onClic
           onChange={handleStatusChange}
           onClick={(e) => e.stopPropagation()}
         >
-          <option value={TaskStatus.NotStarted}>{getStatusText(TaskStatus.NotStarted)}</option>
-          <option value={TaskStatus.InProgress}>{getStatusText(TaskStatus.InProgress)}</option>
-          <option value={TaskStatus.Completed}>{getStatusText(TaskStatus.Completed)}</option>
-          <option value={TaskStatus.Cancelled}>{getStatusText(TaskStatus.Cancelled)}</option>
+          <option value={TaskStatus.NotStarted}>{TASK_STATUS_LABELS[TaskStatus.NotStarted]}</option>
+          <option value={TaskStatus.InProgress}>{TASK_STATUS_LABELS[TaskStatus.InProgress]}</option>
+          <option value={TaskStatus.Completed}>{TASK_STATUS_LABELS[TaskStatus.Completed]}</option>
+          <option value={TaskStatus.Cancelled}>{TASK_STATUS_LABELS[TaskStatus.Cancelled]}</option>
         </select>
       </div>
 

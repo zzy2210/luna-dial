@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import taskService from '../services/task';
 import { CreateTaskRequest, UpdateTaskRequest, PeriodType, Task } from '../types';
 import { getPeriodDates } from '../utils/dateUtils';
+import { TASK_ICONS } from '../constants/icons';
+import { parseTagsFromJsonString } from '../utils/tags';
 import '../styles/dialog.css';
 
 interface TaskEditDialogProps {
@@ -28,28 +30,6 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
   // 将ISO时间字符串转换为YYYY-MM-DD格式
   const isoToDateInput = (isoString: string): string => {
     return isoString.split('T')[0];
-  };
-
-  // 根据周期类型计算默认日期（左闭右开）
-  const getDefaultDates = (periodType: PeriodType) => {
-    // 优先使用外部传入的当前界面日期，否则回退到今天
-    const baseDate = currentDate || new Date();
-    const dates = getPeriodDates(periodType, baseDate);
-    // Task 创建接口期望的是左闭右开的日期区间的日期字符串，这里与 Dashboard 保持一致
-    return {
-      start_date: dates.start_date,
-      end_date: dates.end_date
-    };
-  };
-
-  // 解析标签
-  const parseTags = (tags?: string): string[] => {
-    if (!tags) return [];
-    try {
-      return JSON.parse(tags);
-    } catch {
-      return [];
-    }
   };
 
   // 将任务类型数字转换为字符串
@@ -86,12 +66,12 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
         period_type: taskTypeToPeriodType(task.task_type),
         priority: priorityToString(task.priority),
         icon: task.icon || '📝',
-        tags: parseTags(task.tags),
+        tags: parseTagsFromJsonString(task.tags),
         parent_id: task.parent_id
       };
     } else {
       // 新建模式：使用默认值
-      const dates = getDefaultDates(currentPeriod);
+      const dates = getPeriodDates(currentPeriod, currentDate || new Date());
       return {
         title: '',
         start_date: dates.start_date,
@@ -109,7 +89,7 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
 
   // 处理周期类型改变：自动更新日期为符合规范的格式
   const handlePeriodTypeChange = (newPeriodType: PeriodType) => {
-    const dates = getDefaultDates(newPeriodType);
+    const dates = getPeriodDates(newPeriodType, currentDate || new Date());
     setFormData(prev => ({
       ...prev,
       period_type: newPeriodType,
@@ -179,8 +159,6 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
   const handleIconSelect = (icon: string) => {
     setFormData(prev => ({ ...prev, icon }));
   };
-
-  const icons = ['📝', '💡', '🎯', '📚', '💻', '🏃', '🎨', '🌟', '🔧', '📊'];
 
   return (
     <div className="dialog-overlay" onClick={onClose}>
@@ -285,7 +263,7 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
           <div className="form-group">
             <label>任务图标</label>
             <div className="icon-selector">
-              {icons.map(icon => (
+              {TASK_ICONS.map(icon => (
                 <button
                   key={icon}
                   type="button"

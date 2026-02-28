@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Task, TaskStatus, TaskPriority, TaskType } from '../types';
+import { parseTagsFromJsonString } from '../utils/tags';
+import { TASK_STATUS_LABELS } from '../constants/task';
 import '../styles/dialog.css';
 import '../styles/task-view-dialog.css';
 
@@ -32,13 +34,6 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
     4: '年度任务'
   };
 
-  const statusLabels = {
-    [TaskStatus.NotStarted]: '未开始',
-    [TaskStatus.InProgress]: '进行中',
-    [TaskStatus.Completed]: '已完成',
-    [TaskStatus.Cancelled]: '已取消'
-  };
-
   const priorityLabels = {
     [TaskPriority.Low]: '低',
     [TaskPriority.Medium]: '中',
@@ -53,15 +48,6 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
       month: 'long',
       day: 'numeric'
     });
-  };
-
-  const parseTags = (tags?: string): string[] => {
-    if (!tags) return [];
-    try {
-      return JSON.parse(tags);
-    } catch {
-      return [];
-    }
   };
 
   const handleDelete = () => {
@@ -132,7 +118,7 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
     return stars;
   };
 
-  const tags = parseTags(task.tags);
+  const tags = parseTagsFromJsonString(task.tags);
 
   return (
     <div className="dialog-overlay" onClick={onClose}>
@@ -156,7 +142,7 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
                 </span>
                 <span className="meta-divider">·</span>
                 <span className={`status-badge ${getStatusClassName(task.status)}`}>
-                  {statusLabels[task.status]}
+                  {TASK_STATUS_LABELS[task.status]}
                 </span>
               </div>
             </div>

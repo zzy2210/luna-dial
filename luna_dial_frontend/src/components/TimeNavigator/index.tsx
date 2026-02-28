@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PeriodType } from '../../types';
+import { formatLocalDate, getDateFromYearWeek, getFirstMondayOfYear, getWeekNumber } from '../../utils/dateUtils';
 import './styles.css';
 
 interface TimeNavigatorProps {
@@ -21,19 +22,10 @@ const TimeNavigator: React.FC<TimeNavigatorProps> = ({
   // 生成周选项
   const generateWeekOptions = (year: number) => {
     const options: Array<{ value: string; label: string }> = [];
-    const yearStart = new Date(year, 0, 1);
-
-    // 找到第一个周一（ISO周的开始）
-    let firstMonday = new Date(yearStart);
-    const startDay = yearStart.getDay();
-    if (startDay === 0) { // 周日
-      firstMonday.setDate(yearStart.getDate() + 1);
-    } else if (startDay > 1) { // 周二到周六
-      firstMonday.setDate(yearStart.getDate() + (8 - startDay));
-    }
+    const firstMonday = getFirstMondayOfYear(year);
 
     const yearEnd = new Date(year, 11, 31);
-    let currentMonday = new Date(firstMonday);
+    const currentMonday = new Date(firstMonday);
     let weekNum = 1;
 
     while (currentMonday.getFullYear() <= year && weekNum <= 53) {
@@ -43,15 +35,15 @@ const TimeNavigator: React.FC<TimeNavigatorProps> = ({
       weekEnd.setDate(currentMonday.getDate() + 6);
 
       const startMonth = currentMonday.getMonth() + 1;
-      const startDay = currentMonday.getDate();
+      const startDayOfMonth = currentMonday.getDate();
       const endMonth = weekEnd.getMonth() + 1;
-      const endDay = weekEnd.getDate();
+      const endDayOfMonth = weekEnd.getDate();
 
       let rangeText;
       if (startMonth === endMonth) {
-        rangeText = `${startMonth}月${startDay}日-${endDay}日`;
+        rangeText = `${startMonth}月${startDayOfMonth}日-${endDayOfMonth}日`;
       } else {
-        rangeText = `${startMonth}月${startDay}日-${endMonth}月${endDay}日`;
+        rangeText = `${startMonth}月${startDayOfMonth}日-${endMonth}月${endDayOfMonth}日`;
       }
 
       options.push({
@@ -64,24 +56,6 @@ const TimeNavigator: React.FC<TimeNavigatorProps> = ({
     }
 
     return options;
-  };
-
-  // 根据年份和周数获取日期
-  const getDateFromWeek = (year: number, week: number): Date => {
-    const yearStart = new Date(year, 0, 1);
-
-    let firstMonday = new Date(yearStart);
-    const startDay = yearStart.getDay();
-    if (startDay === 0) {
-      firstMonday.setDate(yearStart.getDate() + 1);
-    } else if (startDay > 1) {
-      firstMonday.setDate(yearStart.getDate() + (8 - startDay));
-    }
-
-    const targetMonday = new Date(firstMonday);
-    targetMonday.setDate(firstMonday.getDate() + (week - 1) * 7);
-
-    return targetMonday;
   };
 
   // 更新周选项
@@ -104,7 +78,7 @@ const TimeNavigator: React.FC<TimeNavigatorProps> = ({
     if (e.target.value) {
       const [year, weekStr] = e.target.value.split('-W');
       const week = parseInt(weekStr);
-      const newDate = getDateFromWeek(parseInt(year), week);
+      const newDate = getDateFromYearWeek(parseInt(year), week);
       onDateChange(newDate);
       setShowPicker(false);
     }
@@ -146,33 +120,6 @@ const TimeNavigator: React.FC<TimeNavigatorProps> = ({
     }
   };
 
-  // 格式化日期为 YYYY-MM-DD
-  const formatDate = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  // 获取当前周数（ISO周）
-  const getCurrentWeek = (date: Date): number => {
-    const year = date.getFullYear();
-    const yearStart = new Date(year, 0, 1);
-
-    let firstMonday = new Date(yearStart);
-    const startDay = yearStart.getDay();
-    if (startDay === 0) {
-      firstMonday.setDate(yearStart.getDate() + 1);
-    } else if (startDay > 1) {
-      firstMonday.setDate(yearStart.getDate() + (8 - startDay));
-    }
-
-    const diff = date.getTime() - firstMonday.getTime();
-    const weekNum = Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1;
-
-    return Math.max(1, Math.min(weekNum, 53));
-  };
-
   // 生成年份选项
   const generateYearOptions = () => {
     const currentYear = new Date().getFullYear();
@@ -195,7 +142,7 @@ const TimeNavigator: React.FC<TimeNavigatorProps> = ({
           <input
             type="date"
             className="date-picker"
-            value={formatDate(currentDate)}
+            value={formatLocalDate(currentDate)}
             onChange={handleDateChange}
           />
         );
@@ -214,7 +161,7 @@ const TimeNavigator: React.FC<TimeNavigatorProps> = ({
             </select>
             <select
               className="week-picker"
-              value={`${currentDate.getFullYear()}-W${getCurrentWeek(currentDate)}`}
+              value={`${currentDate.getFullYear()}-W${getWeekNumber(currentDate)}`}
               onChange={handleWeekChange}
             >
               <option value="">选择周</option>

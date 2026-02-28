@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import taskService from '../services/task';
 import { CreateTaskRequest, PeriodType } from '../types';
+import { getPeriodDates } from '../utils/dateUtils';
+import { TASK_ICONS } from '../constants/icons';
 import '../styles/dialog.css';
 
 interface TaskCreateDialogProps {
@@ -19,69 +21,9 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [tagInput, setTagInput] = useState('');
 
-  // 本地时间格式化函数，避免 toISOString() 的时区问题
-  const formatLocalDate = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  // 根据周期类型计算默认日期（左闭右开）
-  const getDefaultDates = (periodType: PeriodType) => {
-    const today = new Date();
-    const startDate = new Date();
-    const endDate = new Date();
-
-    switch (periodType) {
-      case 'day':
-        // 今天 [today 00:00, tomorrow 00:00)
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setDate(endDate.getDate() + 1);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-      case 'week':
-        // 本周 ISO Week [Monday 00:00, Next Monday 00:00)
-        const day = today.getDay();
-        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-        startDate.setDate(diff);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setDate(startDate.getDate() + 7);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-      case 'month':
-        // 本月 [1st 00:00, Next Month 1st 00:00)
-        startDate.setDate(1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setMonth(endDate.getMonth() + 1, 1);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-      case 'quarter':
-        // 本季度 [Quarter Start 00:00, Next Quarter Start 00:00)
-        const quarter = Math.floor(today.getMonth() / 3);
-        startDate.setMonth(quarter * 3, 1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setMonth((quarter + 1) * 3, 1);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-      case 'year':
-        // 本年 [Jan 1 00:00, Next Year Jan 1 00:00)
-        startDate.setMonth(0, 1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setFullYear(endDate.getFullYear() + 1, 0, 1);
-        endDate.setHours(0, 0, 0, 0);
-        break;
-    }
-
-    return {
-      start_date: formatLocalDate(startDate),
-      end_date: formatLocalDate(endDate)
-    };
-  };
-
   // 使用计算后的默认日期初始化表单
   const [formData, setFormData] = useState<CreateTaskRequest>(() => {
-    const dates = getDefaultDates(currentPeriod);
+    const dates = getPeriodDates(currentPeriod, new Date());
     return {
       title: '',
       start_date: dates.start_date,
@@ -96,7 +38,7 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
 
   // 处理周期类型改变：自动更新日期为符合规范的格式
   const handlePeriodTypeChange = (newPeriodType: PeriodType) => {
-    const dates = getDefaultDates(newPeriodType);
+    const dates = getPeriodDates(newPeriodType, new Date());
     setFormData(prev => ({
       ...prev,
       period_type: newPeriodType,
@@ -149,8 +91,6 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
   const handleIconSelect = (icon: string) => {
     setFormData(prev => ({ ...prev, icon }));
   };
-
-  const icons = ['📝', '💡', '🎯', '📚', '💻', '🏃', '🎨', '🌟', '🔧', '📊'];
 
   return (
     <div className="dialog-overlay" onClick={onClose}>
@@ -226,7 +166,7 @@ const TaskCreateDialog: React.FC<TaskCreateDialogProps> = ({
           <div className="form-group">
             <label>任务图标</label>
             <div className="icon-selector">
-              {icons.map(icon => (
+              {TASK_ICONS.map(icon => (
                 <button
                   key={icon}
                   type="button"

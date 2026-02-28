@@ -12,11 +12,13 @@ import TaskViewDialog from '../components/TaskViewDialog';
 import JournalEditDialog from '../components/JournalEditDialog';
 import JournalViewDialog from '../components/JournalViewDialog';
 import ScoreEditDialog from '../components/ScoreEditDialog';
+import { TASK_STATUS_TO_API } from '../constants/task';
 import {
   formatLocalDate,
   getWeekNumber,
   getQuarterNumber,
   getPeriodDates,
+  getWeekStartDate,
   formatPeriodRange,
   getCurrentDateString,
   getPeriodLabel
@@ -75,15 +77,8 @@ const Dashboard: React.FC = () => {
 
   const handleTaskStatusChange = async (taskId: string, status: TaskStatus) => {
     try {
-      const statusMap = {
-        [TaskStatus.NotStarted]: 'not_started',
-        [TaskStatus.InProgress]: 'in_progress',
-        [TaskStatus.Completed]: 'completed',
-        [TaskStatus.Cancelled]: 'cancelled'
-      };
-
       await taskService.updateTask(taskId, {
-        status: statusMap[status] as any
+        status: TASK_STATUS_TO_API[status]
       });
 
       // 刷新数据
@@ -250,11 +245,7 @@ const Dashboard: React.FC = () => {
 
   // 解析本周趋势（7天）
   const parseWeekTrend = (groupStats: { group_key: string; score_total: number }[]): TrendDataItem[] => {
-    const weekStart = new Date(currentDate);
-    const day = weekStart.getDay();
-    const diff = weekStart.getDate() - day + (day === 0 ? -6 : 1);
-    weekStart.setDate(diff);
-    weekStart.setHours(0, 0, 0, 0);
+    const weekStart = getWeekStartDate(currentDate);
 
     const result: TrendDataItem[] = [];
     const today = new Date();
