@@ -77,6 +77,14 @@ const createConcurrencyLimiter = (maxConcurrency: number) => {
   };
 };
 
+// 裁剪父任务链到分组父任务（兼容后端 /parents 可能“包含自身”的返回）
+const trimParentsChainToGroup = (groupId: string, parents: TaskParentNode[]): TaskParentNode[] => {
+  if (parents.length === 0) return parents;
+  const index = parents.findIndex(p => p.id === groupId);
+  if (index < 0) return parents;
+  return parents.slice(0, index + 1);
+};
+
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
@@ -737,14 +745,15 @@ const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    const limit = createConcurrencyLimiter(PARENTS_FETCH_CONCURRENCY);
+	    const limit = createConcurrencyLimiter(PARENTS_FETCH_CONCURRENCY);
 
-    // 对每个分组选择一个子任务作为 /parents 请求目标：
-    // /api/v1/tasks/{childTaskId}/parents 返回“根 → … → 直接父任务（也就是 groupId）”
-    const targets = taskGroups
-      .filter(g => g.groupId !== 'MISC')
-      .map(g => ({ groupId: g.groupId, targetTaskId: g.tasks[0]?.id }))
-      .filter((t): t is { groupId: string; targetTaskId: string } => Boolean(t.targetTaskId));
+	    // 对每个分组选择一个子任务作为 /parents 请求目标：
+	    // /api/v1/tasks/{childTaskId}/parents 当前实现可能返回“根 → … → groupId → childTaskId（包含自身）”
+	    // 因此需要把链路裁剪到 groupId 为止，避免分组标题/面包屑退化为 “任务 {id}”
+	    const targets = taskGroups
+	      .filter(g => g.groupId !== 'MISC')
+	      .map(g => ({ groupId: g.groupId, targetTaskId: g.tasks[0]?.id }))
+	      .filter((t): t is { groupId: string; targetTaskId: string } => Boolean(t.targetTaskId));
 
     const targetsToFetch = targets.filter((t) => {
       const cached = parentsCacheByTaskIdRef.current[t.groupId];
@@ -776,7 +785,8 @@ const Dashboard: React.FC = () => {
       targetsToFetch.map((t) =>
         limit(async () => {
           try {
-            const parents = await taskService.getTaskParents(t.targetTaskId);
+            const parentsRaw = await taskService.getTaskParents(t.targetTaskId);
+            const parents = trimParentsChainToGroup(t.groupId, parentsRaw);
             if (!isMountedRef.current) return;
             setParentsCacheByTaskId(prev => ({
               ...prev,
@@ -819,7 +829,8 @@ const Dashboard: React.FC = () => {
 
     void (async () => {
       try {
-        const parents = await taskService.getTaskParents(targetTaskId);
+        const parentsRaw = await taskService.getTaskParents(targetTaskId);
+        const parents = trimParentsChainToGroup(groupId, parentsRaw);
         if (!isMountedRef.current) return;
         setParentsCacheByTaskId(prev => ({
           ...prev,
