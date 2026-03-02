@@ -248,7 +248,7 @@ const TimeNavigator: React.FC<TimeNavigatorProps> = ({
     <div className="time-navigator">
       {/* 前进/后退按钮 */}
       <button
-        className="nav-btn nav-prev"
+        className="time-nav-btn nav-prev"
         onClick={() => onNavigate('prev')}
         title="上一个周期"
       >
@@ -256,7 +256,7 @@ const TimeNavigator: React.FC<TimeNavigatorProps> = ({
       </button>
 
       <button
-        className="nav-btn nav-next"
+        className="time-nav-btn nav-next"
         onClick={() => onNavigate('next')}
         title="下一个周期"
       >

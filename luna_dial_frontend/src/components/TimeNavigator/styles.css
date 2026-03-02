@@ -6,7 +6,7 @@
 }
 
 /* 前进/后退按钮 */
-.nav-btn {
+.time-nav-btn {
   padding: 0.5rem 0.75rem;
   background: white;
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -17,12 +17,12 @@
   color: var(--text-primary);
 }
 
-.nav-btn:hover {
+.time-nav-btn:hover {
   background: rgba(0, 0, 0, 0.05);
   border-color: var(--primary-color);
 }
 
-.nav-btn:active {
+.time-nav-btn:active {
   transform: scale(0.95);
 }
 
@@ -91,4 +91,22 @@
 
 .btn-time-jump:active {
   transform: scale(0.98);
+}
+
+@media (max-width: 768px) {
+  .picker-container {
+    flex-wrap: wrap;
+  }
+
+  .week-picker {
+    min-width: 160px;
+  }
+
+  .month-picker {
+    min-width: 120px;
+  }
+
+  .quarter-picker {
+    min-width: 140px;
+  }
 }

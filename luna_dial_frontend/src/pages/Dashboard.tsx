@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/auth';
 import ParentTaskList from '../components/ParentTaskList';
 import TimeNavigator from '../components/TimeNavigator';
+import TaskGroupCard from '../components/TaskGroupCard';
+import TaskGroupSidebar from '../components/TaskGroupSidebar';
 import taskService from '../services/task';
 import journalService from '../services/journal';
 import planService from '../services/plan';
@@ -24,6 +26,8 @@ import {
   getPeriodLabel
 } from '../utils/dateUtils';
 import '../styles/dashboard.css';
+import type { BreadcrumbItem, BreadcrumbStatus } from '../components/AncestryBreadcrumb';
+import type { TaskParentNode } from '../services/task';
 
 // 趋势数据项接口
 interface TrendDataItem {
@@ -32,6 +36,46 @@ interface TrendDataItem {
   percentage: number;
   isCurrent: boolean;
 }
+
+// 父任务链请求并发上限
+const PARENTS_FETCH_CONCURRENCY = 4;
+
+// 父任务链缓存状态
+type ParentsCacheStatus = 'idle' | 'loading' | 'success' | 'error';
+
+// 父任务链缓存条目
+interface ParentsCacheEntry {
+  status: ParentsCacheStatus;
+  parents: TaskParentNode[];
+  errorMessage?: string;
+}
+
+// 创建并发限制器（避免首次渲染请求风暴）
+const createConcurrencyLimiter = (maxConcurrency: number) => {
+  let activeCount = 0;
+  const queue: Array<() => void> = [];
+
+  const runNext = () => {
+    activeCount -= 1;
+    const next = queue.shift();
+    if (next) {
+      next();
+    }
+  };
+
+  return async <T,>(fn: () => Promise<T>): Promise<T> => {
+    if (activeCount >= maxConcurrency) {
+      await new Promise<void>((resolve) => queue.push(resolve));
+    }
+
+    activeCount += 1;
+    try {
+      return await fn();
+    } finally {
+      runNext();
+    }
+  };
+};
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -54,6 +98,16 @@ const Dashboard: React.FC = () => {
   const [viewingJournal, setViewingJournal] = useState<Journal | null>(null);
   const [showScoreDialog, setShowScoreDialog] = useState(false);
   const [editingScoreTask, setEditingScoreTask] = useState<Task | null>(null);
+
+  const parentsCacheInflightRef = useRef<Set<string>>(new Set());
+  const [parentsCacheByTaskId, setParentsCacheByTaskId] = useState<Record<string, ParentsCacheEntry>>({});
+  const parentsCacheByTaskIdRef = useRef<Record<string, ParentsCacheEntry>>({});
+  const isMountedRef = useRef(true);
+
+  // 分组卡片 DOM 引用表（用于 sidebar 定位滚动）
+  const taskGroupElementByIdRef = useRef<Record<string, HTMLDivElement | null>>({});
+  const [activeTaskGroupId, setActiveTaskGroupId] = useState<string | null>(null);
+  const activeTaskGroupIdRef = useRef<string | null>(null);
 
   // 统计数据
   const [stats, setStats] = useState({
@@ -529,48 +583,323 @@ const Dashboard: React.FC = () => {
     loadPlanData();
   }, [currentPeriod, currentDate]);
 
+  useEffect(() => {
+    parentsCacheByTaskIdRef.current = parentsCacheByTaskId;
+  }, [parentsCacheByTaskId]);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    activeTaskGroupIdRef.current = activeTaskGroupId;
+  }, [activeTaskGroupId]);
+
+  const currentPeriodTaskType = useMemo(() => {
+    return currentPeriod === 'day' ? 0 :
+           currentPeriod === 'week' ? 1 :
+           currentPeriod === 'month' ? 2 :
+           currentPeriod === 'quarter' ? 3 : 4;
+  }, [currentPeriod]);
+
+  const taskById = useMemo(() => {
+    const map = new Map<string, Task>();
+    for (const task of planData?.tasks ?? []) {
+      map.set(task.id, task);
+    }
+    return map;
+  }, [planData?.tasks]);
+
+  const currentPeriodTasks = useMemo(() => {
+    return (planData?.tasks ?? []).filter(task => task.task_type === currentPeriodTaskType);
+  }, [planData?.tasks, currentPeriodTaskType]);
+
+  const taskGroups = useMemo(() => {
+    const groups = new Map<string, Task[]>();
+    const misc: Task[] = [];
+
+    for (const task of currentPeriodTasks) {
+      if (task.parent_id) {
+        const existing = groups.get(task.parent_id);
+        if (existing) {
+          existing.push(task);
+        } else {
+          groups.set(task.parent_id, [task]);
+        }
+      } else {
+        misc.push(task);
+      }
+    }
+
+    const entries = Array.from(groups.entries())
+      .map(([parentId, tasks]) => ({
+        groupId: parentId,
+        title: taskById.get(parentId)?.title ?? `任务 ${parentId}`,
+        tasks
+      }))
+      .sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'));
+
+    if (misc.length > 0) {
+      entries.push({
+        groupId: 'MISC',
+        title: '其他',
+        tasks: misc
+      });
+    }
+
+    return entries;
+  }, [currentPeriodTasks, taskById]);
+
+  const sidebarItems = useMemo(() => {
+    // 从父任务链推导分组标题（避免 planData.tasks 不含父任务时退化为 taskId）
+    const resolveGroupTitle = (groupId: string, fallbackTitle: string) => {
+      const state = parentsCacheByTaskId[groupId];
+      if (!state || state.status !== 'success') {
+        return fallbackTitle;
+      }
+      const last = state.parents[state.parents.length - 1];
+      if (!last || last.id !== groupId) {
+        return fallbackTitle;
+      }
+      return last.title;
+    };
+
+    return taskGroups.map(g => ({
+      id: g.groupId,
+      title: g.groupId === 'MISC' ? g.title : resolveGroupTitle(g.groupId, g.title),
+      count: g.tasks.length
+    }));
+  }, [taskGroups, parentsCacheByTaskId]);
+
+  useEffect(() => {
+    if (taskGroups.length === 0) {
+      if (activeTaskGroupIdRef.current !== null) {
+        setActiveTaskGroupId(null);
+      }
+      return;
+    }
+
+    const ids = new Set(taskGroups.map(g => g.groupId));
+    const current = activeTaskGroupIdRef.current;
+    if (current && ids.has(current)) {
+      return;
+    }
+    setActiveTaskGroupId(taskGroups[0].groupId);
+  }, [taskGroups]);
+
+  useEffect(() => {
+    if (taskGroups.length === 0) return;
+    if (typeof IntersectionObserver === 'undefined') return;
+
+    const elements: Array<{ id: string; el: HTMLDivElement }> = [];
+    for (const group of taskGroups) {
+      const el = taskGroupElementByIdRef.current[group.groupId];
+      if (el) {
+        elements.push({ id: group.groupId, el });
+      }
+    }
+
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter(e => e.isIntersecting);
+        if (visible.length === 0) return;
+
+        visible.sort((a, b) => Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top));
+        const top = visible[0];
+        const id = (top.target as HTMLElement).dataset.groupId;
+        if (!id) return;
+        if (activeTaskGroupIdRef.current === id) return;
+        setActiveTaskGroupId(id);
+      },
+      {
+        root: null,
+        threshold: [0.05, 0.1, 0.2],
+        rootMargin: '-20% 0px -70% 0px'
+      }
+    );
+
+    for (const item of elements) {
+      observer.observe(item.el);
+    }
+
+    return () => observer.disconnect();
+  }, [taskGroups]);
+
+  const scrollToTaskGroup = (groupId: string) => {
+    setActiveTaskGroupId(groupId);
+    const el = taskGroupElementByIdRef.current[groupId];
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  useEffect(() => {
+    const limit = createConcurrencyLimiter(PARENTS_FETCH_CONCURRENCY);
+
+    // 对每个分组选择一个子任务作为 /parents 请求目标：
+    // /api/v1/tasks/{childTaskId}/parents 返回“根 → … → 直接父任务（也就是 groupId）”
+    const targets = taskGroups
+      .filter(g => g.groupId !== 'MISC')
+      .map(g => ({ groupId: g.groupId, targetTaskId: g.tasks[0]?.id }))
+      .filter((t): t is { groupId: string; targetTaskId: string } => Boolean(t.targetTaskId));
+
+    const targetsToFetch = targets.filter((t) => {
+      const cached = parentsCacheByTaskIdRef.current[t.groupId];
+      if (cached?.status === 'success' || cached?.status === 'loading' || cached?.status === 'error') {
+        return false;
+      }
+      if (parentsCacheInflightRef.current.has(t.groupId)) {
+        return false;
+      }
+      return true;
+    });
+
+    if (targetsToFetch.length === 0) {
+      return;
+    }
+
+    for (const t of targetsToFetch) {
+      parentsCacheInflightRef.current.add(t.groupId);
+      setParentsCacheByTaskId(prev => ({
+        ...prev,
+        [t.groupId]: {
+          status: 'loading',
+          parents: []
+        }
+      }));
+    }
+
+    void Promise.all(
+      targetsToFetch.map((t) =>
+        limit(async () => {
+          try {
+            const parents = await taskService.getTaskParents(t.targetTaskId);
+            if (!isMountedRef.current) return;
+            setParentsCacheByTaskId(prev => ({
+              ...prev,
+              [t.groupId]: {
+                status: 'success',
+                parents
+              }
+            }));
+          } catch (error) {
+            if (!isMountedRef.current) return;
+            const message = error instanceof Error ? error.message : '未知错误';
+            setParentsCacheByTaskId(prev => ({
+              ...prev,
+              [t.groupId]: {
+                status: 'error',
+                parents: [],
+                errorMessage: message
+              }
+            }));
+          } finally {
+            parentsCacheInflightRef.current.delete(t.groupId);
+          }
+        })
+      )
+    );
+  }, [taskGroups]);
+
+  const requestParentsRetry = (groupId: string, targetTaskId: string) => {
+    if (parentsCacheInflightRef.current.has(groupId)) {
+      return;
+    }
+    parentsCacheInflightRef.current.add(groupId);
+    setParentsCacheByTaskId(prev => ({
+      ...prev,
+      [groupId]: {
+        status: 'loading',
+        parents: []
+      }
+    }));
+
+    void (async () => {
+      try {
+        const parents = await taskService.getTaskParents(targetTaskId);
+        if (!isMountedRef.current) return;
+        setParentsCacheByTaskId(prev => ({
+          ...prev,
+          [groupId]: {
+            status: 'success',
+            parents
+          }
+        }));
+      } catch (error) {
+        if (!isMountedRef.current) return;
+        const message = error instanceof Error ? error.message : '未知错误';
+        setParentsCacheByTaskId(prev => ({
+          ...prev,
+          [groupId]: {
+            status: 'error',
+            parents: [],
+            errorMessage: message
+          }
+        }));
+      } finally {
+        parentsCacheInflightRef.current.delete(groupId);
+      }
+    })();
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
       {/* 顶部导航栏 */}
       <header className="navbar">
-        <div className="navbar-brand">
-          <span className="logo">🌙</span>
-          <h1>Luna Dial</h1>
+        <div className="navbar-left">
+          <div className="navbar-brand">
+            <span className="logo">🌙</span>
+            <h1>Luna Dial</h1>
+          </div>
         </div>
 
-        {/* 周期切换器 */}
-        <div className="period-switcher">
-          {(['day', 'week', 'month', 'quarter', 'year'] as PeriodType[]).map(period => (
+        <div className="navbar-center" role="group" aria-label="周期与时间控制中心">
+          {/* 周期切换器 */}
+          <div className="period-switcher">
+            {(['day', 'week', 'month', 'quarter', 'year'] as PeriodType[]).map(period => (
+              <button
+                key={period}
+                onClick={() => setCurrentPeriod(period)}
+                className={`period-btn ${currentPeriod === period ? 'active' : ''}`}
+              >
+                {period === 'day' && '日'}
+                {period === 'week' && '周'}
+                {period === 'month' && '月'}
+                {period === 'quarter' && '季'}
+                {period === 'year' && '年'}
+              </button>
+            ))}
+          </div>
+
+          <div className="navbar-divider" aria-hidden="true" />
+
+          {/* 时间导航器 */}
+          <TimeNavigator
+            currentPeriod={currentPeriod}
+            currentDate={currentDate}
+            onDateChange={handleDateChange}
+            onNavigate={handleNavigate}
+          />
+        </div>
+
+        <div className="navbar-right">
+          <div className="user-info">
+            <span className="user-name">{user?.name || user?.username}</span>
             <button
-              key={period}
-              onClick={() => setCurrentPeriod(period)}
-              className={`period-btn ${currentPeriod === period ? 'active' : ''}`}
+              className="btn-profile"
+              onClick={() => navigate('/profile')}
+              aria-label="设置"
+              title="设置"
             >
-              {period === 'day' && '日'}
-              {period === 'week' && '周'}
-              {period === 'month' && '月'}
-              {period === 'quarter' && '季'}
-              {period === 'year' && '年'}
+              ⚙
             </button>
-          ))}
-        </div>
-
-        {/* 时间导航器 */}
-        <TimeNavigator
-          currentPeriod={currentPeriod}
-          currentDate={currentDate}
-          onDateChange={handleDateChange}
-          onNavigate={handleNavigate}
-        />
-
-        <div className="user-info">
-          <span className="user-name">{user?.name || user?.username}</span>
-          <button className="btn-profile" onClick={() => navigate('/profile')}>
-            设置
-          </button>
-          <button className="btn-logout" onClick={handleLogout}>
-            登出
-          </button>
+            <button className="btn-logout" onClick={handleLogout}>
+              登出
+            </button>
+          </div>
         </div>
       </header>
 
@@ -613,68 +942,120 @@ const Dashboard: React.FC = () => {
               <div className="loading">加载中...</div>
             ) : (
               <div className="today-tasks">
-                {planData?.tasks?.filter(task =>
-                  task.task_type === (currentPeriod === 'day' ? 0 :
-                                      currentPeriod === 'week' ? 1 :
-                                      currentPeriod === 'month' ? 2 :
-                                      currentPeriod === 'quarter' ? 3 : 4)
-                ).map(task => (
-                  <div key={task.id} className="daily-task">
-                    <div className="task-header">
-                      <div className="task-info">
-                        <span className="task-icon">{task.icon || '📝'}</span>
-                        <span className="task-text">{task.title}</span>
-                        <span className={`priority-badge ${getPriorityClass(task.priority)}`}>
-                          {getPriorityLabel(task.priority)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="task-controls">
-                      <div className="control-item">
-                        <label className="control-label">状态</label>
-                        <select
-                          className="task-status-select"
-                          value={task.status}
-                          onChange={(e) => handleTaskStatusChange(task.id, Number(e.target.value) as TaskStatus)}
-                        >
-                          <option value={TaskStatus.NotStarted}>未开始</option>
-                          <option value={TaskStatus.InProgress}>进行中</option>
-                          <option value={TaskStatus.Completed}>已完成</option>
-                          <option value={TaskStatus.Cancelled}>已取消</option>
-                        </select>
-                      </div>
-                      <div className="control-item">
-                        <label className="control-label">努力程度</label>
-                        <div className="score-display-container">
-                          <span className={`score-value ${task.status === TaskStatus.NotStarted || task.task_type !== 0 ? 'disabled' : ''}`}>
-                            {task.status === TaskStatus.NotStarted || task.task_type !== 0 ? '-' : `${task.score}/10`}
-                          </span>
-                          <button
-                            className="btn-edit-score"
-                            onClick={() => handleOpenScoreDialog(task)}
-                            disabled={task.status === TaskStatus.NotStarted || task.task_type !== 0}
-                            title={task.task_type !== 0 ? "仅日任务支持评分" : "修改努力程度"}
-                          >
-                            ✏️
-                          </button>
-                        </div>
-                      </div>
-                      <div className="control-item task-actions">
-                        <button
-                          className="btn-delete-task"
-                          onClick={() => {
-                            if (window.confirm('确定要删除这个任务吗？')) {
-                              handleDeleteTask(task.id);
-                            }
-                          }}
-                          title="删除任务"
-                        >
-                          🗑️
-                        </button>
-                      </div>
+                {taskGroups.length === 0 ? (
+                  <div className="empty-state">暂无任务</div>
+                ) : (
+                  <div className="task-groups-layout">
+                    <TaskGroupSidebar
+                      items={sidebarItems}
+                      activeId={activeTaskGroupId}
+                      onSelect={scrollToTaskGroup}
+                    />
+	                    <div className="task-group-list">
+	                      {taskGroups.map(group => {
+	                        const breadcrumbState = group.groupId === 'MISC' ? undefined : parentsCacheByTaskId[group.groupId];
+	                        const breadcrumbStatus: BreadcrumbStatus =
+	                          group.groupId === 'MISC' ? 'empty' :
+	                          !breadcrumbState ? 'loading' :
+	                          breadcrumbState.status === 'loading' ? 'loading' :
+	                          breadcrumbState.status === 'error' ? 'error' :
+	                          'ready';
+
+	                        const breadcrumbItems: BreadcrumbItem[] = group.groupId === 'MISC'
+	                          ? []
+	                          : (breadcrumbState?.parents ?? []).map(p => ({ id: p.id, title: p.title }));
+
+	                        const groupTitle = group.groupId === 'MISC'
+	                          ? group.title
+	                          : (() => {
+	                              const parents = breadcrumbState?.status === 'success' ? breadcrumbState.parents : [];
+	                              const last = parents[parents.length - 1];
+	                              if (last && last.id === group.groupId) {
+	                                return last.title;
+	                              }
+	                              return group.title;
+	                            })();
+
+	                        return (
+	                          <div
+	                            key={group.groupId}
+	                            className="task-group-anchor"
+	                            data-group-id={group.groupId}
+                            ref={(el) => {
+                              taskGroupElementByIdRef.current[group.groupId] = el;
+	                            }}
+	                          >
+	                            <TaskGroupCard
+	                              title={groupTitle}
+	                              metaText={`${group.tasks.length} 项`}
+	                              breadcrumbItems={breadcrumbItems}
+	                              breadcrumbStatus={breadcrumbStatus}
+	                              onRetryBreadcrumb={group.groupId === 'MISC' || !group.tasks[0]?.id ? undefined : () => requestParentsRetry(group.groupId, group.tasks[0].id)}
+	                            >
+	                              {group.tasks.map(task => (
+	                                <div key={task.id} className="daily-task">
+	                                  <div className="task-header">
+	                                    <div className="task-info">
+	                                      <span className="task-icon">{task.icon || '📝'}</span>
+                                      <span className="task-text">{task.title}</span>
+                                      <span className={`priority-badge ${getPriorityClass(task.priority)}`}>
+                                        {getPriorityLabel(task.priority)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="task-controls">
+                                    <div className="control-item">
+                                      <label className="control-label">状态</label>
+                                      <select
+                                        className="task-status-select"
+                                        value={task.status}
+                                        onChange={(e) => handleTaskStatusChange(task.id, Number(e.target.value) as TaskStatus)}
+                                      >
+                                        <option value={TaskStatus.NotStarted}>未开始</option>
+                                        <option value={TaskStatus.InProgress}>进行中</option>
+                                        <option value={TaskStatus.Completed}>已完成</option>
+                                        <option value={TaskStatus.Cancelled}>已取消</option>
+                                      </select>
+                                    </div>
+                                    <div className="control-item">
+                                      <label className="control-label">努力程度</label>
+                                      <div className="score-display-container">
+                                        <span className={`score-value ${task.status === TaskStatus.NotStarted || task.task_type !== 0 ? 'disabled' : ''}`}>
+                                          {task.status === TaskStatus.NotStarted || task.task_type !== 0 ? '-' : `${task.score}/10`}
+                                        </span>
+                                        <button
+                                          className="btn-edit-score"
+                                          onClick={() => handleOpenScoreDialog(task)}
+                                          disabled={task.status === TaskStatus.NotStarted || task.task_type !== 0}
+                                          title={task.task_type !== 0 ? "仅日任务支持评分" : "修改努力程度"}
+                                        >
+                                          ✏️
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <div className="control-item task-actions">
+                                      <button
+                                        className="btn-delete-task"
+                                        onClick={() => {
+                                          if (window.confirm('确定要删除这个任务吗？')) {
+                                            handleDeleteTask(task.id);
+                                          }
+                                        }}
+                                        title="删除任务"
+                                      >
+                                        🗑️
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </TaskGroupCard>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             )}
 

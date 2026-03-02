@@ -11,6 +11,15 @@ import {
   TaskPriority
 } from '../types';
 
+// 父任务链节点（后端 /parents 返回的最小字段集）
+export interface TaskParentNode {
+  id: string;
+  title: string;
+  type?: string;
+  parent_id?: string;
+  tree_depth?: number;
+}
+
 // 任务服务类
 class TaskService {
   // 获取任务列表（按时间周期）
@@ -176,13 +185,39 @@ class TaskService {
   }
 
   // 获取任务的父任务链
-  async getTaskParents(taskId: string): Promise<Task[]> {
-    const response = await apiClient.get<ApiResponse<Task[]>>(
+  async getTaskParents(taskId: string): Promise<TaskParentNode[]> {
+    const response = await apiClient.get<ApiResponse<unknown>>(
       `/api/v1/tasks/${taskId}/parents`
     );
 
     if (response.data.success && response.data.data) {
-      return response.data.data;
+      const data = response.data.data;
+      if (!Array.isArray(data)) {
+        throw new Error('父任务链响应格式不正确（期望数组）');
+      }
+
+      const nodes: TaskParentNode[] = [];
+      for (const item of data) {
+        if (!item || typeof item !== 'object') {
+          throw new Error('父任务链响应格式不正确（期望对象）');
+        }
+        const node = item as Partial<Record<string, unknown>>;
+        const id = node.id;
+        const title = node.title;
+        if (typeof id !== 'string' || typeof title !== 'string') {
+          throw new Error('父任务链响应格式不正确（缺少 id/title）');
+        }
+
+        nodes.push({
+          id,
+          title,
+          type: typeof node.type === 'string' ? node.type : undefined,
+          parent_id: typeof node.parent_id === 'string' ? node.parent_id : undefined,
+          tree_depth: typeof node.tree_depth === 'number' ? node.tree_depth : undefined,
+        });
+      }
+
+      return nodes;
     }
 
     throw new Error(response.data.message || '获取父任务链失败');
