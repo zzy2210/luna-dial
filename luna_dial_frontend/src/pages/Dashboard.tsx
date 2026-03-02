@@ -4,7 +4,6 @@ import useAuthStore from '../store/auth';
 import ParentTaskList from '../components/ParentTaskList';
 import TimeNavigator from '../components/TimeNavigator';
 import TaskGroupCard from '../components/TaskGroupCard';
-import TaskGroupSidebar from '../components/TaskGroupSidebar';
 import taskService from '../services/task';
 import journalService from '../services/journal';
 import planService from '../services/plan';
@@ -111,11 +110,6 @@ const Dashboard: React.FC = () => {
   const [parentsCacheByTaskId, setParentsCacheByTaskId] = useState<Record<string, ParentsCacheEntry>>({});
   const parentsCacheByTaskIdRef = useRef<Record<string, ParentsCacheEntry>>({});
   const isMountedRef = useRef(true);
-
-  // 分组卡片 DOM 引用表（用于 sidebar 定位滚动）
-  const taskGroupElementByIdRef = useRef<Record<string, HTMLDivElement | null>>({});
-  const [activeTaskGroupId, setActiveTaskGroupId] = useState<string | null>(null);
-  const activeTaskGroupIdRef = useRef<string | null>(null);
 
   // 统计数据
   const [stats, setStats] = useState({
@@ -601,10 +595,6 @@ const Dashboard: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    activeTaskGroupIdRef.current = activeTaskGroupId;
-  }, [activeTaskGroupId]);
-
   const currentPeriodTaskType = useMemo(() => {
     return currentPeriod === 'day' ? 0 :
            currentPeriod === 'week' ? 1 :
@@ -659,90 +649,6 @@ const Dashboard: React.FC = () => {
 
     return entries;
   }, [currentPeriodTasks, taskById]);
-
-  const sidebarItems = useMemo(() => {
-    // 从父任务链推导分组标题（避免 planData.tasks 不含父任务时退化为 taskId）
-    const resolveGroupTitle = (groupId: string, fallbackTitle: string) => {
-      const state = parentsCacheByTaskId[groupId];
-      if (!state || state.status !== 'success') {
-        return fallbackTitle;
-      }
-      const last = state.parents[state.parents.length - 1];
-      if (!last || last.id !== groupId) {
-        return fallbackTitle;
-      }
-      return last.title;
-    };
-
-    return taskGroups.map(g => ({
-      id: g.groupId,
-      title: g.groupId === 'MISC' ? g.title : resolveGroupTitle(g.groupId, g.title),
-      count: g.tasks.length
-    }));
-  }, [taskGroups, parentsCacheByTaskId]);
-
-  useEffect(() => {
-    if (taskGroups.length === 0) {
-      if (activeTaskGroupIdRef.current !== null) {
-        setActiveTaskGroupId(null);
-      }
-      return;
-    }
-
-    const ids = new Set(taskGroups.map(g => g.groupId));
-    const current = activeTaskGroupIdRef.current;
-    if (current && ids.has(current)) {
-      return;
-    }
-    setActiveTaskGroupId(taskGroups[0].groupId);
-  }, [taskGroups]);
-
-  useEffect(() => {
-    if (taskGroups.length === 0) return;
-    if (typeof IntersectionObserver === 'undefined') return;
-
-    const elements: Array<{ id: string; el: HTMLDivElement }> = [];
-    for (const group of taskGroups) {
-      const el = taskGroupElementByIdRef.current[group.groupId];
-      if (el) {
-        elements.push({ id: group.groupId, el });
-      }
-    }
-
-    if (elements.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.filter(e => e.isIntersecting);
-        if (visible.length === 0) return;
-
-        visible.sort((a, b) => Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top));
-        const top = visible[0];
-        const id = (top.target as HTMLElement).dataset.groupId;
-        if (!id) return;
-        if (activeTaskGroupIdRef.current === id) return;
-        setActiveTaskGroupId(id);
-      },
-      {
-        root: null,
-        threshold: [0.05, 0.1, 0.2],
-        rootMargin: '-20% 0px -70% 0px'
-      }
-    );
-
-    for (const item of elements) {
-      observer.observe(item.el);
-    }
-
-    return () => observer.disconnect();
-  }, [taskGroups]);
-
-  const scrollToTaskGroup = (groupId: string) => {
-    setActiveTaskGroupId(groupId);
-    const el = taskGroupElementByIdRef.current[groupId];
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
 
   useEffect(() => {
 	    const limit = createConcurrencyLimiter(PARENTS_FETCH_CONCURRENCY);
@@ -957,11 +863,6 @@ const Dashboard: React.FC = () => {
                   <div className="empty-state">暂无任务</div>
                 ) : (
                   <div className="task-groups-layout">
-                    <TaskGroupSidebar
-                      items={sidebarItems}
-                      activeId={activeTaskGroupId}
-                      onSelect={scrollToTaskGroup}
-                    />
 	                    <div className="task-group-list">
 	                      {taskGroups.map(group => {
 	                        const breadcrumbState = group.groupId === 'MISC' ? undefined : parentsCacheByTaskId[group.groupId];
@@ -992,9 +893,6 @@ const Dashboard: React.FC = () => {
 	                            key={group.groupId}
 	                            className="task-group-anchor"
 	                            data-group-id={group.groupId}
-                            ref={(el) => {
-                              taskGroupElementByIdRef.current[group.groupId] = el;
-	                            }}
 	                          >
 	                            <TaskGroupCard
 	                              title={groupTitle}
@@ -1006,7 +904,19 @@ const Dashboard: React.FC = () => {
 	                              {group.tasks.map(task => (
 	                                <div key={task.id} className="daily-task">
 	                                  <div className="task-header">
-	                                    <div className="task-info">
+	                                    <div
+                                        className="task-info clickable"
+                                        role="button"
+                                        tabIndex={0}
+                                        title="查看任务详情"
+                                        onClick={() => handleTaskClick(task)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            handleTaskClick(task);
+                                          }
+                                        }}
+                                      >
 	                                      <span className="task-icon">{task.icon || '📝'}</span>
                                       <span className="task-text">{task.title}</span>
                                       <span className={`priority-badge ${getPriorityClass(task.priority)}`}>
@@ -1045,6 +955,14 @@ const Dashboard: React.FC = () => {
                                       </div>
                                     </div>
                                     <div className="control-item task-actions">
+                                      <button
+                                        type="button"
+                                        className="btn-edit-task"
+                                        onClick={() => handleEditTask(task)}
+                                        title="编辑任务"
+                                      >
+                                        ✏️
+                                      </button>
                                       <button
                                         className="btn-delete-task"
                                         onClick={() => {

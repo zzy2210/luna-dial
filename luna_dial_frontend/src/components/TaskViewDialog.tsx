@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Task, TaskStatus, TaskPriority, TaskType } from '../types';
 import { parseTagsFromJsonString } from '../utils/tags';
 import { TASK_STATUS_LABELS } from '../constants/task';
+import taskService, { type TaskParentNode } from '../services/task';
 import '../styles/dialog.css';
 import '../styles/task-view-dialog.css';
 
@@ -25,6 +26,10 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
   const [currentScore, setCurrentScore] = useState<number>(task.score);
   const [editingScore, setEditingScore] = useState<number>(task.score);
   const [isEditingScore, setIsEditingScore] = useState(false);
+
+  const [parentsChainStatus, setParentsChainStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [parentsChain, setParentsChain] = useState<TaskParentNode[]>([]);
+  const [parentsChainError, setParentsChainError] = useState<string | null>(null);
 
   const taskTypeLabels = {
     0: '日任务',
@@ -119,6 +124,39 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
   };
 
   const tags = parseTagsFromJsonString(task.tags);
+
+  useEffect(() => {
+    if (!task.parent_id) {
+      setParentsChainStatus('idle');
+      setParentsChain([]);
+      setParentsChainError(null);
+      return;
+    }
+
+    let canceled = false;
+    setParentsChainStatus('loading');
+    setParentsChain([]);
+    setParentsChainError(null);
+
+    void (async () => {
+      try {
+        const parents = await taskService.getTaskParents(task.id);
+        if (canceled) return;
+        setParentsChainStatus('success');
+        setParentsChain(parents);
+      } catch (error) {
+        if (canceled) return;
+        const message = error instanceof Error ? error.message : '未知错误';
+        setParentsChainStatus('error');
+        setParentsChain([]);
+        setParentsChainError(message);
+      }
+    })();
+
+    return () => {
+      canceled = true;
+    };
+  }, [task.id, task.parent_id]);
 
   return (
     <div className="dialog-overlay" onClick={onClose}>
@@ -284,11 +322,44 @@ const TaskViewDialog: React.FC<TaskViewDialogProps> = ({
               </div>
               <div className="hierarchy-card">
                 {task.parent_id && (
-                  <div className="hierarchy-item">
-                    <span className="hierarchy-icon">↑</span>
-                    <span className="hierarchy-label">父任务ID:</span>
-                    <span className="hierarchy-value">{task.parent_id}</span>
-                  </div>
+                  <>
+                    <div className="hierarchy-item">
+                      <span className="hierarchy-icon">↑</span>
+                      <span className="hierarchy-label">父任务:</span>
+                      <span className="hierarchy-title">
+                        {(() => {
+                          if (parentsChainStatus === 'loading') return '加载中...';
+                          if (parentsChainStatus === 'error') return '加载失败';
+                          if (parentsChainStatus !== 'success') return '未知';
+
+                          const ancestors = parentsChain.filter(p => p.id !== task.id);
+                          const parentNode = ancestors.find(p => p.id === task.parent_id);
+                          return parentNode?.title ?? '未知';
+                        })()}
+                      </span>
+                      <span className="hierarchy-id">(ID: {task.parent_id})</span>
+                    </div>
+                    {parentsChainStatus === 'error' && parentsChainError && (
+                      <div className="hierarchy-item hierarchy-hint">
+                        <span className="hierarchy-icon">⚠️</span>
+                        <span className="hierarchy-label">提示:</span>
+                        <span className="hierarchy-hint-text">{parentsChainError}</span>
+                      </div>
+                    )}
+                    {parentsChainStatus === 'success' && parentsChain.length > 0 && (
+                      <div className="hierarchy-item">
+                        <span className="hierarchy-icon">🧭</span>
+                        <span className="hierarchy-label">路径:</span>
+                        <span className="hierarchy-path">
+                          {(() => {
+                            const ancestors = parentsChain.filter(p => p.id !== task.id);
+                            if (ancestors.length === 0) return '（无）';
+                            return ancestors.map(p => p.title).join(' / ');
+                          })()}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
                 {task.has_children && (
                   <div className="hierarchy-item">

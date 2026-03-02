@@ -498,6 +498,31 @@
   color: var(--text-secondary, #5b21b6);
 }
 
+.hierarchy-title {
+  color: var(--text-secondary, #5b21b6);
+  font-weight: 600;
+}
+
+.hierarchy-id {
+  font-family: 'Courier New', monospace;
+  color: var(--text-tertiary, #6b7280);
+  font-size: 13px;
+}
+
+.hierarchy-path {
+  color: var(--text-secondary, #5b21b6);
+  font-size: 14px;
+}
+
+.hierarchy-item.hierarchy-hint {
+  color: var(--danger-color, #ef4444);
+}
+
+.hierarchy-hint-text {
+  font-size: 13px;
+  color: inherit;
+}
+
 /* 时间戳 */
 .timestamp {
   display: flex;

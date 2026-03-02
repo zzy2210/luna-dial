@@ -1,9 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import journalService from '../services/journal';
 import { Journal, CreateJournalRequest, UpdateJournalRequest, PeriodType } from '../types';
 import { formatLocalDate, getPeriodDates } from '../utils/dateUtils';
 import { JOURNAL_ICONS } from '../constants/icons';
 import '../styles/dialog.css';
+
+// 日志草稿缓存版本号
+const JOURNAL_DRAFT_VERSION = 1 as const;
+
+// 日志草稿缓存结构（v1）
+interface JournalDraftV1 {
+  v: typeof JOURNAL_DRAFT_VERSION;
+  formData: CreateJournalRequest;
+  updatedAt: number;
+}
+
+// 生成日志草稿缓存键（避免刷新/跳转导致内容丢失）
+const buildJournalDraftKey = (params: {
+  isEdit: boolean;
+  journalId: string | null;
+  formData: Pick<CreateJournalRequest, 'journal_type' | 'start_date' | 'end_date'>;
+}): string => {
+  if (params.isEdit && params.journalId) {
+    return `journal_draft:v${JOURNAL_DRAFT_VERSION}:edit:${params.journalId}`;
+  }
+  return `journal_draft:v${JOURNAL_DRAFT_VERSION}:new:${params.formData.journal_type}:${params.formData.start_date}:${params.formData.end_date}`;
+};
+
+// 解析日志草稿缓存内容（失败则返回 null）
+const parseJournalDraft = (raw: string | null): JournalDraftV1 | null => {
+  if (!raw) return null;
+  try {
+    const obj = JSON.parse(raw) as Partial<JournalDraftV1>;
+    if (!obj || obj.v !== JOURNAL_DRAFT_VERSION) return null;
+    if (!obj.formData) return null;
+    if (typeof obj.updatedAt !== 'number') return null;
+    return obj as JournalDraftV1;
+  } catch {
+    return null;
+  }
+};
 
 interface JournalEditDialogProps {
   journal?: Journal | null;
@@ -23,6 +59,10 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const isEdit = !!journal;
 
+  const hasPromptedDraftRestoreRef = useRef(false);
+  const previousDraftKeyRef = useRef<string | null>(null);
+  const [hasLoadedInitialFormData, setHasLoadedInitialFormData] = useState(false);
+
   const [formData, setFormData] = useState<CreateJournalRequest>(() => {
     const dates = getPeriodDates(currentPeriod, currentDate || new Date());
     return {
@@ -36,6 +76,9 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
   });
 
   useEffect(() => {
+    setHasLoadedInitialFormData(false);
+    hasPromptedDraftRestoreRef.current = false;
+
     if (journal) {
       // 编辑模式，加载现有日志数据
       const journalTypeMap = {
@@ -63,7 +106,91 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
         ...dates
       }));
     }
-  }, [journal, currentPeriod]);
+    setHasLoadedInitialFormData(true);
+  }, [journal, currentPeriod, currentDate]);
+
+  const draftKey = useMemo(() => {
+    return buildJournalDraftKey({
+      isEdit,
+      journalId: journal?.id ?? null,
+      formData: {
+        journal_type: formData.journal_type,
+        start_date: formData.start_date,
+        end_date: formData.end_date
+      }
+    });
+  }, [isEdit, journal?.id, formData.journal_type, formData.start_date, formData.end_date]);
+
+  useEffect(() => {
+    // 初始化时记录一次 key，确保后续能正确迁移
+    if (!previousDraftKeyRef.current) {
+      previousDraftKeyRef.current = draftKey;
+    }
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (isEdit) return;
+    const previousKey = previousDraftKeyRef.current;
+    if (!previousKey) {
+      previousDraftKeyRef.current = draftKey;
+      return;
+    }
+    if (previousKey === draftKey) return;
+
+    const raw = localStorage.getItem(previousKey);
+    if (raw && !localStorage.getItem(draftKey)) {
+      localStorage.setItem(draftKey, raw);
+    }
+    localStorage.removeItem(previousKey);
+    previousDraftKeyRef.current = draftKey;
+  }, [isEdit, draftKey]);
+
+  useEffect(() => {
+    if (!hasLoadedInitialFormData) return;
+    if (hasPromptedDraftRestoreRef.current) return;
+
+    const draft = parseJournalDraft(localStorage.getItem(draftKey));
+    if (!draft) {
+      hasPromptedDraftRestoreRef.current = true;
+      return;
+    }
+
+    const draftSnapshot = JSON.stringify(draft.formData);
+    const currentSnapshot = JSON.stringify(formData);
+    if (draftSnapshot === currentSnapshot) {
+      hasPromptedDraftRestoreRef.current = true;
+      return;
+    }
+
+    const ok = window.confirm('检测到未保存的日志草稿，是否恢复？');
+    hasPromptedDraftRestoreRef.current = true;
+    if (!ok) return;
+
+    if (isEdit) {
+      setFormData(prev => ({
+        ...prev,
+        title: draft.formData.title,
+        content: draft.formData.content,
+        icon: draft.formData.icon ?? prev.icon
+      }));
+      return;
+    }
+
+    setFormData(draft.formData);
+  }, [draftKey, formData, hasLoadedInitialFormData, isEdit]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      const draft: JournalDraftV1 = {
+        v: JOURNAL_DRAFT_VERSION,
+        formData,
+        updatedAt: Date.now()
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+    }, 350);
+
+    return () => window.clearTimeout(handle);
+  }, [draftKey, formData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +207,14 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
 
     setLoading(true);
     try {
+      // 提交前先写入草稿，避免提交过程中被 401 跳转导致完全丢失
+      const draft: JournalDraftV1 = {
+        v: JOURNAL_DRAFT_VERSION,
+        formData,
+        updatedAt: Date.now()
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+
       if (isEdit) {
         const updateData: UpdateJournalRequest = {
           journal_id: journal.id,
@@ -92,6 +227,7 @@ const JournalEditDialog: React.FC<JournalEditDialogProps> = ({
       } else {
         await journalService.createJournal(formData);
       }
+      localStorage.removeItem(draftKey);
       onSuccess();
     } catch (error) {
       console.error('Failed to save journal:', error);
